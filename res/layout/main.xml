@@ -3,7 +3,7 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
     
-    <android.com.alienbloodbath_core.GameView
+    <android.com.abb.GameView
       android:id="@+id/GAME_VIEW"
       android:layout_width="fill_parent"
       android:layout_height="fill_parent"/>

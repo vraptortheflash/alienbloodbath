@@ -1,3 +1,14 @@
+// Copyright 2008 and onwards Matthew Burkhart.
+//
+// This program is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation; version 3 of the License.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+
 package android.com.abb;
 
 import android.app.Activity;
@@ -18,7 +29,6 @@ public class AlienBloodBathMain extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.main);
 
     game_ = new AlienBloodBathGame();
@@ -38,8 +48,8 @@ public class AlienBloodBathMain extends Activity {
      * be in a state representing a new game. */
     public void Reset() {
       game_state_.avatar.Stop();
-      game_state_.avatar.x = game_state_.map.starting_x + 105.0f;
-      game_state_.avatar.y = game_state_.map.starting_y - 100.0f;
+      game_state_.avatar.x = game_state_.map.starting_x;
+      game_state_.avatar.y = game_state_.map.starting_y;
       game_state_.avatar.ddy = kGravity;
     }
 
@@ -69,29 +79,26 @@ public class AlienBloodBathMain extends Activity {
 
     /** Run the game simulation for the specified amount of seconds. */
     protected void StepGame(float time_step) {
-      // Step the baddies.
+      // Step the baddies. TODO
       // Step the avatar.
       game_state_.avatar.Step(time_step);
       game_state_.map.CollideEntity(game_state_.avatar);
-      // Step the projectiles.
-      // Collide with map.
-      // Hurt baddies.
-      // Hurt avatar.
+      // Step the projectiles.  TODO
     }
 
     /** Draw the game state. The game map and entities are always drawn with the
      * avatar centered in the screen. */
     protected void DrawGame(Canvas canvas) {
-      canvas.drawRGB(0, 0, 0);  // Clear buffer.
+      canvas.drawRGB(0, 0, 0);  // Clear the buffer.
 
       float center_x = game_state_.avatar.x;
       float center_y = game_state_.avatar.y;
       // Draw the map tiles.
       game_state_.map.Draw(canvas, center_x, center_y);
-      // Draw the baddies.
+      // Draw the baddies.  TODO
       // Draw the avatar.
       game_state_.avatar.Draw(canvas, center_x, center_y);
-      // Draw the projectiles.
+      // Draw the projectiles.  TODO
     }
 
     private GameState game_state_;

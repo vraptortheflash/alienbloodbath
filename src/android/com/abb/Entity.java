@@ -1,3 +1,14 @@
+// Copyright 2008 and onwards Matthew Burkhart.
+//
+// This program is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation; version 3 of the License.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+
 package android.com.abb;
 
 import android.graphics.Canvas;
@@ -11,8 +22,9 @@ public class Entity {
   public Bitmap sprite;
   public Rect sprite_source;
 
-  public float radius;
+  public int health;
 
+  public float radius;
   public boolean has_ground_contact;
 
   public float x;    // Position.
@@ -23,10 +35,7 @@ public class Entity {
   public float ddy;
 
   public Entity() {
-    radius = 0.0f;
     has_ground_contact = false;
-    x = y = 0.0f;
-    Stop();
 
     paint_ = new Paint();  // Default rendering settings.
   }

@@ -1,3 +1,14 @@
+// Copyright 2008 and onwards Matthew Burkhart.
+//
+// This program is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation; version 3 of the License.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+
 package android.com.abb;
 
 import android.graphics.Rect;
@@ -7,8 +18,6 @@ import android.com.abb.Entity;
 
 
 public class Avatar extends Entity {
-  public int health;
-
   public Avatar() {
     super();
     sprite_source = new Rect(0, 0, kSpriteSize, kSpriteSize);
@@ -68,17 +77,17 @@ public class Avatar extends Entity {
     sprite_source.bottom = kSpriteSize * index + kSpriteSize;
   }
 
-  private int sprite_offset_ = 0;
   private float animation_phase_ = 0.0f;
-  private static final float kJumpVelocity = 250.0f;
+  private int sprite_offset_ = 0;
+
+  private static final float kAirAcceleration = 20.0f;
+  private static final float kAirAnimationSpeed = 4.0f;
   private static final float kGroundAcceleration = 300.0f;
-  private static final float kAirAcceleration = 10.0f;
   private static final float kGroundAnimationSpeed = 1.0f / 700.0f;
-  private static final float kAirAnimationSpeed = 5.0f;
   private static final int kHealth = 1;
+  private static final float kJumpVelocity = 250.0f;
   private static final float kRadius = 32.0f;
   private static final int kSpriteSize = 64;
-
   private static final int kKeyLeft = KeyEvent.KEYCODE_A;
   private static final int kKeyRight = KeyEvent.KEYCODE_S;
   private static final int kKeyJump = KeyEvent.KEYCODE_J;
