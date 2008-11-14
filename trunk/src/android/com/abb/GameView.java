@@ -1,3 +1,14 @@
+// Copyright 2008 and onwards Matthew Burkhart.
+//
+// This program is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation; version 3 of the License.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+
 package android.com.abb;
 
 import android.content.Context;
@@ -36,7 +47,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       // Wait util the game instance has been set.
       while (game_ == null) {
         try {
-          Thread.sleep(100l, 0);
+          Thread.sleep(100l, 0);  // Wait 100ms.
         } catch (InterruptedException ex) {}
         continue;
       }
@@ -74,8 +85,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             int sleep_nanoseconds = (int)(remaining_time * 1.0e9f);
             Thread.sleep(sleep_milliseconds, sleep_nanoseconds);
           } catch (InterruptedException ex) {
-            // If someone notified the thread, just forget about it and continue
-            // on. It's not worth the cycles to handle.
+            // If someone has notified this thread, just forget about it and
+            // continue on. It's not worth the cycles to handle.
           }
         }
 
@@ -98,7 +109,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void Pause(boolean pause) {
-      // TODO: Implement this.
     }
 
     public void Halt() {

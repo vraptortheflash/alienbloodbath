@@ -1,3 +1,14 @@
+// Copyright 2008 and onwards Matthew Burkhart.
+//
+// This program is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation; version 3 of the License.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+
 package android.com.abb;
 
 import android.graphics.Bitmap;
@@ -19,8 +30,6 @@ public class Map {
   public Bitmap tiles_bitmap;
 
   public Map() {
-    starting_x = starting_y = 0.0f;
-    ending_x = ending_y = 0.0f;
     paint_ = new Paint();  // Rendering settings.
   }
 
@@ -77,7 +86,8 @@ public class Map {
 
     entity.has_ground_contact = false;
 
-    // Iterate through map tiles potentially intersecting the entity.
+    // Iterate through map tiles potentially intersecting the entity. The
+    // collision model used for entities and tiles are squares.
     float radius = entity.radius;
     float half_tile_size = kTileSize / 2;
     for (float x = entity.x - radius; x <= entity.x + radius; x += kTileSize) {
@@ -95,6 +105,7 @@ public class Map {
         float tile_x = kTileSize * index_x;
         float tile_y = kTileSize * index_y;
 
+        // Determine if a collision has occurred between the two squares.
         float distance_x = entity.x - tile_x;
         float distance_y = entity.y - tile_y;
         if (Math.abs(distance_x) > half_tile_size + entity.radius ||
@@ -102,11 +113,21 @@ public class Map {
           continue;  // No collision with this tile.
         }
 
+        // The kEpsilon constant allows the edges of the square to essential be
+        // rounded which prevents the small corner collisions which may occur
+        // when an entity is sliding over a series of tiles.
+        final float kEpsilon = 10.0f;  // Pixels.
+        float distance =
+            (float)Math.sqrt(distance_x * distance_x + distance_y * distance_y);
+        float threshold_radius = half_tile_size + entity.radius - kEpsilon;
+        float threshold_distance =
+            (float)Math.sqrt(2 * threshold_radius * threshold_radius);
+        if (distance > threshold_distance) {
+          continue;  // No collision with this tile.
+        }
+
         if (tile_exploadable) {
-          float distance =
-              (float)Math.sqrt(distance_x * distance_x + distance_y * distance_y);
-          entity.dx += kExplosionStrength * distance_x / distance;
-          entity.dy += kExplosionStrength * distance_y / distance;
+          entity.dy = Math.min(entity.dy, -kExplosionStrength);
           SetTileAt(x, y, 0);  // Clear the exploding tile.
         }
         if (tile_collideable) {
@@ -115,12 +136,8 @@ public class Map {
           float impact_distance;
 
           // Determine which edges have the least amount of overlap, these will
-          // be the edges which are considered "in-collision". The vertical skew
-          // constant allows for preference to be given to vertical collisions
-          // over horizonal collisions. This is useful in avoiding scraping tile
-          // corners while sliding across the boundary.
-          float kVerticalSkew = 5.0f;  // Pixels.
-          if (Math.abs(distance_x) > Math.abs(distance_y) + kVerticalSkew) {  // Along x-axis.
+          // be the edges which are considered "in-collision".
+          if (Math.abs(distance_x) > Math.abs(distance_y)) {  // Along x-axis.
             if (distance_x > 0) {  // Entity's left edge.
               impact_normal_x = 1.0f;
               impact_normal_y = 0.0f;
@@ -144,7 +161,7 @@ public class Map {
           }
 
           // Apply the force of the impact on the entity. The following friction
-          // implementation  is a bit  of a  hack, as  is everything  else here,
+          // implementation is a bit of a hack, as is everything else here,
           // since we don't have any sense of entity mass.
           float impact_magnitude =
               impact_normal_x * entity.dx + impact_normal_y * entity.dy;
@@ -152,17 +169,6 @@ public class Map {
           entity.dy -= impact_normal_y * impact_magnitude;
           entity.x += impact_normal_x * impact_distance;
           entity.y += impact_normal_y * impact_distance;
-
-          /*
-          final float kKineticFrictionCoefficient = 0.05f;
-          final float kStaticFrictionCoefficient = 0.5f;
-          if (Math.abs(entity.dx) < kStaticFrictionCoefficient)
-            entity.dx = 0.0f;
-          if (Math.abs(entity.dy) < kStaticFrictionCoefficient)
-            entity.dy = 0.0f;
-          entity.dx -= kKineticFrictionCoefficient * -impact_normal_y * entity.dx;
-          entity.dy -= kKineticFrictionCoefficient * -impact_normal_x * entity.dy;
-          */
         }
       }
     }
