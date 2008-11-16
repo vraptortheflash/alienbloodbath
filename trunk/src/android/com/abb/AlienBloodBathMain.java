@@ -19,6 +19,7 @@ import android.graphics.Canvas;
 import android.os.Bundle;
 import android.view.Window;
 import java.util.Iterator;
+import java.util.Random;
 
 import android.com.abb.Game;
 import android.com.abb.GameState;
@@ -95,8 +96,18 @@ public class AlienBloodBathMain extends Activity {
         Enemy enemy = (Enemy)it.next();
         enemy.Step(time_step);
         game_state_.map.CollideEntity(enemy);
-        if (!enemy.alive)
+        if (!enemy.alive) {
+          // Add blood particles whenever an enemy dies.
+          for (int n = 0; n < kBloodBathSize; n++) {
+            float random_angle = random_.nextFloat() * 2.0f * (float)Math.PI;
+            float random_magnitude = kBloodBathVelocity * random_.nextFloat() / 3.0f;
+            game_state_.CreateBloodParticle(
+                enemy.x, enemy.y,
+                enemy.dx + random_magnitude * (float)Math.cos(random_angle),
+                enemy.dy + random_magnitude * (float)Math.sin(random_angle));
+          }
           it.remove();
+        }
       }
 
       // Step the projectiles and collide them against the enemies.
@@ -106,6 +117,14 @@ public class AlienBloodBathMain extends Activity {
         for (Iterator enemy_it = game_state_.enemies.iterator(); enemy_it.hasNext();)
           projectile.CollideEntity((Entity)enemy_it.next());
         if (!projectile.alive)
+          it.remove();
+      }
+
+      // Step the particles.
+      for (Iterator it = game_state_.particles.iterator(); it.hasNext();) {
+        Entity particle = (Entity)it.next();
+        particle.Step(time_step);
+        if (!particle.alive)
           it.remove();
       }
     }
@@ -131,8 +150,16 @@ public class AlienBloodBathMain extends Activity {
       // Draw the projectiles.
       for (Iterator it = game_state_.projectiles.iterator(); it.hasNext();)
         ((Entity)it.next()).Draw(canvas, center_x, center_y);
+
+      // Draw the particles.
+      for (Iterator it = game_state_.particles.iterator(); it.hasNext();)
+        ((Entity)it.next()).Draw(canvas, center_x, center_y);
     }
 
     private GameState game_state_;
+    private Random random_ = new Random();
+
+    private static final int kBloodBathSize = 6;  // Particles.
+    private static final float kBloodBathVelocity = 100.0f;
   }
 }

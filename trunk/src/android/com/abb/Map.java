@@ -147,7 +147,7 @@ public class Map {
           for (int n = 0; n < kExplosionSize; n++) {
             float random_angle = random_.nextFloat() * 2.0f * (float)Math.PI;
             float random_magnitude = kExplosionStrength * random_.nextFloat() / 3.0f;
-            game_state_.CreateFire(
+            game_state_.CreateFireProjectile(
                 tile_x, tile_y,
                 random_magnitude * (float)Math.cos(random_angle),
                 random_magnitude * (float)Math.sin(random_angle));
@@ -242,7 +242,7 @@ public class Map {
   private Random random_ = new Random();
 
   private static final int kEndingTile = 11;
-  private static final int kExplosionSize = 15;
+  private static final int kExplosionSize = 15;  // Particles.
   private static final float kExplosionStrength = 250.0f;
   private static final int kMapHeight = 100;
   private static final int kMapWidth = 100;
