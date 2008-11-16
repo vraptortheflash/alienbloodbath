@@ -18,6 +18,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.os.Bundle;
 import android.view.Window;
+import java.util.Iterator;
 
 import android.com.abb.Game;
 import android.com.abb.GameState;
@@ -48,9 +49,9 @@ public class AlienBloodBathMain extends Activity {
      * be in a state representing a new game. */
     public void Reset() {
       game_state_.avatar.Stop();
+      game_state_.avatar.alive = true;
       game_state_.avatar.x = game_state_.map.starting_x;
       game_state_.avatar.y = game_state_.map.starting_y;
-      game_state_.avatar.ddy = kGravity;
     }
 
     public void LoadResources(Resources resources) {
@@ -58,6 +59,10 @@ public class AlienBloodBathMain extends Activity {
           BitmapFactory.decodeResource(resources, R.drawable.avatar);
       game_state_.map.tiles_bitmap =
           BitmapFactory.decodeResource(resources, R.drawable.tiles_0);
+      game_state_.enemy_sprites =
+          BitmapFactory.decodeResource(resources, R.drawable.enemy_0);
+      game_state_.misc_sprites =
+          BitmapFactory.decodeResource(resources, R.drawable.misc);
       game_state_.map.LoadFromArray(resources.getIntArray(R.array.level_0));
     }
 
@@ -79,11 +84,30 @@ public class AlienBloodBathMain extends Activity {
 
     /** Run the game simulation for the specified amount of seconds. */
     protected void StepGame(float time_step) {
-      // Step the baddies. TODO
       // Step the avatar.
       game_state_.avatar.Step(time_step);
-      game_state_.map.CollideEntity(game_state_.avatar);
-      // Step the projectiles.  TODO
+      game_state_.map.CollideEntity(game_state_.avatar);  
+      if (!game_state_.avatar.alive)
+        Reset();
+
+      // Step the enemies.
+      for (Iterator it = game_state_.enemies.iterator(); it.hasNext();) {
+        Enemy enemy = (Enemy)it.next();
+        enemy.Step(time_step);
+        game_state_.map.CollideEntity(enemy);
+        if (!enemy.alive)
+          it.remove();
+      }
+
+      // Step the projectiles and collide them against the enemies.
+      for (Iterator it = game_state_.projectiles.iterator(); it.hasNext();) {
+        Fire projectile = (Fire)it.next();
+        projectile.Step(time_step);
+        for (Iterator enemy_it = game_state_.enemies.iterator(); enemy_it.hasNext();)
+          projectile.CollideEntity((Entity)enemy_it.next());
+        if (!projectile.alive)
+          it.remove();
+      }
     }
 
     /** Draw the game state. The game map and entities are always drawn with the
@@ -93,17 +117,22 @@ public class AlienBloodBathMain extends Activity {
 
       float center_x = game_state_.avatar.x;
       float center_y = game_state_.avatar.y;
+
       // Draw the map tiles.
       game_state_.map.Draw(canvas, center_x, center_y);
-      // Draw the baddies.  TODO
+
+      // Draw the enemies.
+      for (Iterator it = game_state_.enemies.iterator(); it.hasNext();)
+        ((Entity)it.next()).Draw(canvas, center_x, center_y);
+
       // Draw the avatar.
       game_state_.avatar.Draw(canvas, center_x, center_y);
-      // Draw the projectiles.  TODO
+
+      // Draw the projectiles.
+      for (Iterator it = game_state_.projectiles.iterator(); it.hasNext();)
+        ((Entity)it.next()).Draw(canvas, center_x, center_y);
     }
 
     private GameState game_state_;
-
-    /** Game constants. */
-    private static final float kGravity = 200.0f;
   }
 }
