@@ -22,7 +22,7 @@ public class Entity {
   public Bitmap sprite;
   public Rect sprite_source;
 
-  public int health;
+  public boolean alive = true;  // Should not be deleted from the game.
 
   public float radius;
   public boolean has_ground_contact;
@@ -35,8 +35,6 @@ public class Entity {
   public float ddy;
 
   public Entity() {
-    has_ground_contact = false;
-
     paint_ = new Paint();  // Default rendering settings.
   }
 
@@ -73,7 +71,7 @@ public class Entity {
     }
   }
 
-  private static final float kGroundFriction = 0.1f;
-
   private Paint paint_;
+
+  private static final float kGroundFriction = 0.1f;
 }

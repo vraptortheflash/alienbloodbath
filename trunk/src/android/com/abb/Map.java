@@ -17,8 +17,10 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import java.lang.Math;
+import java.util.Random;
 
 import android.com.abb.Entity;
+import android.com.abb.GameState;
 
 
 public class Map {
@@ -29,8 +31,8 @@ public class Map {
   public int[] tiles;
   public Bitmap tiles_bitmap;
 
-  public Map() {
-    paint_ = new Paint();  // Rendering settings.
+  public Map(GameState game_state) {
+    game_state_ = game_state;
   }
 
   public void LoadFromArray(int[] new_tiles) {
@@ -71,11 +73,19 @@ public class Map {
       return -1;  // Tile out of map range.
   }
 
-  public static boolean IsCollideable(int tile_id) {
+  public static boolean TileIsCollideable(int tile_id) {
     return ((tile_id >= 1 && tile_id <= 5) || tile_id == 7);
   }
 
-  public static boolean IsExploadable(int tile_id) {
+  public static boolean TileIsDeath(int tile_id) {
+    return (tile_id == 4);
+  }
+
+  public static boolean TileIsEnemy(int tile_id) {
+    return (tile_id == 12);
+  }
+
+  public static boolean TileIsExploadable(int tile_id) {
     return (tile_id == 9);
   }
 
@@ -93,17 +103,19 @@ public class Map {
     for (float x = entity.x - radius; x <= entity.x + radius; x += kTileSize) {
       for (float y = entity.y - radius; y <= entity.y + radius; y += kTileSize) {
         int tile_id = TileAt(x, y);
-        boolean tile_collideable = IsCollideable(tile_id);
-        boolean tile_exploadable = IsExploadable(tile_id);
-
-        if (!tile_collideable && !tile_exploadable) {
-          continue;  // Not a collideable tile.
-        }
+        boolean tile_collideable = TileIsCollideable(tile_id);
+        boolean tile_deadly = TileIsDeath(tile_id);
+        boolean tile_exploadable = TileIsExploadable(tile_id);
 
         int index_x = (int)(x / kTileSize + 0.5f);
         int index_y = (int)(y / kTileSize + 0.5f);
         float tile_x = kTileSize * index_x;
         float tile_y = kTileSize * index_y;
+
+
+        if (!tile_collideable && !tile_exploadable && !tile_deadly) {
+          continue;  // Not a collideable tile.
+        }
 
         // Determine if a collision has occurred between the two squares.
         float distance_x = entity.x - tile_x;
@@ -126,9 +138,20 @@ public class Map {
           continue;  // No collision with this tile.
         }
 
+        if (tile_deadly) {
+          entity.alive = false;
+        }
         if (tile_exploadable) {
           entity.dy = Math.min(entity.dy, -kExplosionStrength);
           SetTileAt(x, y, 0);  // Clear the exploding tile.
+          for (int n = 0; n < kExplosionSize; n++) {
+            float random_angle = random_.nextFloat() * 2.0f * (float)Math.PI;
+            float random_magnitude = kExplosionStrength * random_.nextFloat() / 3.0f;
+            game_state_.CreateFire(
+                tile_x, tile_y,
+                random_magnitude * (float)Math.cos(random_angle),
+                random_magnitude * (float)Math.sin(random_angle));
+          }
         }
         if (tile_collideable) {
           float impact_normal_x;
@@ -186,8 +209,15 @@ public class Map {
       for (float y = center_y - half_canvas_height;
            y < center_y + half_canvas_height + kTileSize;
            y += kTileSize) {
-        // Determine tile index for this world position x, y.
+        // Determine tile id for this world position x, y.
         int tile_id = TileAt(x, y);
+
+        // Spawn enemies if we happen to pass over an enemy tile.
+        if (TileIsEnemy(tile_id)) {
+          game_state_.CreateEnemy(x, y);
+          SetTileAt(x, y, 0);  // Clear the tile.
+        }
+
         if (tile_id < 1 || tile_id > 11) {
           continue;  // Not a visual tile.
         }
@@ -207,12 +237,15 @@ public class Map {
     }
   }
 
-  private Paint paint_;
+  private GameState game_state_;
+  private Paint paint_ = new Paint();  // Rendering settings.;
+  private Random random_ = new Random();
 
-  private static final int kStartingTile = 10;
   private static final int kEndingTile = 11;
-  private static final int kMapWidth = 100;
-  private static final int kMapHeight = 100;
-  private static final int kTileSize = 64;
+  private static final int kExplosionSize = 15;
   private static final float kExplosionStrength = 250.0f;
+  private static final int kMapHeight = 100;
+  private static final int kMapWidth = 100;
+  private static final int kStartingTile = 10;
+  private static final int kTileSize = 64;
 }
