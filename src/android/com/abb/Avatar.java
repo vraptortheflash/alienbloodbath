@@ -49,7 +49,7 @@ public class Avatar extends Entity {
       sprite_offset_ = 0;
 
     if (has_ground_contact) {
-      if (Math.abs(dx) > 30.0f) {
+      if (Math.abs(dx) > kAnimationStopThreshold) {
         animation_phase_ += kGroundAnimationSpeed * Math.abs(dx);
         while (animation_phase_ > 1.0f)
           animation_phase_ -= 1.0f;
@@ -107,9 +107,10 @@ public class Avatar extends Entity {
 
   private static final float kAirAcceleration = 25.0f;
   private static final float kAirAnimationSpeed = 4.0f;
+  private static final float kAnimationStopThreshold = 30.0f;
   private static final float kGravity = 200.0f;
   private static final float kGroundAcceleration = 300.0f;
-  private static final float kGroundAnimationSpeed = 1.0f / 700.0f;
+  private static final float kGroundAnimationSpeed = 1.0f / 500.0f;
   private static final float kJumpVelocity = 250.0f;
   private static final float kRadius = 32.0f;
   private static final float kShotDelay = 0.2f;  // Seconds between shots.

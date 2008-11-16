@@ -50,8 +50,8 @@ public class Fire extends Entity {
   private float frame = 0.0f;
 
   private static final int kFrames = 14;
-  private static final float kFrameRate = 6.0f;  // Frames / sec.
-  private static final float kRadius = 16.0f;
+  private static final float kFrameRate = 10.0f;  // Frames / sec.
+  private static final float kRadius = 3.0f;
   private static final int kSpriteBase = 521;
   private static final int kSpriteWidth = 64;
   private static final int kSpriteHeight = 36;
