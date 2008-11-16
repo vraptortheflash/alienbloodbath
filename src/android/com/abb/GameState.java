@@ -16,6 +16,7 @@ import android.graphics.Rect;
 import java.util.ArrayList;
 
 import android.com.abb.Avatar;
+import android.com.abb.Blood;
 import android.com.abb.Enemy;
 import android.com.abb.Fire;
 import android.com.abb.Map;
@@ -25,7 +26,9 @@ public class GameState {
   public Map map = new Map(this);
   public Avatar avatar = new Avatar(this);
   public ArrayList enemies = new ArrayList();
+  public ArrayList particles = new ArrayList();
   public ArrayList projectiles = new ArrayList();
+
   public Bitmap enemy_sprites;
   public Bitmap misc_sprites;
 
@@ -38,7 +41,18 @@ public class GameState {
     return enemy;
   }
 
-  public Entity CreateFire(float x, float y, float dx, float dy) {
+  public Entity CreateBloodParticle(float x, float y, float dx, float dy) {
+    Entity blood = new Blood();
+    blood.sprite = misc_sprites;
+    blood.x = x;
+    blood.y = y;
+    blood.dx = dx;
+    blood.dy = dy;
+    particles.add(blood);
+    return blood;
+  }
+
+  public Entity CreateFireProjectile(float x, float y, float dx, float dy) {
     Entity fire = new Fire();
     fire.sprite = misc_sprites;
     fire.x = x;

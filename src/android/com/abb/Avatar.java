@@ -76,7 +76,7 @@ public class Avatar extends Entity {
 
       if (sprite_offset_ == 9) x_offset *= -1.0f;
       if (sprite_offset_ == 9) dx_offset *= -1.0f;
-      game_state_.CreateFire(
+      game_state_.CreateFireProjectile(
           x + x_offset, y + y_offset, dx + dx_offset, dy + dy_offset);
       shot_delay_ = kShotDelay;
     }
