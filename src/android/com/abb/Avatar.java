@@ -121,6 +121,6 @@ public class Avatar extends Entity {
   private static final int kSpriteSize = 64;
   private static final int kKeyLeft = KeyEvent.KEYCODE_A;
   private static final int kKeyRight = KeyEvent.KEYCODE_S;
-  private static final int kKeyJump = KeyEvent.KEYCODE_J;
-  private static final int kKeyShoot = KeyEvent.KEYCODE_K;
+  private static final int kKeyJump = KeyEvent.KEYCODE_K;
+  private static final int kKeyShoot = KeyEvent.KEYCODE_J;
 }
