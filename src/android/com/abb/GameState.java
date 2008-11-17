@@ -11,11 +11,13 @@
 
 package android.com.abb;
 
+import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;;
+import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.os.Vibrator;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
@@ -47,7 +49,9 @@ public class GameState implements Game {
     avatar.y = map.starting_y;
   }
 
-  public void LoadResources(Resources resources) {
+  public void LoadResources(Context context) {
+    vibrator_ = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
+    Resources resources = context.getResources();
     avatar.sprite =
         BitmapFactory.decodeResource(resources, R.drawable.avatar);
     map.tiles_bitmap =
@@ -89,7 +93,8 @@ public class GameState implements Game {
       enemy.Step(time_step);
       map.CollideEntity(enemy);
       if (!enemy.alive) {
-        // Add blood particles whenever an enemy dies.
+        // Add blood particles and vibrate whenever an enemy dies.
+        Vibrate();
         for (int n = 0; n < kBloodBathSize; n++) {
           float random_angle = random_.nextFloat() * 2.0f * (float)Math.PI;
           float random_magnitude = kBloodBathVelocity * random_.nextFloat() / 3.0f;
@@ -179,8 +184,14 @@ public class GameState implements Game {
     return fire;
   }
 
-  private Random random_ = new Random();
+  public void Vibrate() {
+    vibrator_.vibrate(kVibrateLength);
+  }
 
-  private static final int kBloodBathSize = 6;  // Particles.
+  private Random random_ = new Random();
+  private Vibrator vibrator_;
+
+  private static final int kBloodBathSize = 6;  // Number of particles.
   private static final float kBloodBathVelocity = 100.0f;
+  private static final long kVibrateLength = 30;  // Milliseconds.
 }

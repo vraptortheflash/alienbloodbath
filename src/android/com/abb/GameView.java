@@ -133,13 +133,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     setFocusable(true);
     SurfaceHolder surface_holder = getHolder();
     surface_holder.addCallback(this);
-
-    // Create thread only; it's started in surfaceCreated()
     game_thread_ = new GameThread(surface_holder);
   }
 
   public void SetGame(Game game) {
-    game.LoadResources(context_.getResources());
+    game.LoadResources(context_);
     game_ = game;
     game_thread_.SetGame(game);
   }

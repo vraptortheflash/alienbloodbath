@@ -11,6 +11,7 @@
 
 package android.com.abb;
 
+import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 
@@ -18,7 +19,7 @@ import android.graphics.Canvas;
 /** Simple interface which hides most of the Android specifics. All method calls
  * are serialized. */
 public interface Game {
-  void LoadResources(Resources resources);
+  void LoadResources(Context context);
 
   void Reset();
 
