@@ -144,6 +144,7 @@ public class Map {
         if (tile_exploadable) {
           entity.dy = Math.min(entity.dy, -kExplosionStrength);
           SetTileAt(x, y, 0);  // Clear the exploding tile.
+          game_state_.Vibrate();
           for (int n = 0; n < kExplosionSize; n++) {
             float random_angle = random_.nextFloat() * 2.0f * (float)Math.PI;
             float random_magnitude = kExplosionStrength * random_.nextFloat() / 3.0f;
@@ -238,11 +239,11 @@ public class Map {
   }
 
   private GameState game_state_;
-  private Paint paint_ = new Paint();  // Rendering settings.;
+  private Paint paint_ = new Paint();  // Drawing settings.
   private Random random_ = new Random();
 
   private static final int kEndingTile = 11;
-  private static final int kExplosionSize = 15;  // Particles.
+  private static final int kExplosionSize = 15;  // Number of particles.
   private static final float kExplosionStrength = 250.0f;
   private static final int kMapHeight = 100;
   private static final int kMapWidth = 100;

@@ -12,10 +12,9 @@
 package android.com.abb;
 
 import android.app.Activity;
-import android.os.Bundle;
-
 import android.com.abb.GameState;
 import android.com.abb.GameView;
+import android.os.Bundle;
 
 
 public class AlienBloodBathMain extends Activity {

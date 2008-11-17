@@ -34,10 +34,6 @@ public class Entity {
   public float ddx;  // Acceleration.
   public float ddy;
 
-  public Entity() {
-    paint_ = new Paint();  // Default rendering settings.
-  }
-
   public void Stop() {
     dx = dy = ddx = ddy = 0.0f;
   }
@@ -49,9 +45,10 @@ public class Entity {
     dy += ddy * time_step;
 
     // The following is a poor hack to simulate "friction" against the ground
-    // surface.
+    // surface. The problem with this implementation is that it does not account
+    // for the time_step. TODO: Fix.
     if (has_ground_contact) {
-      dx *= (1.0f - kGroundFriction);  // Integrate ^ time
+      dx *= (1.0f - kGroundFriction);
     }
   }
 
@@ -71,7 +68,7 @@ public class Entity {
     }
   }
 
-  private Paint paint_;
+  private Paint paint_ = new Paint();  // Drawing settings.
 
   private static final float kGroundFriction = 0.1f;
 }
