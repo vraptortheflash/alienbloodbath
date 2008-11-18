@@ -15,6 +15,7 @@ import android.app.Activity;
 import android.com.abb.GameState;
 import android.com.abb.GameView;
 import android.os.Bundle;
+import android.widget.TextView;
 
 
 public class AlienBloodBathMain extends Activity {
@@ -24,6 +25,7 @@ public class AlienBloodBathMain extends Activity {
     setContentView(R.layout.main);
 
     game_view_ = (GameView)findViewById(R.id.GAME_VIEW);
+    game_view_.SetTitleView((TextView)findViewById(R.id.TEXT_VIEW));
     game_view_.SetGame(game_state_);
   }
 

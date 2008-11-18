@@ -120,10 +120,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     SurfaceHolder surface_holder_;
   }
 
-  private Context context_;
-  private Game game_;
-  private GameThread game_thread_;
-
   public GameView(Context context, AttributeSet attrs) {
     super(context, attrs);
     context_ = context;
@@ -142,9 +138,20 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     game_thread_.SetGame(game);
   }
 
-  /** Standard override to get key-press events. */
+  /** Set up the android widget to be displayed until any key is pressed. */
+  public void SetTitleView(TextView title_view) {
+    title_view_ = title_view;
+  }
+
+  /** Standard override to get key-press events. The title screen view becomes
+   * hidden with the first key press. */
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent msg) {
+    if (!title_view_hidden_) {
+      title_view_.setText("");
+      title_view_hidden_ = true;
+    }
+
     synchronized (game_) {
       return game_.OnKeyDown(keyCode);
     }
@@ -193,4 +200,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       } catch (InterruptedException e) {}
     }
   }
+
+  private Context context_;
+  private Game game_;
+  private GameThread game_thread_;
+  private TextView title_view_;
+  private boolean title_view_hidden_ = false;
 }
