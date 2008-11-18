@@ -89,6 +89,10 @@ public class Map {
     return (tile_id == 9);
   }
 
+  public static boolean TileIsGoal(int tile_id) {
+    return (tile_id == kEndingTile);
+  }
+
   public void CollideEntity(Entity entity) {
     if (entity.radius <= 0) {
       return;  // Collision disabled for this entity.
@@ -246,7 +250,7 @@ public class Map {
 
   private static final int kEndingTile = 11;
   private static final int kExplosionSize = 15;  // Number of particles.
-  private static final float kExplosionStrength = 250.0f;
+  private static final float kExplosionStrength = 200.0f;
   private static final int kMapHeight = 100;
   private static final int kMapWidth = 100;
   private static final int kStartingTile = 10;
