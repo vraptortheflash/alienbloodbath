@@ -19,13 +19,11 @@ import android.graphics.RectF;
 
 
 public class Entity {
+  public boolean alive = true;  // Should not be deleted from the game.
+  public boolean has_ground_contact;
+  public float radius;
   public Bitmap sprite;
   public Rect sprite_source;
-
-  public boolean alive = true;  // Should not be deleted from the game.
-
-  public float radius;
-  public boolean has_ground_contact;
 
   public float x;    // Position.
   public float y;
@@ -46,7 +44,7 @@ public class Entity {
 
     // The following is a poor hack to simulate "friction" against the ground
     // surface. The problem with this implementation is that it does not account
-    // for the time_step. TODO: Fix.
+    // for the time_step. TODO: Fix this implementation.
     if (has_ground_contact) {
       dx *= (1.0f - kGroundFriction);
     }
@@ -62,8 +60,8 @@ public class Entity {
       RectF sprite_destination =
           new RectF(0, 0, sprite_source.width(), sprite_source.height());
       sprite_destination.offset(
-          x - center_x - sprite_source.width() / 2.0f + canvas_width / 2.0f,
-          y - center_y - sprite_source.height() / 2.0f + canvas_height / 2.0f);
+          x - center_x + (canvas_width - sprite_source.width()) / 2.0f,
+          y - center_y + (canvas_height - sprite_source.height()) / 2.0f);
       canvas.drawBitmap(sprite, sprite_source, sprite_destination, paint_);
     }
   }
