@@ -50,17 +50,28 @@ public class GameState implements Game {
   }
 
   public void LoadResources(Context context) {
+    // Load services.
     vibrator_ = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
+
+    // Load images.
     Resources resources = context.getResources();
     avatar.sprite =
         BitmapFactory.decodeResource(resources, R.drawable.avatar);
-    map.tiles_bitmap =
-        BitmapFactory.decodeResource(resources, R.drawable.tiles_0);
     enemy_sprites =
         BitmapFactory.decodeResource(resources, R.drawable.enemy_0);
     misc_sprites =
         BitmapFactory.decodeResource(resources, R.drawable.misc);
-    map.LoadFromArray(resources.getIntArray(R.array.level_0));
+
+    // Load the maps. TODO: We'd ideally like to enumerate all of the levels
+    // declared in the resources file and on disk. The following is a bit of a
+    // hack.
+    int[] tiles_ids = { R.drawable.tiles_0, R.drawable.tiles_1 };
+    for (int tiles_id : tiles_ids)
+      tiles_.add(BitmapFactory.decodeResource(resources, tiles_id));
+    int[] level_ids = { R.array.level_0, R.array.level_1, R.array.level_2 };
+    for (int level_id : level_ids)
+      levels_.add(resources.getIntArray(level_id));
+    LoadLevel(current_level_);
   }
 
   public boolean OnKeyDown(int key_code) {
@@ -85,7 +96,9 @@ public class GameState implements Game {
     avatar.Step(time_step);
     map.CollideEntity(avatar);  
     if (!avatar.alive)
-        Reset();
+      Reset();
+    if (map.TileIsGoal(map.TileAt(avatar.x, avatar.y)))
+      LoadLevel(++current_level_);
 
     // Step the enemies.
     for (Iterator it = enemies.iterator(); it.hasNext();) {
@@ -129,7 +142,8 @@ public class GameState implements Game {
   /** Draw the game state. The game map and entities are always drawn with the
    * avatar centered in the screen. */
   protected void DrawGame(Canvas canvas) {
-    canvas.drawRGB(0, 0, 0);  // Clear the buffer.
+    char background[] = backgrounds_[current_level_ % backgrounds_.length];
+    canvas.drawRGB(background[0], background[1], background[2]);  // Clear the buffer.
 
     float center_x = avatar.x;
     float center_y = avatar.y;
@@ -151,6 +165,17 @@ public class GameState implements Game {
     // Draw the particles.
     for (Iterator it = particles.iterator(); it.hasNext();)
       ((Entity)it.next()).Draw(canvas, center_x, center_y);
+  }
+
+  public void LoadLevel(int level) {
+    level = level % levels_.size();
+    map.LoadFromArray((int[])levels_.get(level));
+
+    int tiles = level % tiles_.size();
+    map.tiles_bitmap = (Bitmap)tiles_.get(tiles);
+
+    enemies.clear();
+    Reset();
   }
 
   public Entity CreateEnemy(float x, float y) {
@@ -188,7 +213,11 @@ public class GameState implements Game {
     vibrator_.vibrate(kVibrateLength);
   }
 
+  private char[][] backgrounds_ = {{5, 5, 5}, {50, 50, 50}};  // Hack.
+  private int current_level_ = 0;
+  private ArrayList levels_ = new ArrayList();
   private Random random_ = new Random();
+  private ArrayList tiles_ = new ArrayList();
   private Vibrator vibrator_;
 
   private static final int kBloodBathSize = 6;  // Number of particles.
