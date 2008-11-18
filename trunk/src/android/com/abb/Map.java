@@ -28,7 +28,6 @@ public class Map {
   public float starting_y;
   public float ending_x;
   public float ending_y;
-  public int[] tiles;
   public Bitmap tiles_bitmap;
 
   public Map(GameState game_state) {
@@ -247,6 +246,7 @@ public class Map {
   private GameState game_state_;
   private Paint paint_ = new Paint();  // Drawing settings.
   private Random random_ = new Random();
+  private int[] tiles;
 
   private static final int kEndingTile = 11;
   private static final int kExplosionSize = 15;  // Number of particles.
