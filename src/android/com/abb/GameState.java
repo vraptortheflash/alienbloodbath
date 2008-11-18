@@ -88,6 +88,12 @@ public class GameState implements Game {
 
   /** Run the game simulation for the specified amount of seconds. */
   protected void StepGame(float time_step) {
+    // Update the view parameters.
+    target_zoom_ = kGroundZoom;
+    if (!avatar.has_ground_contact)
+      target_zoom_ = kAirZoom;
+    zoom_ += (target_zoom_ - zoom_) * kZoomSpeed;
+
     // Step the avatar.
     avatar.Step(time_step);
     map.CollideEntity(avatar);
@@ -102,7 +108,6 @@ public class GameState implements Game {
       enemy.Step(time_step);
       map.CollideEntity(enemy);
       if (!enemy.alive) {
-        // Add blood particles and vibrate whenever an enemy dies.
         Vibrate();
         for (int n = 0; n < kBloodBathSize; n++) {
           float random_angle = random_.nextFloat() * 2.0f * (float)Math.PI;
@@ -145,22 +150,22 @@ public class GameState implements Game {
     float center_y = avatar.y;
 
     // Draw the map tiles.
-    map.Draw(canvas, center_x, center_y);
+    map.Draw(canvas, center_x, center_y, zoom_);
 
     // Draw the enemies.
     for (Iterator it = enemies.iterator(); it.hasNext();)
-      ((Entity)it.next()).Draw(canvas, center_x, center_y);
+      ((Entity)it.next()).Draw(canvas, center_x, center_y, zoom_);
 
     // Draw the avatar.
-    avatar.Draw(canvas, center_x, center_y);
+    avatar.Draw(canvas, center_x, center_y, zoom_);
 
     // Draw the projectiles.
     for (Iterator it = projectiles.iterator(); it.hasNext();)
-      ((Entity)it.next()).Draw(canvas, center_x, center_y);
+      ((Entity)it.next()).Draw(canvas, center_x, center_y, zoom_);
 
     // Draw the particles.
     for (Iterator it = particles.iterator(); it.hasNext();)
-      ((Entity)it.next()).Draw(canvas, center_x, center_y);
+      ((Entity)it.next()).Draw(canvas, center_x, center_y, zoom_);
   }
 
   public void LoadLevel(int level) {
@@ -213,8 +218,13 @@ public class GameState implements Game {
   private Random random_ = new Random();
   private ArrayList tiles_ = new ArrayList();
   private Vibrator vibrator_;
+  private float zoom_ = kGroundZoom;
+  private float target_zoom_ = kGroundZoom;
 
+  private static final float kAirZoom = 0.5f;
   private static final int kBloodBathSize = 6;  // Number of particles.
   private static final float kBloodBathVelocity = 100.0f;
+  private static final float kGroundZoom = 0.8f;
   private static final long kVibrateLength = 30;  // Milliseconds.
+  private static final float kZoomSpeed = 0.05f;
 }

@@ -67,18 +67,33 @@ public class Avatar extends Entity {
     // Update the shooting mechanism.
     shot_delay_ -= time_step;
     if (shooting_ && shot_delay_ < time_step) {
-      shot_phase_ += 10.0f;  // Essentially randomized angle.
-
-      float x_offset = kShotOffsetX;
-      float y_offset = kShotOffsetY;
-      float dx_offset = kShotVelocity;
-      float dy_offset = kShotSpread * (float)Math.sin(shot_phase_);
-
-      if (sprite_offset_ == 9) x_offset *= -1.0f;
-      if (sprite_offset_ == 9) dx_offset *= -1.0f;
-      game_state_.CreateFireProjectile(
-          x + x_offset, y + y_offset, dx + dx_offset, dy + dy_offset);
       shot_delay_ = kShotDelay;
+
+      float shot_angle;
+      boolean facing_left = (sprite_offset_ == 9);
+      if (!has_ground_contact) {
+        shot_angle = shot_phase_;
+        if (facing_left)
+          shot_angle = -shot_phase_;
+        shot_delay_ -= 2.0f * time_step;
+        shot_phase_ += 45.0f * (float)Math.PI / 180.0f;
+      } else if (facing_left) {
+        shot_angle = kShotSpread * (float)Math.sin(shot_phase_) + (float)Math.PI;
+        shot_phase_ += 10.0f;
+      } else {
+        shot_angle = kShotSpread * (float)Math.sin(shot_phase_);
+        shot_phase_ += 10.0f;
+      }
+
+      float cos_shot_angle = (float)Math.cos(shot_angle);
+      float sin_shot_angle = (float)Math.sin(shot_angle);
+      float x_offset = kShotDistance * cos_shot_angle;
+      float y_offset = kShotDistance * sin_shot_angle;
+      float dx_offset = kShotVelocity * cos_shot_angle;
+      float dy_offset = kShotVelocity * sin_shot_angle;
+      Fire fire = game_state_.CreateFireProjectile(
+          x + x_offset, y + y_offset, dx + dx_offset, dy + dy_offset);
+
     }
   }
 
@@ -114,9 +129,8 @@ public class Avatar extends Entity {
   private static final float kJumpVelocity = 250.0f;
   private static final float kRadius = 27.0f;
   private static final float kShotDelay = 0.2f;  // Seconds between shots.
-  private static final int kShotOffsetX = 23;
-  private static final int kShotOffsetY = -8;
-  private static final float kShotSpread = 15.0f;
+  private static final float kShotDistance = 25.0f;
+  private static final float kShotSpread = 15.0f * (float)Math.PI / 180.0f;  // Radians.
   private static final float kShotVelocity = 60.0f;
   private static final int kSpriteSize = 64;
   private static final int kKeyLeft = KeyEvent.KEYCODE_A;

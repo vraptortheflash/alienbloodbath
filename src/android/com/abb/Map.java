@@ -199,14 +199,14 @@ public class Map {
   /** Draw the entity to the canvas such that the specified coordinates are
    * centered. Tile locations in world coordinates correspond to the *center* of
    * the tile, eg. (0, 0) is the center of the first tile. */
-  public void Draw(Canvas canvas, float center_x, float center_y) {
+  public void Draw(Canvas canvas, float center_x, float center_y, float zoom) {
     int half_canvas_width = canvas.getWidth() / 2;
     int half_canvas_height = canvas.getHeight() / 2;
-    for (float x = center_x - half_canvas_width;
-         x < center_x + half_canvas_width + kTileSize;
+    for (float x = center_x - half_canvas_width / zoom;
+         x < center_x + (half_canvas_width + kTileSize) / zoom;
          x += kTileSize) {
-      for (float y = center_y - half_canvas_height;
-           y < center_y + half_canvas_height + kTileSize;
+      for (float y = center_y - half_canvas_height / zoom;
+           y < center_y + (half_canvas_height + kTileSize) / zoom;
            y += kTileSize) {
         // Determine tile id for this world position x, y.
         int tile_id = TileAt(x, y);
@@ -226,11 +226,12 @@ public class Map {
             0, kTileSize * tile_id,
             kTileSize, kTileSize * tile_id + kTileSize);
         RectF tile_destination = new RectF(
-            kTileSize * index_x, kTileSize * index_y,
-            kTileSize * index_x + kTileSize, kTileSize * index_y + kTileSize);
-        tile_destination.offset(
-            -center_x + half_canvas_width - kTileSize / 2,
-            -center_y + half_canvas_height - kTileSize / 2);
+            kTileSize * index_x * zoom, kTileSize * index_y * zoom,
+            (kTileSize * index_x + kTileSize) * zoom,
+            (kTileSize * index_y + kTileSize) * zoom);
+      tile_destination.offset(
+          -center_x * zoom + half_canvas_width - kTileSize / 2 * zoom,
+          -center_y * zoom + half_canvas_height - kTileSize / 2 * zoom);
         canvas.drawBitmap(tiles_bitmap, tile_source, tile_destination, paint_);
       }
     }
