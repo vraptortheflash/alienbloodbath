@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Alien Blood Bath</string>
+    <string name="title_text">
+      Goal: Find the red flag, shoot aliens on the way!\n
+      Move left - a\n
+      Move right - s\n
+      Shoot - j\n
+      Jump - k\n
+      \n
+      This game is open sourced under the GPLv3 at:\n
+      http://code.google.com/p/alienbloodbath
+    </string>
     <array name="level_0">
 <item>0</item>
 <item>0</item>

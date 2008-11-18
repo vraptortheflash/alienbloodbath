@@ -98,8 +98,8 @@ public class Map {
 
     // Iterate through map tiles potentially intersecting the entity. The
     // collision model used for entities and tiles are squares.
-    float radius = entity.radius;
     float half_tile_size = kTileSize / 2;
+    float radius = Math.max(entity.radius, half_tile_size);
     for (float x = entity.x - radius; x <= entity.x + radius; x += kTileSize) {
       for (float y = entity.y - radius; y <= entity.y + radius; y += kTileSize) {
         int tile_id = TileAt(x, y);
@@ -188,11 +188,13 @@ public class Map {
           // implementation is a bit of a hack, as is everything else here,
           // since we don't have any sense of entity mass.
           float impact_magnitude =
-              impact_normal_x * entity.dx + impact_normal_y * entity.dy;
-          entity.dx -= impact_normal_x * impact_magnitude;
-          entity.dy -= impact_normal_y * impact_magnitude;
-          entity.x += impact_normal_x * impact_distance;
-          entity.y += impact_normal_y * impact_distance;
+              -(impact_normal_x * entity.dx + impact_normal_y * entity.dy);
+          if (impact_magnitude > 0) {
+            entity.dx += impact_normal_x * impact_magnitude;
+            entity.dy += impact_normal_y * impact_magnitude;
+            entity.x += impact_normal_x * impact_distance;
+            entity.y += impact_normal_y * impact_distance;
+          }
         }
       }
     }

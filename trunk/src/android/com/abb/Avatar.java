@@ -107,12 +107,12 @@ public class Avatar extends Entity {
 
   private static final float kAirAcceleration = 25.0f;
   private static final float kAirAnimationSpeed = 4.0f;
-  private static final float kAnimationStopThreshold = 30.0f;
+  private static final float kAnimationStopThreshold = 40.0f;
   private static final float kGravity = 200.0f;
   private static final float kGroundAcceleration = 300.0f;
   private static final float kGroundAnimationSpeed = 1.0f / 500.0f;
   private static final float kJumpVelocity = 250.0f;
-  private static final float kRadius = 32.0f;
+  private static final float kRadius = 28.0f;
   private static final float kShotDelay = 0.2f;  // Seconds between shots.
   private static final int kShotOffsetX = 23;
   private static final int kShotOffsetY = -8;

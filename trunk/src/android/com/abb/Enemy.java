@@ -49,7 +49,6 @@ public class Enemy extends Entity {
     }
     if (has_ground_contact) {
       ++sprite_offset;
-      --y;  // Hack. TODO: Fix.
       dy = -kJumpVelocity;
     }
 
@@ -62,7 +61,7 @@ public class Enemy extends Entity {
   private static final float kAcceleration = 40.0f;
   private static final float kGravity = 100.0f;
   private static final float kJumpVelocity = 100.0f;
-  private static final float kRadius = 32.0f;
+  private static final float kRadius = 25.0f;
   private static final int kSpriteBase = 0;
   private static final int kSpriteWidth = 64;
   private static final int kSpriteHeight = 64;
