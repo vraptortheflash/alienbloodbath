@@ -52,16 +52,16 @@ public class Entity {
 
   /** Draw the entity to the canvas such that the specified coordinates are
    * centered. */
-  public void Draw(Canvas canvas, float center_x, float center_y) {
+  public void Draw(Canvas canvas, float center_x, float center_y, float zoom) {
     if (sprite != null) {
       int canvas_width = canvas.getWidth();
       int canvas_height = canvas.getHeight();
 
       RectF sprite_destination =
-          new RectF(0, 0, sprite_source.width(), sprite_source.height());
+          new RectF(0, 0, sprite_source.width() * zoom, sprite_source.height() * zoom);
       sprite_destination.offset(
-          x - center_x + (canvas_width - sprite_source.width()) / 2.0f,
-          y - center_y + (canvas_height - sprite_source.height()) / 2.0f);
+          (x - center_x) * zoom + (canvas_width - sprite_source.width() * zoom) / 2.0f,
+          (y - center_y) * zoom + (canvas_height - sprite_source.height() * zoom) / 2.0f);
       canvas.drawBitmap(sprite, sprite_source, sprite_destination, paint_);
     }
   }
