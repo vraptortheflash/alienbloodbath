@@ -28,6 +28,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.TextView;
+import java.lang.Math;
 import java.lang.System;
 import java.lang.Thread;
 
@@ -44,10 +45,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void run() {
-      // Wait util the game instance has been set.
       while (game_ == null) {
         try {
-          Thread.sleep(100l, 0);  // Wait 100ms.
+          Thread.sleep(100, 0);  // Wait 100ms.
         } catch (InterruptedException ex) {}
         continue;
       }
@@ -62,7 +62,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       // possible. Here we define the maximum framerate which needs to make the
       // trade off between graphics fluidity and power savings.
       final float kMaxFrameRate = 15.0f;  // Frames / second.
+      final float kMinFrameRate = 2.0f;   //Frames / second.
       final float kMinTimeStep = 1.0f / kMaxFrameRate;  // Seconds.
+      final float kMaxTimeStep = 1.0f / kMinFrameRate;  // Seconds.
 
       // The timers available through the Java APIs appear sketchy in general. I
       // was able to find the following resource useful:
@@ -89,6 +91,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             // continue on. It's not worth the cycles to handle.
           }
         }
+        time_step = Math.max(time_step, kMinTimeStep);
 
         Canvas canvas = null;
         try {
@@ -97,9 +100,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             game_.Update(time_step, canvas);
           }
         } finally {
-          if (canvas != null) {
+          if (canvas != null)
             surface_holder_.unlockCanvasAndPost(canvas);
-          }
         }
       }
     }
@@ -109,6 +111,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void Pause(boolean pause) {
+      // TODO: Implement.
     }
 
     public void Halt() {
@@ -125,7 +128,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     context_ = context;
 
     // Make sure we get key events and register our interest in hearing about
-    // changes to our surface.
+    // surface changes.
     setFocusable(true);
     SurfaceHolder surface_holder = getHolder();
     surface_holder.addCallback(this);
@@ -138,13 +141,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     game_thread_.SetGame(game);
   }
 
-  /** Set up the android widget to be displayed until any key is pressed. */
+  /** Set up the android widget for the title screen to be displayed until any
+   * key is pressed. */
   public void SetTitleView(TextView title_view) {
     title_view_ = title_view;
   }
 
-  /** Standard override to get key-press events. The title screen view becomes
-   * hidden with the first key press. */
+  /** Standard override to get key-press events. */
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent msg) {
     if (!title_view_hidden_) {
@@ -176,8 +179,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   /** Callback invoked when the Surface has been created and is ready to be
    * used. */
   public void surfaceCreated(SurfaceHolder holder) {
-    // Start the thread here so that we don't busy-wait in run() waiting for the
-    // surface to be created
     game_thread_.start();
   }
 
@@ -186,11 +187,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                              int width, int height) {}  // Don't care.
 
   /** Callback invoked when the Surface has been destroyed and must no longer be
-   * touched. WARNING: after this method returns, the Surface/Canvas must never
-   * be touched again! */
+   * touched. */
   public void surfaceDestroyed(SurfaceHolder holder) {
-    // we have to tell thread to shut down & wait for it to finish, or else it
-    // might touch the Surface after we return and explode
     boolean retry = true;
     game_thread_.Halt();
     while (retry) {

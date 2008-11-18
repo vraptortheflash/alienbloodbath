@@ -31,17 +31,16 @@ import android.com.abb.Map;
 
 
 public class GameState implements Game {
-  public Map map = new Map(this);
   public Avatar avatar = new Avatar(this);
   public ArrayList enemies = new ArrayList();
+  public Bitmap enemy_sprites;
+  public Map map = new Map(this);
+  public Bitmap misc_sprites;
   public ArrayList particles = new ArrayList();
   public ArrayList projectiles = new ArrayList();
 
-  public Bitmap enemy_sprites;
-  public Bitmap misc_sprites;
-
   /** Initialize the game state structure. Upon returning, game_state_ should be
-   * in a state representing a new game. */
+   * in a state representing a new game life. */
   public void Reset() {
     avatar.Stop();
     avatar.alive = true;
@@ -55,16 +54,13 @@ public class GameState implements Game {
 
     // Load images.
     Resources resources = context.getResources();
-    avatar.sprite =
-        BitmapFactory.decodeResource(resources, R.drawable.avatar);
-    enemy_sprites =
-        BitmapFactory.decodeResource(resources, R.drawable.enemy_0);
-    misc_sprites =
-        BitmapFactory.decodeResource(resources, R.drawable.misc);
+    avatar.sprite = BitmapFactory.decodeResource(resources, R.drawable.avatar);
+    enemy_sprites = BitmapFactory.decodeResource(resources, R.drawable.enemy_0);
+    misc_sprites = BitmapFactory.decodeResource(resources, R.drawable.misc);
 
     // Load the maps. TODO: We'd ideally like to enumerate all of the levels
-    // declared in the resources file and on disk. The following is a bit of a
-    // hack.
+    // declared in the resources file and on disk. However, the following is a
+    // bit of a hack.
     int[] tiles_ids = { R.drawable.tiles_0, R.drawable.tiles_1 };
     for (int tiles_id : tiles_ids)
       tiles_.add(BitmapFactory.decodeResource(resources, tiles_id));
@@ -94,7 +90,7 @@ public class GameState implements Game {
   protected void StepGame(float time_step) {
     // Step the avatar.
     avatar.Step(time_step);
-    map.CollideEntity(avatar);  
+    map.CollideEntity(avatar);
     if (!avatar.alive)
       Reset();
     if (map.TileIsGoal(map.TileAt(avatar.x, avatar.y)))
@@ -170,10 +166,8 @@ public class GameState implements Game {
   public void LoadLevel(int level) {
     level = level % levels_.size();
     map.LoadFromArray((int[])levels_.get(level));
-
     int tiles = level % tiles_.size();
     map.tiles_bitmap = (Bitmap)tiles_.get(tiles);
-
     enemies.clear();
     Reset();
   }
@@ -213,7 +207,7 @@ public class GameState implements Game {
     vibrator_.vibrate(kVibrateLength);
   }
 
-  private char[][] backgrounds_ = {{5, 5, 5}, {50, 50, 50}};  // Hack.
+  private char[][] backgrounds_ = {{5, 5, 5}, {50, 50, 50}, {10, 5, 5}};
   private int current_level_ = 0;
   private ArrayList levels_ = new ArrayList();
   private Random random_ = new Random();

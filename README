@@ -1,0 +1,12 @@
+This project requires that the Java SDK, the Ant build system, and Android SDK
+are installed. The build file expects that the Android SDK is located within:
+/usr/local/android-sdk.
+
+To build:
+# ant debug
+
+To install:
+# ant install
+
+For more information, visit:
+http://code.google.com/p/alienbloodbath

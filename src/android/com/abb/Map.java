@@ -26,8 +26,6 @@ import android.com.abb.GameState;
 public class Map {
   public float starting_x;
   public float starting_y;
-  public float ending_x;
-  public float ending_y;
   public Bitmap tiles_bitmap;
 
   public Map(GameState game_state) {
@@ -36,15 +34,10 @@ public class Map {
 
   public void LoadFromArray(int[] new_tiles) {
     tiles = new_tiles;
-    // Search for the starting and ending tiles.
     for (int n = 0; n < kMapWidth * kMapHeight; ++n) {
       if (tiles[n] == kStartingTile) {
         starting_x = (n / kMapWidth) * kTileSize;
         starting_y = (n % kMapWidth) * kTileSize;
-      }
-      if (tiles[n] == kEndingTile) {
-        ending_x = (n / kMapWidth) * kTileSize;
-        ending_y = (n % kMapWidth) * kTileSize;
       }
     }
   }
@@ -101,7 +94,7 @@ public class Map {
 
     // Iterate through map tiles potentially intersecting the entity. The
     // collision model used for entities and tiles are squares.
-    float half_tile_size = kTileSize / 2;
+    float half_tile_size = kTileSize / 2.0f;
     float radius = Math.max(entity.radius, half_tile_size);
     for (float x = entity.x - radius; x <= entity.x + radius; x += kTileSize) {
       for (float y = entity.y - radius; y <= entity.y + radius; y += kTileSize) {
