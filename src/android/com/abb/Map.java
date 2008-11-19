@@ -32,10 +32,16 @@ public class Map {
     game_state_ = game_state;
   }
 
-  public void LoadFromArray(char[] new_tiles) {
-    tiles_ = new_tiles;
+  static public char[] DecodeArray(char[] tiles) {
     for (int n = 0; n < kMapWidth * kMapHeight; ++n) {
-      tiles_[n] -= kBaseValue;
+      tiles[n] -= kBaseValue;
+    }
+    return tiles;
+  }
+
+  public void LoadFromArray(char[] tiles) {
+    tiles_ = tiles;
+    for (int n = 0; n < kMapWidth * kMapHeight; ++n) {
       if (tiles_[n] == kStartingTile) {
         starting_x = (n / kMapWidth) * kTileSize;
         starting_y = (n % kMapWidth) * kTileSize;
