@@ -1,0 +1,10 @@
+#summary Alien Blood Bath FAQs
+
+Q: Is there sound?
+A: Not yet. Code patches and sound samples are welcome.
+
+Q: How many levels are there?
+A: 3. Feel free to contribute a level editor and / or more levels.
+
+Q: Why is it so bad?
+A. Code patches are welcome.
