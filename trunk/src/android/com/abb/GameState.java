@@ -67,8 +67,10 @@ public class GameState implements Game {
     for (int tiles_id : tiles_ids)
       tiles_.add(BitmapFactory.decodeResource(resources, tiles_id));
     int[] level_ids = { R.string.level_0, R.string.level_1, R.string.level_2 };
-    for (int level_id : level_ids)
-      levels_.add(resources.getText(level_id).toString().toCharArray());
+    for (int level_id : level_ids) {
+      char[] level_array = resources.getText(level_id).toString().toCharArray();
+      levels_.add(Map.DecodeArray(level_array));
+    }
     LoadLevel(current_level_);
   }
 
