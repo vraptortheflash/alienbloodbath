@@ -16,6 +16,7 @@ import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import java.lang.Math;
 
 
 public class Entity {
@@ -48,6 +49,11 @@ public class Entity {
     if (has_ground_contact) {
       dx *= (1.0f - kGroundFriction);
     }
+
+    dx = Math.max(dx, -kMaxVelocity);
+    dx = Math.min(dx,  kMaxVelocity);
+    dy = Math.max(dy, -2.0f * kMaxVelocity);
+    dy = Math.min(dy,  2.0f * kMaxVelocity);
   }
 
   /** Draw the entity to the canvas such that the specified coordinates are
@@ -58,10 +64,13 @@ public class Entity {
       int canvas_height = canvas.getHeight();
 
       RectF sprite_destination =
-          new RectF(0, 0, sprite_source.width() * zoom, sprite_source.height() * zoom);
+          new RectF(0, 0, sprite_source.width() * zoom,
+                    sprite_source.height() * zoom);
       sprite_destination.offset(
-          (x - center_x) * zoom + (canvas_width - sprite_source.width() * zoom) / 2.0f,
-          (y - center_y) * zoom + (canvas_height - sprite_source.height() * zoom) / 2.0f);
+          (x - center_x) * zoom +
+          (canvas_width - sprite_source.width() * zoom) / 2.0f,
+          (y - center_y) * zoom +
+          (canvas_height - sprite_source.height() * zoom) / 2.0f);
       canvas.drawBitmap(sprite, sprite_source, sprite_destination, paint_);
     }
   }
@@ -69,4 +78,5 @@ public class Entity {
   private Paint paint_ = new Paint();  // Drawing settings.
 
   private static final float kGroundFriction = 0.1f;
+  private static final float kMaxVelocity = 200.0f;
 }

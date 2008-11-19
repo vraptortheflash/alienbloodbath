@@ -32,10 +32,11 @@ public class Map {
     game_state_ = game_state;
   }
 
-  public void LoadFromArray(int[] new_tiles) {
-    tiles = new_tiles;
+  public void LoadFromArray(char[] new_tiles) {
+    tiles_ = new_tiles;
     for (int n = 0; n < kMapWidth * kMapHeight; ++n) {
-      if (tiles[n] == kStartingTile) {
+      tiles_[n] -= kBaseValue;
+      if (tiles_[n] == kStartingTile) {
         starting_x = (n / kMapWidth) * kTileSize;
         starting_y = (n % kMapWidth) * kTileSize;
       }
@@ -51,16 +52,16 @@ public class Map {
     return kMapWidth * index_x + index_y;
   }
 
-  public void SetTileAt(float x, float y, int tile_id) {
+  public void SetTileAt(float x, float y, char tile_id) {
     int tile_index = TileIndexAt(x, y);
     if (tile_index >= 0)
-      tiles[tile_index] = tile_id;
+      tiles_[tile_index] = tile_id;
   }
 
   public int TileAt(float x, float y) {
     int tile_index = TileIndexAt(x, y);
     if (tile_index >= 0)
-      return tiles[tile_index];
+      return tiles_[tile_index];
     else
       return -1;  // Tile out of map range.
   }
@@ -86,9 +87,8 @@ public class Map {
   }
 
   public void CollideEntity(Entity entity) {
-    if (entity.radius <= 0) {
+    if (entity.radius <= 0)
       return;  // Collision disabled for this entity.
-    }
 
     entity.has_ground_contact = false;
 
@@ -109,17 +109,15 @@ public class Map {
         float tile_y = kTileSize * index_y;
 
 
-        if (!tile_collideable && !tile_exploadable && !tile_deadly) {
+        if (!tile_collideable && !tile_exploadable && !tile_deadly)
           continue;  // Not a collideable tile.
-        }
 
         // Determine if a collision has occurred between the two squares.
         float distance_x = entity.x - tile_x;
         float distance_y = entity.y - tile_y;
         if (Math.abs(distance_x) > half_tile_size + entity.radius ||
-            Math.abs(distance_y) > half_tile_size + entity.radius) {
+            Math.abs(distance_y) > half_tile_size + entity.radius)
           continue;  // No collision with this tile.
-        }
 
         // The kEpsilon constant allows the edges of the square to essential be
         // rounded which prevents the small corner collisions which may occur
@@ -130,16 +128,15 @@ public class Map {
         float threshold_radius = half_tile_size + entity.radius - kEpsilon;
         float threshold_distance =
             (float)Math.sqrt(2 * threshold_radius * threshold_radius);
-        if (distance > threshold_distance) {
+        if (distance > threshold_distance)
           continue;  // No collision with this tile.
-        }
 
         if (tile_deadly) {
           entity.alive = false;
         }
         if (tile_exploadable) {
           entity.dy = Math.min(entity.dy, -kExplosionStrength);
-          SetTileAt(x, y, 0);  // Clear the exploding tile.
+          SetTileAt(x, y, (char)0);  // Clear the exploding tile.
           game_state_.Vibrate();
           for (int n = 0; n < kExplosionSize; n++) {
             float random_angle = random_.nextFloat() * 2.0f * (float)Math.PI;
@@ -214,12 +211,12 @@ public class Map {
         // Spawn enemies if we happen to pass over an enemy tile.
         if (TileIsEnemy(tile_id)) {
           game_state_.CreateEnemy(x, y);
-          SetTileAt(x, y, 0);  // Clear the tile.
+          SetTileAt(x, y, (char)0);  // Clear the tile.
         }
 
-        if (tile_id < 1 || tile_id > 11) {
+        if (tile_id < 1 || tile_id > 11)
           continue;  // Not a visual tile.
-        }
+
         int index_x = (int)(x / kTileSize + 0.5f);
         int index_y = (int)(y / kTileSize + 0.5f);
         Rect tile_source = new Rect(
@@ -240,8 +237,9 @@ public class Map {
   private GameState game_state_;
   private Paint paint_ = new Paint();  // Drawing settings.
   private Random random_ = new Random();
-  private int[] tiles;
+  private char[] tiles_;
 
+  private static final char kBaseValue = 'a';
   private static final int kEndingTile = 11;
   private static final int kExplosionSize = 15;  // Number of particles.
   private static final float kExplosionStrength = 200.0f;
