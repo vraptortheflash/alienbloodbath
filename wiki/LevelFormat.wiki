@@ -8,4 +8,4 @@ Each character value, starting with 'a' equivalent to 0, in the level string cor
 
 = Adding new Levels to the Game =
 
-Currently, the available level resource IDs are hardcoded into [http://code.google.com/p/alienbloodbath/source/browse/trunk/src/android/com/abb/GameState.java GameState.java] and, once the level definition has been added to the resource file, must also be referenced there within the {{{int[] level_ids}}} array.
+When new level definitions have been added to the resource file, they resources IDs must also be referenced there within [http://code.google.com/p/alienbloodbath/source/browse/trunk/src/android/com/abb/GameState.java GameState.java]. Currently, the new IDs must be added to the {{{int[] level_ids}}} array.
