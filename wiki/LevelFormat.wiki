@@ -1,4 +1,4 @@
-#summary How to create new levels.
+#summary How to add new levels.
 
 = Storage Format =
 
