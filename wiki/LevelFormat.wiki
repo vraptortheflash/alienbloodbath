@@ -2,4 +2,4 @@
 
 = Format =
 
-Each level / map is represented as a matrix of values with each element corresponding to a different tile. The matrix is of size 100 x 100 and is stored with a column-major layout within the Android package resources. 
+Each level / map is represented as a matrix of values with each element corresponding to a different tile. The matrix is of size 100 x 100 and is stored using a column-major layout within the Android package resources as a text string. For example, the file [http://code.google.com/p/alienbloodbath/source/browse/trunk/res/values/strings.xml res/values/strings.xml] contains the levels.
