@@ -18,7 +18,7 @@ Special tile values are used to mark certain aspects of the game including level
 || 12           || Enemy spawn location. ||
 
 The following tile values are collidable:
-1-5, 7
+1-5, and 7.
 
 = Adding new Levels to the Game =
 
