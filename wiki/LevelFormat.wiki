@@ -10,7 +10,7 @@ Each character value, starting with 'a' equivalent to 0, in the level string cor
 
 Special tile values are used to mark certain aspects of the game including level start and end locations as well as enemy locations.
 
-|| _Tile Value_ || _Meaning_             ||
+|| *Tile Value* || *Meaning*             ||
 || 9            || Tile explodes.        ||
 || 4            || Tile causes death.    ||
 || 10           || Map start.            ||
