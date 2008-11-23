@@ -6,6 +6,18 @@ Each level / map is represented as a matrix of values with each element correspo
 
 Each character value, starting with 'a' equivalent to 0, in the level string corresponds to a tile from the tiles sprite images (see tiles_0.png and tiles_1.png in [http://code.google.com/p/alienbloodbath/source/browse/#svn/trunk/res/drawable sprite resources]). A value of 'a' corresponds to the top most tile in the tiles image (blank open space) where as, for example, 'c' corresponds to the 3rd tile from the top.
 
+== Special Tile Values ==
+
+Special tile values are used to mark certain aspects of the game including level start and end locations as well as enemy locations.
+
+|| _Tile Value_ || _Meaning_             ||
+|| 9            || Tile explodes.        ||
+|| 4            || Tile causes death.    ||
+|| 10           || Map start.            ||
+|| 11           || Map end.              ||
+|| 12           || Enemy spawn location. ||
+
+
 = Adding new Levels to the Game =
 
 When new level definitions have been added to the resource file, they resources IDs must also be referenced there within [http://code.google.com/p/alienbloodbath/source/browse/trunk/src/android/com/abb/GameState.java GameState.java]. Currently, the new resource IDs must be manually added to the {{{int[] level_ids}}} array.
