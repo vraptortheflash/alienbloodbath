@@ -17,6 +17,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.os.Bundle;
 import android.os.Vibrator;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -217,6 +218,13 @@ public class GameState implements Game {
 
   public void Vibrate() {
     vibrator_.vibrate(kVibrateLength);
+  }
+
+  public void LoadStateBundle(Bundle saved_instance_state) {
+  }
+
+  public Bundle SaveStateBundle() {
+    return null;
   }
 
   private char[][] backgrounds_ = {{5, 5, 5}, {50, 50, 50}, {10, 5, 5}};
