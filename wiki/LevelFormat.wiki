@@ -32,5 +32,3 @@ sdcard/abb_maps/my_level/tiles.txt
 sdcard/abb_maps/my_level_with_new_tiles/tiles.txt
 sdcard/abb_maps/my_level_with_new_tiles/tiles.png
 }}}
-
- When new level definitions have been added to the resource file, they resources IDs must also be referenced there within [http://code.google.com/p/alienbloodbath/source/browse/trunk/src/android/com/abb/GameState.java GameState.java]. Currently, the new resource IDs must be manually added to the {{{int[] level_ids}}} array.
