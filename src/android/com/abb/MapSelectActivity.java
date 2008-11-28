@@ -18,6 +18,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import java.io.File;
+import java.util.ArrayList;
 
 
 public class MapSelectActivity extends ListActivity {
@@ -26,38 +28,46 @@ public class MapSelectActivity extends ListActivity {
     super.onCreate(savedInstanceState);
 
     int item_layout_id = R.layout.mapselect_item;
-    String[] maps = GetMaps();
+    LoadMaps();
+    String[] maps = maps_.toArray(new String[0]);
     setListAdapter(new ArrayAdapter<String>(this, item_layout_id, maps));
     getListView().setTextFilterEnabled(true);
   }
 
   @Override
   protected void onListItemClick(ListView l, View v, int position, long id) {
-    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("file://foo"),
+    Intent intent = new Intent(Intent.ACTION_VIEW,
+                               Uri.parse(map_uris_.get(position)),
                                this, AlienBloodBathMain.class);
     setResult(RESULT_OK, intent);
     finish();
+  }
 
-    //    startActivity(intent);
-    /*
-    Uri uri = ContentUris.withAppendedId(getIntent().getData(), id);
-    String action = getIntent().getAction();
-    if (Intent.ACTION_PICK.equals(action) ||
-        Intent.ACTION_GET_CONTENT.equals(action)) {
-      // The caller is waiting for us to return a note selected by the user. The
-      // have clicked on one, so return it now.
-      setResult(RESULT_OK, new Intent().setData(uri));
-    } else {
-      // Launch activity to view/edit the currently selected item
-      startActivity(new Intent(Intent.ACTION_EDIT, uri));
+  private void LoadMaps() {
+    // Add built-in maps.
+    maps_.add("Classic 1");
+    map_uris_.add("builtin://0");
+    maps_.add("Classic 2");
+    map_uris_.add("builtin://1");
+
+    // Add maps located within files.
+    for (String root_path : paths_) {
+      String[] map_paths = (new File(root_path)).list();
+      if (map_paths == null)
+        continue;
+
+      for (String map_path : map_paths) {
+        String full_path = root_path + "/" + map_path;
+        if ((new File(full_path + "/tiles.txt")).exists()) {
+          maps_.add(full_path);
+          map_uris_.add("file://" + full_path);
+        }
+      }
     }
-    */
   }
 
-  private String[] GetMaps() {
-    String[] maps = new String[2];
-    maps[0] = "Classic 1";
-    maps[1] = "Classic 2";
-    return maps;
-  }
+  private ArrayList<String> maps_ = new ArrayList<String>();
+  private ArrayList<String> map_uris_ = new ArrayList<String>();
+  private String[] paths_ = { "/sdcard/abb_maps",
+                              "/data/data/android.com.abb/abb_maps" };
 }

@@ -14,9 +14,11 @@ package android.com.abb;
 import android.app.Activity;
 import android.com.abb.GameState;
 import android.com.abb.GameView;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
@@ -30,6 +32,7 @@ public class AlienBloodBathMain extends Activity {
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.main);
 
+    game_state_ = new GameState((Context)this);
     game_view_ = (GameView)findViewById(R.id.GAME_VIEW);
     game_view_.SetTitleView((TextView)findViewById(R.id.TEXT_VIEW));
     game_view_.SetGame(game_state_);
@@ -49,9 +52,10 @@ public class AlienBloodBathMain extends Activity {
 
   @Override
   public boolean onMenuItemSelected(int feature_id, MenuItem item) {
-    switch(item.getItemId()) {
+    switch (item.getItemId()) {
       case kSelectMap:
-        startActivity(new Intent(this, MapSelectActivity.class));
+        startActivityForResult(
+            new Intent(this, MapSelectActivity.class), kSelectMap);
         return true;
       case kAbout:
         startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(kAboutPage)));
@@ -61,11 +65,30 @@ public class AlienBloodBathMain extends Activity {
   }
 
   @Override
-  public void onSaveInstanceState(Bundle out_state) {
-    out_state.putBundle(kStateKey, game_state_.SaveStateBundle());
+  public void onActivityResult(int request_code, int result_code, Intent intent)  {
+    switch (request_code) {
+      case kSelectMap:
+        if (intent != null) {
+          game_state_.map_uri = intent.getData();
+          game_state_.Reset();
+        }
+        break;
+    }
   }
 
-  private GameState game_state_ = new GameState();
+  @Override
+  public void onSaveInstanceState(Bundle saved_instance_state) {
+    saved_instance_state.putBundle(kStateKey, game_state_.SaveStateBundle());
+    super.onSaveInstanceState(saved_instance_state);
+  }
+
+  @Override
+  public void onRestoreInstanceState(Bundle saved_instance_state) {
+    super.onRestoreInstanceState(saved_instance_state);
+    game_state_.LoadStateBundle(saved_instance_state.getBundle(kStateKey));
+  }
+
+  private GameState game_state_;
   private GameView game_view_;
 
   private final int kAbout = 2;
