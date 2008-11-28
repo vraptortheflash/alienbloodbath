@@ -11,12 +11,18 @@
 
 package android.com.abb;
 
+import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.net.Uri;
+import android.util.Log;
 import java.lang.Math;
+import java.io.File;
+import java.io.FileReader;
 import java.util.Random;
 
 import android.com.abb.Entity;
@@ -26,10 +32,13 @@ import android.com.abb.GameState;
 public class Map {
   public float starting_x;
   public float starting_y;
-  public Bitmap tiles_bitmap;
 
   public Map(GameState game_state) {
     game_state_ = game_state;
+  }
+
+  public void SetResources(Resources resources) {
+    resources_ = resources;
   }
 
   static public char[] DecodeArray(char[] tiles) {
@@ -49,12 +58,57 @@ public class Map {
     }
   }
 
+  public void LoadFromUri(Uri uri)  {
+    // Handle both of the built-in map types as well as maps located on the file
+    // system. Built-in maps are encoded with the URI syntax builtin://<level#>.
+    // The built in map format is necessary because it is difficult to ship raw
+    // files in an Android package.
+    if (uri.getScheme().equals("builtin")) {
+      char[][] builtin_backgrounds = {{5, 5, 5}, {50, 50, 50}};
+      int[] builtin_maps = { R.string.level_0, R.string.level_1 };
+      int[] builtin_tiles = { R.drawable.tiles_0, R.drawable.tiles_1 };
+      int index = Integer.parseInt(uri.getHost()) % builtin_maps.length;
+      background_ = builtin_backgrounds[index];
+      tiles_bitmap_ =
+          BitmapFactory.decodeResource(resources_, builtin_tiles[index]);
+      char[] tiles_raw =
+          resources_.getText(builtin_maps[index]).toString().toCharArray();
+      LoadFromArray(DecodeArray(tiles_raw));
+    }
+
+    // Maps located on disk are encoded with the URI syntax file://<path>. The
+    // disk storage scheme is much more extensible than the built in map store
+    // scheme and is intended to be the format used by outside developers.
+    else if (uri.getScheme().equals("file")) {
+      String path = uri.getPath();
+
+      // Load map tiles.
+      try {
+        FileReader tiles_reader = new FileReader(new File(path + "/tiles.txt"));
+        tiles_ = new char[kMapWidth * kMapHeight];
+        tiles_reader.read(tiles_, 0, kMapWidth * kMapHeight);
+        LoadFromArray(DecodeArray(tiles_));
+      } catch (Exception ex) {}
+
+      // Load map tile images, if present.
+      tiles_bitmap_ = BitmapFactory.decodeFile(path + "/tiles.png");
+      if (tiles_bitmap_ == null) {
+        int default_tiles = R.drawable.tiles_0;
+        tiles_bitmap_ = BitmapFactory.decodeResource(resources_, default_tiles);
+      }
+    }
+
+    else {
+      Log.d("Map::LoadFromUri", "Unknown URI scheme type.");
+    }
+  }
+
   public int TileIndexAt(float x, float y) {
     int index_x = (int)(x / kTileSize + 0.5f);
     int index_y = (int)(y / kTileSize + 0.5f);
     if (index_x < 0 || index_y < 0 ||
         index_x >= kMapWidth || index_y >= kMapHeight)
-      return -1;  // Tile out of map range;
+      return -1;  // Tile out of map range.
     return kMapWidth * index_x + index_y;
   }
 
@@ -113,7 +167,6 @@ public class Map {
         int index_y = (int)(y / kTileSize + 0.5f);
         float tile_x = kTileSize * index_x;
         float tile_y = kTileSize * index_y;
-
 
         if (!tile_collideable && !tile_exploadable && !tile_deadly)
           continue;  // Not a collideable tile.
@@ -203,6 +256,8 @@ public class Map {
    * centered. Tile locations in world coordinates correspond to the *center* of
    * the tile, eg. (0, 0) is the center of the first tile. */
   public void Draw(Canvas canvas, float center_x, float center_y, float zoom) {
+    canvas.drawRGB(background_[0], background_[1], background_[2]);
+
     int half_canvas_width = canvas.getWidth() / 2;
     int half_canvas_height = canvas.getHeight() / 2;
     for (float x = center_x - half_canvas_width / zoom;
@@ -232,18 +287,21 @@ public class Map {
             kTileSize * index_x * zoom, kTileSize * index_y * zoom,
             (kTileSize * index_x + kTileSize) * zoom,
             (kTileSize * index_y + kTileSize) * zoom);
-      tile_destination.offset(
-          -center_x * zoom + half_canvas_width - kTileSize / 2 * zoom,
-          -center_y * zoom + half_canvas_height - kTileSize / 2 * zoom);
-        canvas.drawBitmap(tiles_bitmap, tile_source, tile_destination, paint_);
+        tile_destination.offset(
+            -center_x * zoom + half_canvas_width - kTileSize / 2 * zoom,
+            -center_y * zoom + half_canvas_height - kTileSize / 2 * zoom);
+        canvas.drawBitmap(tiles_bitmap_, tile_source, tile_destination, paint_);
       }
     }
   }
 
+  private char[] background_ = {0, 0, 0};
   private GameState game_state_;
-  private Paint paint_ = new Paint();  // Drawing settings.
+  private Paint paint_ = new Paint();
   private Random random_ = new Random();
+  private Resources resources_;
   private char[] tiles_;
+  private Bitmap tiles_bitmap_;
 
   private static final char kBaseValue = 'a';
   private static final int kEndingTile = 11;

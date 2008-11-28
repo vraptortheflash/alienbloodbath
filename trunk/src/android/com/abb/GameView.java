@@ -23,6 +23,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -38,8 +39,6 @@ import android.com.abb.Game;
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   class GameThread extends Thread {
     public GameThread(SurfaceHolder surface_holder) {
-      game_ = null;
-      running_ = true;
       surface_holder_ = surface_holder;
     }
 
@@ -47,13 +46,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     public void run() {
       while (game_ == null) {
         try {
-          Thread.sleep(100, 0);  // Wait 100ms.
+          Thread.sleep(100);  // Wait 100ms.
         } catch (InterruptedException ex) {}
         continue;
-      }
-
-      synchronized (game_) {
-        game_.Reset();
       }
 
       // Since our target platform is a mobile device, we should do what we can
@@ -62,7 +57,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       // possible. Here we define the maximum framerate which needs to make the
       // trade off between graphics fluidity and power savings.
       final float kMaxFrameRate = 15.0f;  // Frames / second.
-      final float kMinFrameRate = 2.0f;   //Frames / second.
+      final float kMinFrameRate = 4.0f;   //Frames / second.
       final float kMinTimeStep = 1.0f / kMaxFrameRate;  // Seconds.
       final float kMaxTimeStep = 1.0f / kMinFrameRate;  // Seconds.
 
@@ -72,6 +67,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       long time = System.nanoTime();
 
       while (running_) {
+        if (paused_) {
+          try {
+            Thread.sleep(100);  // Wait 100ms.
+          } catch (InterruptedException ex) {}
+          continue;
+        }
+
         // Calculate the interval between this and the previous frame. See note
         // above regarding system timers. If we have exceeded our framerate
         // budget, sleep. TODO: Look into the cost of these clocks.
@@ -92,6 +94,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
           }
         }
         time_step = Math.max(time_step, kMinTimeStep);
+        time_step = Math.min(time_step, kMaxTimeStep);
 
         Canvas canvas = null;
         try {
@@ -111,34 +114,28 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void Pause(boolean pause) {
-      // TODO: Implement.
+      paused_ = pause;
     }
 
     public void Halt() {
       running_ = false;
     }
 
-    boolean running_;
+    boolean running_ = true;
+    boolean paused_ = false;
     Game game_;
     SurfaceHolder surface_holder_;
   }
 
   public GameView(Context context, AttributeSet attrs) {
     super(context, attrs);
-    context_ = context;
-
-    // Make sure we get key events and register our interest in hearing about
-    // surface changes.
-    setFocusable(true);
-    SurfaceHolder surface_holder = getHolder();
-    surface_holder.addCallback(this);
-    game_thread_ = new GameThread(surface_holder);
+    getHolder().addCallback(this);
   }
 
   public void SetGame(Game game) {
-    game.LoadResources(context_);
     game_ = game;
-    game_thread_.SetGame(game);
+    if (game_thread_ != null)
+      game_thread_.SetGame(game);
   }
 
   /** Set up the android widget for the title screen to be displayed until any
@@ -149,37 +146,46 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
   /** Standard override to get key-press events. */
   @Override
-  public boolean onKeyDown(int keyCode, KeyEvent msg) {
+  public boolean onKeyDown(int key_code, KeyEvent msg) {
     if (!title_view_hidden_) {
       title_view_.setText("");
       title_view_hidden_ = true;
     }
 
     synchronized (game_) {
-      return game_.OnKeyDown(keyCode);
+      return game_.OnKeyDown(key_code);
     }
   }
 
   /** Standard override for key-up. We actually care about these, so we can turn
    * off the engine or stop rotating. */
   @Override
-  public boolean onKeyUp(int keyCode, KeyEvent msg) {
+  public boolean onKeyUp(int key_code, KeyEvent msg) {
     synchronized (game_) {
-      return game_.OnKeyUp(keyCode);
+      return game_.OnKeyUp(key_code);
     }
   }
 
   /** Standard window-focus override. Notice focus lost so we can pause on focus
    * lost. e.g. user switches to take a call. */
   @Override
-  public void onWindowFocusChanged(boolean hasWindowFocus) {
-    game_thread_.Pause(hasWindowFocus);
+  public void onWindowFocusChanged(boolean has_window_focus) {
+    if (game_thread_ != null)
+      game_thread_.Pause(!has_window_focus);
   }
 
   /** Callback invoked when the Surface has been created and is ready to be
    * used. */
   public void surfaceCreated(SurfaceHolder holder) {
+    // Make sure we get key events and register our interest in hearing about
+    // surface changes.
+    setFocusable(true);
+    getHolder().addCallback(this);
+
+    game_thread_ = new GameThread(holder);
+    game_thread_.SetGame(game_);
     game_thread_.start();
+    game_thread_started_ = true;
   }
 
   /** Callback invoked when the surface dimensions change. */
@@ -194,14 +200,15 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     while (retry) {
       try {
         game_thread_.join();
+        game_thread_ = null;
         retry = false;
       } catch (InterruptedException e) {}
     }
   }
 
-  private Context context_;
   private Game game_;
   private GameThread game_thread_;
+  private boolean game_thread_started_ = false;
   private TextView title_view_;
   private boolean title_view_hidden_ = false;
 }

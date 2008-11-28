@@ -17,8 +17,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.util.Log;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
@@ -35,44 +37,37 @@ public class GameState implements Game {
   public Avatar avatar = new Avatar(this);
   public ArrayList enemies = new ArrayList();
   public Bitmap enemy_sprites;
-  public Map map = new Map(this);
+  public Uri map_uri = Uri.parse("builtin://0");
   public Bitmap misc_sprites;
   public ArrayList particles = new ArrayList();
   public ArrayList projectiles = new ArrayList();
 
-  /** Initialize the game state structure. Upon returning, game_state_ should be
-   * in a state representing a new game life. */
-  public void Reset() {
-    avatar.Stop();
-    avatar.alive = true;
-    avatar.x = map.starting_x;
-    avatar.y = map.starting_y;
-    view_x_ = target_view_x_ = avatar.x;
-    view_y_ = target_view_y_ = avatar.y;
-  }
-
-  public void LoadResources(Context context) {
-    // Load services.
-    vibrator_ = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
-
-    // Load images.
+  public GameState(Context context) {
+    // Load data resources.
     Resources resources = context.getResources();
     avatar.sprite = BitmapFactory.decodeResource(resources, R.drawable.avatar);
     enemy_sprites = BitmapFactory.decodeResource(resources, R.drawable.enemy_0);
     misc_sprites = BitmapFactory.decodeResource(resources, R.drawable.misc);
+    map_.SetResources(resources);  // Let the map load resources on-demand.
+    Reset();
 
-    // Load the maps. TODO: We'd ideally like to enumerate all of the maps
-    // declared in the resources file and on disk. However, the following is a
-    // bit of a hack.
-    int[] tiles_ids = { R.drawable.tiles_0, R.drawable.tiles_1 };
-    for (int tiles_id : tiles_ids)
-      tiles_.add(BitmapFactory.decodeResource(resources, tiles_id));
-    int[] level_ids = { R.string.level_0, R.string.level_1, R.string.level_2 };
-    for (int level_id : level_ids) {
-      char[] level_array = resources.getText(level_id).toString().toCharArray();
-      levels_.add(Map.DecodeArray(level_array));
-    }
-    LoadLevel(current_level_);
+    // Load services.
+    vibrator_ = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
+  }
+
+  /** Initialize the game state structure. Upon returning, game_state_ should be
+   * in a state representing a new game life. */
+  public void Reset() {
+    map_.LoadFromUri(map_uri);
+    particles.clear();
+    projectiles.clear();
+    enemies.clear();
+    avatar.Stop();
+    avatar.alive = true;
+    avatar.x = map_.starting_x;
+    avatar.y = map_.starting_y;
+    view_x_ = target_view_x_ = avatar.x;
+    view_y_ = target_view_y_ = avatar.y;
   }
 
   public boolean OnKeyDown(int key_code) {
@@ -107,17 +102,15 @@ public class GameState implements Game {
 
     // Step the avatar.
     avatar.Step(time_step);
-    map.CollideEntity(avatar);
+    map_.CollideEntity(avatar);
     if (!avatar.alive)
       Reset();
-    if (map.TileIsGoal(map.TileAt(avatar.x, avatar.y)))
-      LoadLevel(++current_level_);
 
     // Step the enemies.
     for (Iterator it = enemies.iterator(); it.hasNext();) {
       Enemy enemy = (Enemy)it.next();
       enemy.Step(time_step);
-      map.CollideEntity(enemy);
+      map_.CollideEntity(enemy);
       if (!enemy.alive) {
         Vibrate();
         for (int n = 0; n < kBloodBathSize; n++) {
@@ -154,11 +147,8 @@ public class GameState implements Game {
   /** Draw the game state. The game map and entities are always drawn with the
    * avatar centered in the screen. */
   protected void DrawGame(Canvas canvas) {
-    char background[] = backgrounds_[current_level_ % backgrounds_.length];
-    canvas.drawRGB(background[0], background[1], background[2]);
-
     // Draw the map tiles.
-    map.Draw(canvas, view_x_, view_y_, zoom_);
+    map_.Draw(canvas, view_x_, view_y_, zoom_);
 
     // Draw the enemies.
     for (Iterator it = enemies.iterator(); it.hasNext();)
@@ -174,15 +164,6 @@ public class GameState implements Game {
     // Draw the particles.
     for (Iterator it = particles.iterator(); it.hasNext();)
       ((Entity)it.next()).Draw(canvas, view_x_, view_y_, zoom_);
-  }
-
-  public void LoadLevel(int level) {
-    level = level % levels_.size();
-    map.LoadFromArray((char[])levels_.get(level));
-    int tiles = level % tiles_.size();
-    map.tiles_bitmap = (Bitmap)tiles_.get(tiles);
-    enemies.clear();
-    Reset();
   }
 
   public Entity CreateEnemy(float x, float y) {
@@ -221,20 +202,49 @@ public class GameState implements Game {
   }
 
   public void LoadStateBundle(Bundle saved_instance_state) {
+    map_uri = Uri.parse(saved_instance_state.getString("map_uri"));
+    Reset();
+
+    target_view_x_ = saved_instance_state.getFloat("target_view_x_");
+    target_view_y_ = saved_instance_state.getFloat("target_view_y_");
+    view_x_ = saved_instance_state.getFloat("view_x_");
+    view_y_ = saved_instance_state.getFloat("view_y_");
+    zoom_ = saved_instance_state.getFloat("zoom_");
+
+    avatar.x = saved_instance_state.getFloat("avatar.x");
+    avatar.y = saved_instance_state.getFloat("avatar.y");
+    avatar.dx = saved_instance_state.getFloat("avatar.dx");
+    avatar.dy = saved_instance_state.getFloat("avatar.dy");
+    avatar.ddx = saved_instance_state.getFloat("avatar.ddx");
+    avatar.ddy = saved_instance_state.getFloat("avatar.ddy");
   }
 
   public Bundle SaveStateBundle() {
-    return null;
+    // Note that particles, projectiles and spawned aliens are lost through
+    // serialization.
+    Bundle saved_instance_state = new Bundle();
+
+    saved_instance_state.putString("map_uri", map_uri.toString());
+    saved_instance_state.putFloat("target_view_x_", target_view_x_);
+    saved_instance_state.putFloat("target_view_y_", target_view_y_);
+    saved_instance_state.putFloat("view_x_", view_x_);
+    saved_instance_state.putFloat("view_y_", view_y_);
+    saved_instance_state.putFloat("zoom_", zoom_);
+
+    saved_instance_state.putFloat("avatar.x", avatar.x);
+    saved_instance_state.putFloat("avatar.y", avatar.y);
+    saved_instance_state.putFloat("avatar.dx", avatar.dx);
+    saved_instance_state.putFloat("avatar.dy", avatar.dy);
+    saved_instance_state.putFloat("avatar.dx", avatar.ddx);
+    saved_instance_state.putFloat("avatar.dy", avatar.ddy);
+    return saved_instance_state;
   }
 
-  private char[][] backgrounds_ = {{5, 5, 5}, {50, 50, 50}, {10, 5, 5}};
-  private int current_level_ = 0;
-  private ArrayList levels_ = new ArrayList();
+  private Map map_ = new Map(this);
   private Random random_ = new Random();
   private float target_view_x_ = 0.0f;
   private float target_view_y_ = 0.0f;
   private float target_zoom_ = kGroundZoom;
-  private ArrayList tiles_ = new ArrayList();
   private Vibrator vibrator_;
   private float view_x_ = 0.0f;
   private float view_y_ = 0.0f;
