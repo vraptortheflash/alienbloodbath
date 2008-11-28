@@ -4,7 +4,7 @@ Q: Is there sound?
 A: Not yet. Code patches and sound samples are welcome.
 
 Q: How many levels are there?
-A: 3. Feel free to contribute a level editor and / or more levels.
+A: 3. Feel free to contribute a level editor and / or more levels. See the WIKI page on [http://code.google.com/p/alienbloodbath/wiki/LevelFormat creating new levels].
 
 Q: Why is it so bad?
 A. Code patches are welcome.
