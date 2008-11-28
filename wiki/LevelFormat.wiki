@@ -2,7 +2,7 @@
 
 = Storage Format =
 
-Each level / map is represented as a matrix of values with each element corresponding to a different tile. The matrix is of size 100 x 100 and is stored using a column-major layout within the Android package resources as a text string. The file [http://code.google.com/p/alienbloodbath/source/browse/trunk/res/values/strings.xml res/values/strings.xml] currently contains the level definitions. The upper-left most position in the map corresponds the the tile at index (0, 0).
+Each level / map is represented as a matrix of values with each element corresponding to a different tile. The matrix is of size 100 x 100 and is stored using a column-major layout as a text string of characters. The upper-left most position in the map corresponds the the tile at index (0, 0).
 
 Each character value, starting with 'a' equivalent to 0, in the level string corresponds to a tile from the tiles sprite images (see tiles_0.png and tiles_1.png in [http://code.google.com/p/alienbloodbath/source/browse/#svn/trunk/res/drawable sprite resources]). A value of 'a' corresponds to the top most tile in the tiles image (blank open space) where as, for example, 'c' corresponds to the 3rd tile from the top.
 
