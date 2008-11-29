@@ -6,6 +6,20 @@ Each map is represented as a matrix of values with each element corresponding to
 
 Each character value, starting with 'a' equivalent to 0, in the level string corresponds to a tile from the tiles sprite images (see tiles_0.png and tiles_1.png in [http://code.google.com/p/alienbloodbath/source/browse/#svn/trunk/res/drawable sprite resources] for examples). A value of 'a' corresponds to the top most tile in the tiles image (blank open space) where as, for example, 'c' corresponds to the 3rd tile from the top.
 
+= Adding new Levels to the Game =
+
+New levels may be added to the SD card storage device under a directory named "abb_maps". Within the "abb_maps" directory, each sub-directory represents a unique map. The tiles are stored within the map directory as "tiles.txt" and the file is expected to contain the consecutive ASCII characters for the map matrix elements as described above.
+
+*Optionally*, each map directory may contain a "tiles.png" file which overrides the default game map tile images. The tile images is expected to contain tiles of the same size and the tile semantics (eg. spikes = death) do not change. See above tile image examples to use as templates.
+
+Example directory structure:
+{{{
+sdcard/abb_maps/my_level/tiles.txt
+sdcard/abb_maps/my_level_with_new_tiles/tiles.txt
+sdcard/abb_maps/my_level_with_new_tiles/tiles.png
+sdcard/abb_maps/my_level_with_new_tiles/tile_effects.txt
+}}}
+
 == Special Tile Values ==
 
 Special tile values are used to mark certain aspects of the game including level start and end locations as well as enemy locations.
@@ -20,15 +34,14 @@ Special tile values are used to mark certain aspects of the game including level
 The following tile values are collidable:
 1-5, and 7.
 
-= Adding new Levels to the Game =
+*Optionally*, special tiles may be modified. The tile id semantics may be overridden by providing a "tile_effects.txt" file within the map directory. The expected format is an ASCII file with two values per line. Each line must first specify the integer tile index and then the effect name / meaning. The tile effect may be one of either: solid, death, or explode.
 
-New levels may be added to the SD card storage device under a directory named "abb_maps". Within the "abb_maps" directory, each sub-directory represents a unique map. The tiles are stored within the map directory as "tiles.txt" and the file is expected to contain the consecutive ASCII characters for the map matrix elements as described above.
-
-*Optionally*, each map directory may contain a "tiles.png" file which overrides the default game map tile images. The tile images is expected to contain tiles of the same size and the tile semantics (eg. spikes = death) do not change. See above tile image examples to use as templates.
-
-Example directory structure:
+Example tile_effects.txt file:
 {{{
-sdcard/abb_maps/my_level/tiles.txt
-sdcard/abb_maps/my_level_with_new_tiles/tiles.txt
-sdcard/abb_maps/my_level_with_new_tiles/tiles.png
+1 solid
+2 solid
+3 solid
+4 death
+7 solid
+9 explode
 }}}
