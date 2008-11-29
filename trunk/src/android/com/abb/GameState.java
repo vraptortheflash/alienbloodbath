@@ -35,12 +35,12 @@ import android.com.abb.Map;
 
 public class GameState implements Game {
   public Avatar avatar = new Avatar(this);
-  public ArrayList enemies = new ArrayList();
+  public ArrayList<Entity> enemies = new ArrayList<Entity>();
   public Bitmap enemy_sprites;
   public Uri map_uri = Uri.parse("builtin://0");
   public Bitmap misc_sprites;
-  public ArrayList particles = new ArrayList();
-  public ArrayList projectiles = new ArrayList();
+  public ArrayList<Entity> particles = new ArrayList<Entity>();
+  public ArrayList<Entity> projectiles = new ArrayList<Entity>();
 
   public GameState(Context context) {
     // Load data resources.
@@ -68,6 +68,7 @@ public class GameState implements Game {
     avatar.y = map_.starting_y;
     view_x_ = target_view_x_ = avatar.x;
     view_y_ = target_view_y_ = avatar.y;
+    death_timer_ = kDeathTimer;
   }
 
   public boolean OnKeyDown(int key_code) {
@@ -101,10 +102,22 @@ public class GameState implements Game {
     view_y_ += (target_view_y_ - view_y_) * kViewSpeed;
 
     // Step the avatar.
-    avatar.Step(time_step);
-    map_.CollideEntity(avatar);
-    if (!avatar.alive)
-      Reset();
+    if (avatar.alive) {
+      avatar.Step(time_step);
+      map_.CollideEntity(avatar);
+    } else {
+      if (death_timer_ == kDeathTimer) {
+        for (int n = 0; n < 2 * kBloodBathSize; n++) {
+          CreateBloodParticle(
+              avatar.x, avatar.y,
+              2.0f * kBloodBathVelocity * (0.5f - random_.nextFloat()) + avatar.dx, 
+              2.0f * kBloodBathVelocity * (0.5f - random_.nextFloat()) + avatar.dy);
+        }
+      }
+      death_timer_ -= time_step;
+      if (death_timer_ < 0)
+        Reset();
+    }
 
     // Step the enemies.
     for (Iterator it = enemies.iterator(); it.hasNext();) {
@@ -114,12 +127,10 @@ public class GameState implements Game {
       if (!enemy.alive) {
         Vibrate();
         for (int n = 0; n < kBloodBathSize; n++) {
-          float random_angle = random_.nextFloat() * 2.0f * (float)Math.PI;
-          float random_magnitude = kBloodBathVelocity * random_.nextFloat() / 3.0f;
           CreateBloodParticle(
               enemy.x, enemy.y,
-              enemy.dx + random_magnitude * (float)Math.cos(random_angle),
-              enemy.dy + random_magnitude * (float)Math.sin(random_angle));
+              kBloodBathVelocity * (0.5f - random_.nextFloat()) + enemy.dx,
+              kBloodBathVelocity * (0.5f - random_.nextFloat()) + enemy.dy);
         }
         it.remove();
       }
@@ -155,7 +166,8 @@ public class GameState implements Game {
       ((Entity)it.next()).Draw(canvas, view_x_, view_y_, zoom_);
 
     // Draw the avatar.
-    avatar.Draw(canvas, view_x_, view_y_, zoom_);
+    if (avatar.alive)
+      avatar.Draw(canvas, view_x_, view_y_, zoom_);
 
     // Draw the projectiles.
     for (Iterator it = projectiles.iterator(); it.hasNext();)
@@ -182,6 +194,7 @@ public class GameState implements Game {
     blood.y = y;
     blood.dx = dx;
     blood.dy = dy;
+    blood.ddy = kGravity;
     particles.add(blood);
     return blood;
   }
@@ -193,6 +206,7 @@ public class GameState implements Game {
     fire.y = y;
     fire.dx = dx;
     fire.dy = dy;
+    fire.ddy = -50.0f;  // Slight up draft.
     projectiles.add(fire);
     return fire;
   }
@@ -240,6 +254,7 @@ public class GameState implements Game {
     return saved_instance_state;
   }
 
+  private float death_timer_ = kDeathTimer;
   private Map map_ = new Map(this);
   private Random random_ = new Random();
   private float target_view_x_ = 0.0f;
@@ -251,8 +266,10 @@ public class GameState implements Game {
   private float zoom_ = kGroundZoom;
 
   private static final float kAirZoom = 0.6f;
-  private static final int kBloodBathSize = 6;  // Number of particles.
-  private static final float kBloodBathVelocity = 100.0f;
+  private static final int kBloodBathSize = 8;  // Number of particles.
+  private static final float kBloodBathVelocity = 70.0f;
+  private static final float kDeathTimer = 4.0f;
+  private static final float kGravity = 200.0f;
   private static final float kGroundZoom = 0.8f;
   private static final long kVibrateLength = 30;  // Milliseconds.
   private static final float kViewLead = 1.0f;

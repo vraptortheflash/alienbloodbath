@@ -140,6 +140,7 @@
             <classpath>
                 <fileset dir="${external-libs}" includes="*.jar"/>
             </classpath>
+            <compilerarg value="-Xlint"/> 
          </javac>
     </target>
 
