@@ -23,6 +23,9 @@ import android.util.Log;
 import java.lang.Math;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 
 import android.com.abb.Entity;
@@ -46,6 +49,23 @@ public class Map {
       tiles[n] -= kBaseValue;
     }
     return tiles;
+  }
+
+  static public char[] ToPrimative(ArrayList<Character> array_list) {
+    char[] result = new char[array_list.size()];
+    for (int index = 0; index < array_list.size(); ++index)
+      result[index] = array_list.get(index).charValue();
+    return result;
+  }
+
+  public void LoadDefaultEffects() {
+    effects_death_ = new boolean[kMaxTileCount];
+    effects_death_[4] = true;
+    effects_explode_ = new boolean[kMaxTileCount];
+    effects_explode_[9] = true;
+    effects_solid_ = new boolean[kMaxTileCount];
+    effects_solid_[1] = effects_solid_[2]  =
+        effects_solid_[3]  = effects_solid_[7] = true;
   }
 
   public void LoadFromArray(char[] tiles) {
@@ -74,6 +94,7 @@ public class Map {
       char[] tiles_raw =
           resources_.getText(builtin_maps[index]).toString().toCharArray();
       LoadFromArray(DecodeArray(tiles_raw));
+      LoadDefaultEffects();
     }
 
     // Maps located on disk are encoded with the URI syntax file://<path>. The
@@ -88,18 +109,46 @@ public class Map {
         tiles_ = new char[kMapWidth * kMapHeight];
         tiles_reader.read(tiles_, 0, kMapWidth * kMapHeight);
         LoadFromArray(DecodeArray(tiles_));
-      } catch (Exception ex) {}
+      } catch (IOException ex) {
+        Log.e("Map::LoadFromUri", "Cannot find tiles.txt.", ex);
+      }
 
-      // Load map tile images, if present.
+      // Load map tile images, if defined.
       tiles_bitmap_ = BitmapFactory.decodeFile(path + "/tiles.png");
       if (tiles_bitmap_ == null) {
+        Log.w("Map::LoadFromUri", "Cannot find tiles.png, using default.");
         int default_tiles = R.drawable.tiles_0;
         tiles_bitmap_ = BitmapFactory.decodeResource(resources_, default_tiles);
+      }
+
+      // Load tile effects, if defined.
+      try {
+        FileReader effects_reader = new FileReader(new File(path + "/tile_effects.txt"));
+        ArrayList<Character> effects_array = new ArrayList<Character>();
+        while (effects_reader.ready())
+          effects_array.add(new Character((char)effects_reader.read()));
+        String[] effects_tokens = (new String(ToPrimative(effects_array))).split("\\s");
+        effects_death_ = new boolean[kMaxTileCount];
+        effects_explode_ = new boolean[kMaxTileCount];
+        effects_solid_ = new boolean[kMaxTileCount];
+        for (int effect = 0; effect < effects_tokens.length; effect += 2) {
+          int tile_id = Integer.parseInt(effects_tokens[effect]);
+          String tile_effect = effects_tokens[effect + 1];
+          if (tile_effect.equals("death"))
+            effects_death_[tile_id] = true;
+          else if (tile_effect.equals("explode"))
+            effects_explode_[tile_id] = true;
+          else if (tile_effect.equals("solid"))
+            effects_solid_[tile_id] = true;;
+        }
+      } catch (IOException ex) {
+        Log.w("Map::LoadFromUri", "Cannot find tiles_effects.txt, using default.");
+        LoadDefaultEffects();
       }
     }
 
     else {
-      Log.d("Map::LoadFromUri", "Unknown URI scheme type.");
+      Log.e("Map::LoadFromUri", "Unknown URI scheme type.");
     }
   }
 
@@ -126,20 +175,8 @@ public class Map {
       return -1;  // Tile out of map range.
   }
 
-  public static boolean TileIsCollideable(int tile_id) {
-    return ((tile_id >= 1 && tile_id <= 5) || tile_id == 7);
-  }
-
-  public static boolean TileIsDeath(int tile_id) {
-    return (tile_id == 4);
-  }
-
   public static boolean TileIsEnemy(int tile_id) {
     return (tile_id == 12);
-  }
-
-  public static boolean TileIsExploadable(int tile_id) {
-    return (tile_id == 9);
   }
 
   public static boolean TileIsGoal(int tile_id) {
@@ -159,16 +196,16 @@ public class Map {
     for (float x = entity.x - radius; x <= entity.x + radius; x += kTileSize) {
       for (float y = entity.y - radius; y <= entity.y + radius; y += kTileSize) {
         int tile_id = TileAt(x, y);
-        boolean tile_collideable = TileIsCollideable(tile_id);
-        boolean tile_deadly = TileIsDeath(tile_id);
-        boolean tile_exploadable = TileIsExploadable(tile_id);
+        boolean tile_deadly = effects_death_[tile_id];
+        boolean tile_exploadable = effects_explode_[tile_id];
+        boolean tile_solid = effects_solid_[tile_id];
 
         int index_x = (int)(x / kTileSize + 0.5f);
         int index_y = (int)(y / kTileSize + 0.5f);
         float tile_x = kTileSize * index_x;
         float tile_y = kTileSize * index_y;
 
-        if (!tile_collideable && !tile_exploadable && !tile_deadly)
+        if (!tile_solid && !tile_exploadable && !tile_deadly)
           continue;  // Not a collideable tile.
 
         // Determine if a collision has occurred between the two squares.
@@ -206,7 +243,7 @@ public class Map {
                 random_magnitude * (float)Math.sin(random_angle));
           }
         }
-        if (tile_collideable) {
+        if (tile_solid) {
           float impact_normal_x;
           float impact_normal_y;
           float impact_distance;
@@ -295,6 +332,9 @@ public class Map {
     }
   }
 
+  private boolean[] effects_death_;
+  private boolean[] effects_explode_;
+  private boolean[] effects_solid_;
   private char[] background_ = {0, 0, 0};
   private GameState game_state_;
   private Paint paint_ = new Paint();
@@ -309,6 +349,7 @@ public class Map {
   private static final float kExplosionStrength = 200.0f;
   private static final int kMapHeight = 100;
   private static final int kMapWidth = 100;
+  private static final int kMaxTileCount = 25;
   private static final int kStartingTile = 10;
   private static final int kTileSize = 64;
 }

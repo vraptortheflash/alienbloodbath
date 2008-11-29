@@ -77,6 +77,6 @@ public class Entity {
 
   private Paint paint_ = new Paint();
 
-  private static final float kGroundFriction = 0.1f;
+  private static final float kGroundFriction = 0.2f;
   private static final float kMaxVelocity = 200.0f;
 }

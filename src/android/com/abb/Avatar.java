@@ -136,7 +136,7 @@ public class Avatar extends Entity {
   private static final float kAirAnimationSpeed = 3.0f;
   private static final float kAnimationStopThreshold = 40.0f;
   private static final float kGravity = 200.0f;
-  private static final float kGroundAcceleration = 500.0f;
+  private static final float kGroundAcceleration = 700.0f;
   private static final float kGroundAnimationSpeed = 1.0f / 600.0f;
   private static final float kJumpVelocity = 250.0f;
   private static final int kKeyLeft = KeyEvent.KEYCODE_A;
