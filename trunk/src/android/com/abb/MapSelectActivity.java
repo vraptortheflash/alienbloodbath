@@ -15,11 +15,19 @@ import android.app.ListActivity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 
 public class MapSelectActivity extends ListActivity {
@@ -43,7 +51,55 @@ public class MapSelectActivity extends ListActivity {
     finish();
   }
 
+  private void UnzipMapPackages() {
+    for (String root_path : paths_) {
+      String[] files = (new File(root_path)).list();
+      if (files == null)
+        continue;
+
+      for (String file : files) {
+        if (!file.endsWith(kMapPackageSuffix)) {
+          try {
+            // Create the new map directory.
+            String zip_file_path = root_path + "/" + file;
+            ZipFile zip_file = new ZipFile(zip_file_path);
+            String map_path = root_path + "/" + file.replace(kMapPackageSuffix, "");
+            (new File(map_path)).mkdir();
+
+            // Populate the map directory with the zipped contents.
+            for (Enumeration<? extends ZipEntry> entry_it = zip_file.entries();
+                 entry_it.hasMoreElements();) {
+              ZipEntry entry = entry_it.nextElement();
+              String output_path = map_path + "/" + entry.getName();
+              Log.w("MapSelectActivity::UnzipMapPackages",
+                    "Unzipping to " + output_path);
+
+              InputStream input_stream = zip_file.getInputStream(entry);
+              BufferedOutputStream output_stream =
+                  new BufferedOutputStream(new FileOutputStream(output_path));
+              byte[] buffer = new byte[1024];
+              int bytes_read;
+              while((bytes_read = input_stream.read(buffer)) >= 0)
+                output_stream.write(buffer, 0, bytes_read);
+              input_stream.close();
+              output_stream.close();
+            }
+
+            // Delete the source zip package.
+            (new File(zip_file_path)).delete();
+          } catch (IOException ex) {
+            Log.w("MapSelectActivity::UnzipMapPackages",
+                  "Cannot unzip package, ignoring.");
+          }
+        }
+      }
+    }
+  }
+
   private void LoadMaps() {
+    // Unzip map package files on the SD card.
+    UnzipMapPackages();
+
     // Add built-in maps.
     maps_.add("Classic 1");
     map_uris_.add("builtin://0");
@@ -68,6 +124,7 @@ public class MapSelectActivity extends ListActivity {
 
   private ArrayList<String> maps_ = new ArrayList<String>();
   private ArrayList<String> map_uris_ = new ArrayList<String>();
-  private String[] paths_ = { "/sdcard/abb_maps",
-                              "/data/data/android.com.abb/abb_maps" };
+  private String[] paths_ = { "/sdcard/abb_maps", "/sdcard" };
+
+  private final String kMapPackageSuffix = ".abb.zip";
 }

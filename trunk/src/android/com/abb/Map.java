@@ -128,6 +128,9 @@ public class Map {
         while (effects_reader.ready())
           effects_array.add(new Character((char)effects_reader.read()));
         String[] effects_tokens = (new String(ToPrimative(effects_array))).split("\\s");
+        if (effects_tokens.length % 2 != 0)
+          Log.e("Map::LoadFromUri", "Cannot find tiles_effects.txt, using default.");
+
         effects_death_ = new boolean[kMaxTileCount];
         effects_explode_ = new boolean[kMaxTileCount];
         effects_solid_ = new boolean[kMaxTileCount];
