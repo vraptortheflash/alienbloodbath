@@ -231,6 +231,7 @@ public class GameState implements Game {
     avatar.dy = saved_instance_state.getFloat("avatar.dy");
     avatar.ddx = saved_instance_state.getFloat("avatar.ddx");
     avatar.ddy = saved_instance_state.getFloat("avatar.ddy");
+    avatar.alive = saved_instance_state.getBoolean("avatar.alive");
   }
 
   public Bundle SaveStateBundle() {
@@ -251,6 +252,7 @@ public class GameState implements Game {
     saved_instance_state.putFloat("avatar.dy", avatar.dy);
     saved_instance_state.putFloat("avatar.dx", avatar.ddx);
     saved_instance_state.putFloat("avatar.dy", avatar.ddy);
+    saved_instance_state.putBoolean("avatar.alive", avatar.alive);
     return saved_instance_state;
   }
 
