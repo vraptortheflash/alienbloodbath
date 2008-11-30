@@ -46,6 +46,7 @@ public class AlienBloodBathMain extends Activity {
   public boolean onCreateOptionsMenu(Menu menu) {
     boolean result = super.onCreateOptionsMenu(menu);
     menu.add(0, kSelectMap, 0, "Load Map...").setIcon(R.drawable.load);
+    menu.add(0, kDownloadMap, 0, "More Maps...").setIcon(R.drawable.download);
     menu.add(0, kAbout, 0, "About...").setIcon(R.drawable.about);
     return result;
   }
@@ -56,6 +57,9 @@ public class AlienBloodBathMain extends Activity {
       case kSelectMap:
         startActivityForResult(
             new Intent(this, MapSelectActivity.class), kSelectMap);
+        return true;
+      case kDownloadMap:
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(kMapsPage)));
         return true;
       case kAbout:
         startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(kAboutPage)));
@@ -92,7 +96,9 @@ public class AlienBloodBathMain extends Activity {
   private GameView game_view_;
 
   private final int kAbout = 2;
+  private final int kDownloadMap = 3;
   private final String kAboutPage = "http://code.google.com/p/alienbloodbath";
+  private final String kMapsPage = "http://abbserver.appspot.com";
   private final int kSelectMap = 1;
   private final String kStateKey = "abb-state";
 }
