@@ -12,8 +12,6 @@
 package android.com.abb;
 
 import android.app.Activity;
-import android.com.abb.GameState;
-import android.com.abb.GameView;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -24,11 +22,16 @@ import android.view.MenuItem;
 import android.view.Window;
 import android.widget.TextView;
 
+import android.com.abb.Content;
+import android.com.abb.GameState;
+import android.com.abb.GameView;
+
 
 public class AlienBloodBathMain extends Activity {
   @Override
   public void onCreate(Bundle saved_instance_state) {
     super.onCreate(saved_instance_state);
+    Content.Initialize(getResources());
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.main);
 
@@ -38,7 +41,10 @@ public class AlienBloodBathMain extends Activity {
     game_view_.SetGame(game_state_);
 
     if (saved_instance_state != null) {
-      game_state_.LoadStateBundle(saved_instance_state.getBundle(kStateKey));
+      game_state_.LoadStateBundle(saved_instance_state.getBundle("game_state_"));
+    } else {
+      game_state_.map.LoadFromUri(Uri.parse("content://"));
+      game_state_.Reset();
     }
   }
 
@@ -73,7 +79,7 @@ public class AlienBloodBathMain extends Activity {
     switch (request_code) {
       case kSelectMap:
         if (intent != null) {
-          game_state_.map_uri = intent.getData();
+          game_state_.map.LoadFromUri(intent.getData());
           game_state_.Reset();
         }
         break;
@@ -82,14 +88,14 @@ public class AlienBloodBathMain extends Activity {
 
   @Override
   public void onSaveInstanceState(Bundle saved_instance_state) {
-    saved_instance_state.putBundle(kStateKey, game_state_.SaveStateBundle());
+    saved_instance_state.putBundle("game_state_", game_state_.SaveStateBundle());
     super.onSaveInstanceState(saved_instance_state);
   }
 
   @Override
   public void onRestoreInstanceState(Bundle saved_instance_state) {
     super.onRestoreInstanceState(saved_instance_state);
-    game_state_.LoadStateBundle(saved_instance_state.getBundle(kStateKey));
+    game_state_.LoadStateBundle(saved_instance_state.getBundle("game_state_"));
   }
 
   private GameState game_state_;
@@ -100,5 +106,4 @@ public class AlienBloodBathMain extends Activity {
   private final String kAboutPage = "http://code.google.com/p/alienbloodbath";
   private final String kMapsPage = "http://abbserver.appspot.com";
   private final int kSelectMap = 1;
-  private final String kStateKey = "abb-state";
 }

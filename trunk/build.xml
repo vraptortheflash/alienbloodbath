@@ -102,8 +102,17 @@
         <mkdir dir="${outdir-classes}" />
     </target>
 
+    <!-- Generate the game content package content_package.zip to add to the
+    resources. NOTE: This is not part of a standard Android build file, it was
+    added specifially for ABB. -->
+    <target name="content-package">
+      <echo>Generating game content package: content_package.zip...</echo>
+      <exec executable="./prepare_content.sh" failonerror="true">
+      </exec>
+    </target>
+
     <!-- Generate the R.java file for this project's resources. -->
-    <target name="resource-src" depends="dirs">
+    <target name="resource-src" depends="dirs, content-package">
         <echo>Generating R.java / Manifest.java from the resources...</echo>
         <exec executable="${aapt}" failonerror="true">
             <arg value="package" />
