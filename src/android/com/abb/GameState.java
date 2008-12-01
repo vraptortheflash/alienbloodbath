@@ -37,7 +37,7 @@ public class GameState implements Game {
   public Avatar avatar = new Avatar(this);
   public ArrayList<Entity> enemies = new ArrayList<Entity>();
   public Bitmap enemy_sprites;
-  public Uri map_uri = Uri.parse("builtin://0");
+  public Map map = new Map(this);
   public Bitmap misc_sprites;
   public ArrayList<Entity> particles = new ArrayList<Entity>();
   public ArrayList<Entity> projectiles = new ArrayList<Entity>();
@@ -48,7 +48,7 @@ public class GameState implements Game {
     avatar.sprite = BitmapFactory.decodeResource(resources, R.drawable.avatar);
     enemy_sprites = BitmapFactory.decodeResource(resources, R.drawable.enemy_0);
     misc_sprites = BitmapFactory.decodeResource(resources, R.drawable.misc);
-    map_.SetResources(resources);  // Let the map load resources on-demand.
+    map.SetResources(resources);  // Let the map load resources on-demand.
     Reset();
 
     // Load services.
@@ -58,14 +58,13 @@ public class GameState implements Game {
   /** Initialize the game state structure. Upon returning, game_state_ should be
    * in a state representing a new game life. */
   public void Reset() {
-    map_.LoadFromUri(map_uri);
     particles.clear();
     projectiles.clear();
     enemies.clear();
     avatar.Stop();
     avatar.alive = true;
-    avatar.x = map_.starting_x;
-    avatar.y = map_.starting_y;
+    avatar.x = map.starting_x;
+    avatar.y = map.starting_y;
     view_x_ = target_view_x_ = avatar.x;
     view_y_ = target_view_y_ = avatar.y;
     death_timer_ = kDeathTimer;
@@ -104,7 +103,11 @@ public class GameState implements Game {
     // Step the avatar.
     if (avatar.alive) {
       avatar.Step(time_step);
-      map_.CollideEntity(avatar);
+      map.CollideEntity(avatar);
+      if (Map.TileIsGoal(map.TileAt(avatar.x, avatar.y))) {
+        map.AdvanceLevel();
+        Reset();
+      }
     } else {
       if (death_timer_ == kDeathTimer) {
         for (int n = 0; n < 2 * kBloodBathSize; n++) {
@@ -123,7 +126,7 @@ public class GameState implements Game {
     for (Iterator it = enemies.iterator(); it.hasNext();) {
       Enemy enemy = (Enemy)it.next();
       enemy.Step(time_step);
-      map_.CollideEntity(enemy);
+      map.CollideEntity(enemy);
       if (!enemy.alive) {
         Vibrate();
         for (int n = 0; n < kBloodBathSize; n++) {
@@ -159,7 +162,7 @@ public class GameState implements Game {
    * avatar centered in the screen. */
   protected void DrawGame(Canvas canvas) {
     // Draw the map tiles.
-    map_.Draw(canvas, view_x_, view_y_, zoom_);
+    map.Draw(canvas, view_x_, view_y_, zoom_);
 
     // Draw the enemies.
     for (Iterator it = enemies.iterator(); it.hasNext();)
@@ -216,7 +219,7 @@ public class GameState implements Game {
   }
 
   public void LoadStateBundle(Bundle saved_instance_state) {
-    map_uri = Uri.parse(saved_instance_state.getString("map_uri"));
+    map.LoadStateBundle(saved_instance_state.getBundle("map"));
     Reset();
 
     target_view_x_ = saved_instance_state.getFloat("target_view_x_");
@@ -235,11 +238,11 @@ public class GameState implements Game {
   }
 
   public Bundle SaveStateBundle() {
-    // Note that particles, projectiles and spawned aliens are lost through
+    // Note that particles, projectiles and spawned enemies are lost through
     // serialization.
     Bundle saved_instance_state = new Bundle();
+    saved_instance_state.putBundle("map", map.SaveStateBundle());
 
-    saved_instance_state.putString("map_uri", map_uri.toString());
     saved_instance_state.putFloat("target_view_x_", target_view_x_);
     saved_instance_state.putFloat("target_view_y_", target_view_y_);
     saved_instance_state.putFloat("view_x_", view_x_);
@@ -257,7 +260,6 @@ public class GameState implements Game {
   }
 
   private float death_timer_ = kDeathTimer;
-  private Map map_ = new Map(this);
   private Random random_ = new Random();
   private float target_view_x_ = 0.0f;
   private float target_view_y_ = 0.0f;

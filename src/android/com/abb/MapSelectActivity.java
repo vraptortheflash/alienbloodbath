@@ -97,14 +97,13 @@ public class MapSelectActivity extends ListActivity {
   }
 
   private void LoadMaps() {
-    // Unzip map package files on the SD card.
+    // Unzip map package files locaded on the SD card to we can easily find
+    // parse the contents.
     UnzipMapPackages();
 
     // Add built-in maps.
-    maps_.add("Classic 1");
-    map_uris_.add("builtin://0");
-    maps_.add("Classic 2");
-    map_uris_.add("builtin://1");
+    maps_.add("Classic Map Set");
+    map_uris_.add("content://");
 
     // Add maps located within files.
     for (String root_path : paths_) {
@@ -114,7 +113,7 @@ public class MapSelectActivity extends ListActivity {
 
       for (String map_path : map_paths) {
         String full_path = root_path + "/" + map_path;
-        if ((new File(full_path + "/tiles.txt")).exists()) {
+        if ((new File(full_path + "/level_0.txt")).exists()) {
           maps_.add(full_path);
           map_uris_.add("file://" + full_path);
         }

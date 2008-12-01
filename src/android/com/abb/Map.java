@@ -19,6 +19,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Log;
 import java.lang.Math;
 import java.io.File;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
+import android.com.abb.Content;
 import android.com.abb.Entity;
 import android.com.abb.GameState;
 
@@ -44,114 +46,121 @@ public class Map {
     resources_ = resources;
   }
 
-  static public char[] DecodeArray(char[] tiles) {
+  public void AdvanceLevel() {
+    LoadFromUri(base_uri_, level_offset_ + 1);
+  }
+
+  public void LoadFromUri(Uri base_uri) {
+    LoadFromUri(base_uri, 0);
+  }
+
+  public void LoadFromUri(Uri base_uri, int level_offset) {
+    base_uri_ = base_uri;
+    level_offset_ = level_offset;
+
+    // Map data may be either stored within the embedded package zip file or on
+    // disk. The Content class is used to access map data in a storage agnostic
+    // way.
+    //
+    // Maps are organized into package where each package is its own set of
+    // (ordered) levels, tiles, and tile definitions.
+
+    // Load level tiles.
+    Uri level_uri =
+        Uri.withAppendedPath(base_uri_, "level_" + level_offset_ + ".txt");
+    String level_path = Content.GetTemporaryFilePath(level_uri);
+    LoadLevelFromFile(level_path);
+
+    // Load level tile images.
+    Uri tiles_uri =
+        Uri.withAppendedPath(base_uri_, "tiles_" + level_offset_ + ".png");
+    if (!Content.Exists(tiles_uri))
+      tiles_uri = Uri.withAppendedPath(base_uri_, "tiles_default.png");
+    String tiles_path = Content.GetTemporaryFilePath(tiles_uri);
+    LoadTilesFromFile(tiles_path);
+
+    // Load tile effects.
+    Uri effects_uri =
+        Uri.withAppendedPath(base_uri_, "effects_" + level_offset_ + ".txt");
+    if (!Content.Exists(effects_uri))
+      effects_uri = Uri.withAppendedPath(base_uri_, "effects_default.txt");
+    String effects_path = Content.GetTemporaryFilePath(effects_uri);
+    LoadEffectsFromFile(effects_path);
+  }
+
+  public void LoadLevelFromFile(String file_path) {
+    if (file_path == null)
+      Log.e("Map::LoadLevelFromFile", "Invalid null argument.");
+    try {
+      FileReader level_reader = new FileReader(new File(file_path));
+      tiles_ = new char[kMapWidth * kMapHeight];
+      level_reader.read(tiles_, 0, kMapWidth * kMapHeight);
+      LoadLevelFromArray(DecodeArray(tiles_));
+    } catch (IOException ex) {
+      Log.e("Map::LoadLevelFromFile", "Cannot find: " + file_path, ex);
+    }
+  }
+
+  public void LoadTilesFromFile(String file_path) {
+    if (file_path == null)
+      Log.e("Map::LoadTilesFromFile", "Invalid null argument.");
+    tiles_bitmap_ = BitmapFactory.decodeFile(file_path);
+    if (tiles_bitmap_ == null)
+      Log.e("Map::LoadTilesFromFile", "Cannot find: " + file_path);
+  }
+
+  public void LoadEffectsFromFile(String file_path) {
+    if (file_path == null)
+      Log.e("Map::LoadEffectsFromFile", "Invalid null argument.");
+    try {
+      FileReader effects_reader = new FileReader(new File(file_path));
+      ArrayList<Character> effects_array = new ArrayList<Character>();
+      while (effects_reader.ready())
+        effects_array.add(new Character((char)effects_reader.read()));
+      String[] effects_tokens =
+          (new String(ToPrimative(effects_array))).split("\\s");
+      if (effects_tokens.length % 2 != 0)
+        Log.e("Map::LoadFromUri", "Improperly formatted effects file.");
+
+      effects_death_ = new boolean[kMaxTileCount];
+      effects_explode_ = new boolean[kMaxTileCount];
+      effects_solid_ = new boolean[kMaxTileCount];
+      for (int effect = 0; effect < effects_tokens.length; effect += 2) {
+        int tile_id = Integer.parseInt(effects_tokens[effect]);
+        String tile_effect = effects_tokens[effect + 1];
+        if (tile_effect.equals("death"))
+          effects_death_[tile_id] = true;
+        else if (tile_effect.equals("explode"))
+          effects_explode_[tile_id] = true;
+        else if (tile_effect.equals("solid"))
+          effects_solid_[tile_id] = true;;
+      }
+    } catch (IOException ex) {
+      Log.e("Map::LoadFromUri", "Cannot find: " + file_path, ex);
+    }
+  }
+
+  static private char[] DecodeArray(char[] tiles) {
     for (int n = 0; n < kMapWidth * kMapHeight; ++n) {
       tiles[n] -= kBaseValue;
     }
     return tiles;
   }
 
-  static public char[] ToPrimative(ArrayList<Character> array_list) {
+  static private char[] ToPrimative(ArrayList<Character> array_list) {
     char[] result = new char[array_list.size()];
     for (int index = 0; index < array_list.size(); ++index)
       result[index] = array_list.get(index).charValue();
     return result;
   }
 
-  public void LoadDefaultEffects() {
-    effects_death_ = new boolean[kMaxTileCount];
-    effects_death_[4] = true;
-    effects_explode_ = new boolean[kMaxTileCount];
-    effects_explode_[9] = true;
-    effects_solid_ = new boolean[kMaxTileCount];
-    effects_solid_[1] = effects_solid_[2]  =
-        effects_solid_[3]  = effects_solid_[7] = true;
-  }
-
-  public void LoadFromArray(char[] tiles) {
+  private void LoadLevelFromArray(char[] tiles) {
     tiles_ = tiles;
     for (int n = 0; n < kMapWidth * kMapHeight; ++n) {
       if (tiles_[n] == kStartingTile) {
         starting_x = (n / kMapWidth) * kTileSize;
         starting_y = (n % kMapWidth) * kTileSize;
       }
-    }
-  }
-
-  public void LoadFromUri(Uri uri)  {
-    // Handle both of the built-in map types as well as maps located on the file
-    // system. Built-in maps are encoded with the URI syntax builtin://<level#>.
-    // The built in map format is necessary because it is difficult to ship raw
-    // files in an Android package.
-    if (uri.getScheme().equals("builtin")) {
-      char[][] builtin_backgrounds = {{5, 5, 5}, {50, 50, 50}};
-      int[] builtin_maps = { R.string.level_0, R.string.level_1 };
-      int[] builtin_tiles = { R.drawable.tiles_0, R.drawable.tiles_1 };
-      int index = Integer.parseInt(uri.getHost()) % builtin_maps.length;
-      background_ = builtin_backgrounds[index];
-      tiles_bitmap_ =
-          BitmapFactory.decodeResource(resources_, builtin_tiles[index]);
-      char[] tiles_raw =
-          resources_.getText(builtin_maps[index]).toString().toCharArray();
-      LoadFromArray(DecodeArray(tiles_raw));
-      LoadDefaultEffects();
-    }
-
-    // Maps located on disk are encoded with the URI syntax file://<path>. The
-    // disk storage scheme is much more extensible than the built in map store
-    // scheme and is intended to be the format used by outside developers.
-    else if (uri.getScheme().equals("file")) {
-      String path = uri.getPath();
-
-      // Load map tiles.
-      try {
-        FileReader tiles_reader = new FileReader(new File(path + "/tiles.txt"));
-        tiles_ = new char[kMapWidth * kMapHeight];
-        tiles_reader.read(tiles_, 0, kMapWidth * kMapHeight);
-        LoadFromArray(DecodeArray(tiles_));
-      } catch (IOException ex) {
-        Log.e("Map::LoadFromUri", "Cannot find tiles.txt.", ex);
-      }
-
-      // Load map tile images, if defined.
-      tiles_bitmap_ = BitmapFactory.decodeFile(path + "/tiles.png");
-      if (tiles_bitmap_ == null) {
-        Log.w("Map::LoadFromUri", "Cannot find tiles.png, using default.");
-        int default_tiles = R.drawable.tiles_0;
-        tiles_bitmap_ = BitmapFactory.decodeResource(resources_, default_tiles);
-      }
-
-      // Load tile effects, if defined.
-      try {
-        FileReader effects_reader = new FileReader(new File(path + "/tile_effects.txt"));
-        ArrayList<Character> effects_array = new ArrayList<Character>();
-        while (effects_reader.ready())
-          effects_array.add(new Character((char)effects_reader.read()));
-        String[] effects_tokens = (new String(ToPrimative(effects_array))).split("\\s");
-        if (effects_tokens.length % 2 != 0)
-          Log.e("Map::LoadFromUri", "Cannot find tiles_effects.txt, using default.");
-
-        effects_death_ = new boolean[kMaxTileCount];
-        effects_explode_ = new boolean[kMaxTileCount];
-        effects_solid_ = new boolean[kMaxTileCount];
-        for (int effect = 0; effect < effects_tokens.length; effect += 2) {
-          int tile_id = Integer.parseInt(effects_tokens[effect]);
-          String tile_effect = effects_tokens[effect + 1];
-          if (tile_effect.equals("death"))
-            effects_death_[tile_id] = true;
-          else if (tile_effect.equals("explode"))
-            effects_explode_[tile_id] = true;
-          else if (tile_effect.equals("solid"))
-            effects_solid_[tile_id] = true;;
-        }
-      } catch (IOException ex) {
-        Log.w("Map::LoadFromUri", "Cannot find tiles_effects.txt, using default.");
-        LoadDefaultEffects();
-      }
-    }
-
-    else {
-      Log.e("Map::LoadFromUri", "Unknown URI scheme type.");
     }
   }
 
@@ -258,17 +267,17 @@ public class Map {
               impact_normal_x = 1.0f;
               impact_normal_y = 0.0f;
               impact_distance = half_tile_size + entity.radius - distance_x;
-            } else {                 // Entity's right edge.
+            } else {               // Entity's right edge.
               impact_normal_x = -1.0f;
               impact_normal_y =  0.0f;
               impact_distance = half_tile_size + entity.radius + distance_x;
             }
-          } else {  // Along y-axis.
+          } else {                                            // Along y-axis.
             if (distance_y > 0) {  // Entity's top edge.
               impact_normal_x = 0.0f;
               impact_normal_y = 1.0f;
               impact_distance = half_tile_size + entity.radius - distance_y;
-            } else {                 // Entity's bottom edge.
+            } else {               // Entity's bottom edge.
               impact_normal_x =  0.0f;
               impact_normal_y = -1.0f;
               impact_distance = half_tile_size + entity.radius + distance_y;
@@ -335,11 +344,26 @@ public class Map {
     }
   }
 
+  public void LoadStateBundle(Bundle saved_instance_state) {
+    base_uri_ = Uri.parse(saved_instance_state.getString("base_uri_"));
+    level_offset_ = saved_instance_state.getInt("level_offset_");
+    LoadFromUri(base_uri_, level_offset_);
+  }
+
+  public Bundle SaveStateBundle() {
+    Bundle saved_instance_state = new Bundle();
+    saved_instance_state.putString("base_uri_", base_uri_.toString());
+    saved_instance_state.putInt("level_offset_", level_offset_);
+    return saved_instance_state;
+  }
+
+  private Uri base_uri_;
   private boolean[] effects_death_;
   private boolean[] effects_explode_;
   private boolean[] effects_solid_;
   private char[] background_ = {0, 0, 0};
   private GameState game_state_;
+  private int level_offset_ = 0;  // Level within the base_uri_ package.
   private Paint paint_ = new Paint();
   private Random random_ = new Random();
   private Resources resources_;
