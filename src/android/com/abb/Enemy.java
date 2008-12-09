@@ -23,7 +23,7 @@ public class Enemy extends Entity {
     super();
     target_ = target;
     radius = kRadius;
-    sprite_source =
+    sprite_rect =
         new Rect(0, kSpriteBase, kSpriteWidth, kSpriteBase + kSpriteHeight);
   }
 
@@ -52,8 +52,8 @@ public class Enemy extends Entity {
       dy = -kJumpVelocity;
     }
 
-    sprite_source.top = kSpriteBase + kSpriteHeight * sprite_offset;
-    sprite_source.bottom = kSpriteBase + kSpriteHeight * (sprite_offset + 1);
+    sprite_rect.top = kSpriteBase + kSpriteHeight * sprite_offset;
+    sprite_rect.bottom = kSpriteBase + kSpriteHeight * (sprite_offset + 1);
   }
 
   private Entity target_;

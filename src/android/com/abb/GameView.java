@@ -34,6 +34,7 @@ import java.lang.System;
 import java.lang.Thread;
 
 import android.com.abb.Game;
+import android.com.abb.Graphics;
 
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
@@ -51,13 +52,19 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         continue;
       }
 
+      synchronized (game_) {
+        graphics_  = new Graphics();
+        graphics_.Initialize(surface_holder_);
+        game_.InitializeGraphics(graphics_);
+      }
+
       // Since our target platform is a mobile device, we should do what we can
       // to save power. In the case of a game like this, we should 1) limit the
       // framerate to something "reasonable" and 2) pause the updates as much as
       // possible. Here we define the maximum framerate which needs to make the
       // trade off between graphics fluidity and power savings.
       final float kMaxFrameRate = 15.0f;  // Frames / second.
-      final float kMinFrameRate = 4.0f;   //Frames / second.
+      final float kMinFrameRate = 4.0f;   // Frames / second.
       final float kMinTimeStep = 1.0f / kMaxFrameRate;  // Seconds.
       final float kMaxTimeStep = 1.0f / kMinFrameRate;  // Seconds.
 
@@ -98,13 +105,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
         Canvas canvas = null;
         try {
-          canvas = surface_holder_.lockCanvas(null);
           synchronized (game_) {
-            game_.Update(time_step, canvas);
+            graphics_.BeginFrame();
+            game_.OnFrame(graphics_, time_step);
           }
         } finally {
-          if (canvas != null)
-            surface_holder_.unlockCanvasAndPost(canvas);
+          graphics_.EndFrame();
         }
       }
     }
@@ -117,6 +123,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       paused_ = pause;
     }
 
+    public void SurfaceChanged(SurfaceHolder surface_holder,
+                               int width, int height) {
+      if (graphics_ != null)
+        graphics_.SurfaceChanged(surface_holder, width, height);
+    }
+
     public void Halt() {
       running_ = false;
     }
@@ -124,12 +136,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     boolean running_ = true;
     boolean paused_ = false;
     Game game_;
+    Graphics graphics_;
     SurfaceHolder surface_holder_;
   }
 
   public GameView(Context context, AttributeSet attrs) {
     super(context, attrs);
     getHolder().addCallback(this);
+    getHolder().setType(SurfaceHolder.SURFACE_TYPE_GPU);
   }
 
   public void SetGame(Game game) {
@@ -169,9 +183,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   /** Standard window-focus override. Notice focus lost so we can pause on focus
    * lost. e.g. user switches to take a call. */
   @Override
-  public void onWindowFocusChanged(boolean has_window_focus) {
+  public void onWindowFocusChanged(boolean window_has_focus) {
+    super.onWindowFocusChanged(window_has_focus);
     if (game_thread_ != null)
-      game_thread_.Pause(!has_window_focus);
+      game_thread_.Pause(!window_has_focus);
   }
 
   /** Callback invoked when the Surface has been created and is ready to be
@@ -181,6 +196,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     // surface changes.
     setFocusable(true);
     getHolder().addCallback(this);
+    getHolder().setType(SurfaceHolder.SURFACE_TYPE_GPU);
 
     game_thread_ = new GameThread(holder);
     game_thread_.SetGame(game_);
@@ -189,8 +205,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   /** Callback invoked when the surface dimensions change. */
-  public void surfaceChanged(SurfaceHolder holder, int format,
-                             int width, int height) {}  // Don't care.
+  public void surfaceChanged(SurfaceHolder surface_holder, int format,
+                             int width, int height) {
+    game_thread_.SurfaceChanged(surface_holder, width, height);
+  }
 
   /** Callback invoked when the Surface has been destroyed and must no longer be
    * touched. */

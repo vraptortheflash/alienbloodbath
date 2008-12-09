@@ -304,17 +304,22 @@ public class Map {
   /** Draw the entity to the canvas such that the specified coordinates are
    * centered. Tile locations in world coordinates correspond to the *center* of
    * the tile, eg. (0, 0) is the center of the first tile. */
-  public void Draw(Canvas canvas, float center_x, float center_y, float zoom) {
-    canvas.drawRGB(background_[0], background_[1], background_[2]);
+  public void Draw(Graphics graphics, float center_x, float center_y, float zoom) {
+    // Load the image if it hasn't been done already.
+    if (tiles_bitmap_ != null) {
+      graphics.FreeImage(tiles_image_);
+      tiles_image_ = graphics.LoadImageFromBitmap(tiles_bitmap_);
+      tiles_bitmap_ = null;
+    }
 
-    int half_canvas_width = canvas.getWidth() / 2;
-    int half_canvas_height = canvas.getHeight() / 2;
-    for (float x = center_x - half_canvas_width / zoom;
-         x < center_x + (half_canvas_width + kTileSize) / zoom;
-         x += kTileSize) {
-      for (float y = center_y - half_canvas_height / zoom;
-           y < center_y + (half_canvas_height + kTileSize) / zoom;
-           y += kTileSize) {
+    int half_canvas_width = graphics.GetWidth() / 2;
+    int half_canvas_height = graphics.GetHeight() / 2;
+    float x_min = center_x - half_canvas_width / zoom;
+    float x_max = center_x + (half_canvas_width + kTileSize) / zoom;
+    float y_min = center_y - half_canvas_height / zoom;
+    float y_max = center_y + (half_canvas_height + kTileSize) / zoom;
+    for (float x = x_min; x < x_max; x += kTileSize) {
+      for (float y = y_min; y < y_max; y += kTileSize) {
         // Determine tile id for this world position x, y.
         int tile_id = TileAt(x, y);
 
@@ -339,7 +344,7 @@ public class Map {
         tile_destination.offset(
             -center_x * zoom + half_canvas_width - kTileSize / 2 * zoom,
             -center_y * zoom + half_canvas_height - kTileSize / 2 * zoom);
-        canvas.drawBitmap(tiles_bitmap_, tile_source, tile_destination, paint_);
+        graphics.DrawImage(tiles_image_, tile_source, tile_destination, false);
       }
     }
   }
@@ -361,14 +366,13 @@ public class Map {
   private boolean[] effects_death_;
   private boolean[] effects_explode_;
   private boolean[] effects_solid_;
-  private char[] background_ = {0, 0, 0};
   private GameState game_state_;
   private int level_offset_ = 0;  // Level within the base_uri_ package.
-  private Paint paint_ = new Paint();
   private Random random_ = new Random();
   private Resources resources_;
   private char[] tiles_;
   private Bitmap tiles_bitmap_;
+  private int tiles_image_ = -1;
 
   private static final char kBaseValue = 'a';
   private static final int kEndingTile = 11;
