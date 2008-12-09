@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
+<!--Generated with glade3 3.4.5 on Mon Dec  8 21:09:42 2008 -->
+<glade-interface>
+  <widget class="GtkWindow" id="window">
+    <property name="visible">True</property>
+    <property name="title" translatable="yes">ABB Editor</property>
+    <property name="window_position">GTK_WIN_POS_MOUSE</property>
+    <property name="default_width">640</property>
+    <property name="default_height">700</property>
+    <property name="destroy_with_parent">True</property>
+    <signal name="key_press_event" handler="on_window_key_press_event"/>
+    <child>
+      <widget class="GtkVBox" id="vbox">
+        <property name="visible">True</property>
+        <child>
+          <widget class="GtkMenuBar" id="menubar">
+            <property name="visible">True</property>
+            <child>
+              <widget class="GtkMenuItem" id="filemenu">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">_File</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <widget class="GtkMenu" id="menu1">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="menuitem_loadlevel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Load Level...</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_menuitem_loadlevel_activate"/>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image91">
+                            <property name="stock">gtk-open</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="menuitem_loadbrushes">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Load Tile Set...</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_menuitem_loadbrushes_activate"/>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image92">
+                            <property name="stock">gtk-open</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="menuitem_savelevel">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Save Level As...</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_menuitem_savelevel_activate"/>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image93">
+                            <property name="stock">gtk-save-as</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkSeparatorMenuItem" id="separatormenuitem1">
+                        <property name="visible">True</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="quit_menuitem">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">gtk-quit</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_quit_menuitem_activate"/>
+                      </widget>
+                    </child>
+                  </widget>
+                </child>
+              </widget>
+            </child>
+          </widget>
+          <packing>
+            <property name="expand">False</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="GtkHBox" id="hbox1">
+            <property name="visible">True</property>
+            <child>
+              <widget class="GtkDrawingArea" id="brushes">
+                <property name="width_request">32</property>
+                <property name="visible">True</property>
+                <property name="events">GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_MOTION_MASK | GDK_BUTTON1_MOTION_MASK | GDK_BUTTON2_MOTION_MASK | GDK_BUTTON3_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_FOCUS_CHANGE_MASK | GDK_STRUCTURE_MASK | GDK_PROPERTY_CHANGE_MASK | GDK_VISIBILITY_NOTIFY_MASK | GDK_PROXIMITY_IN_MASK | GDK_PROXIMITY_OUT_MASK | GDK_SUBSTRUCTURE_MASK | GDK_SCROLL_MASK</property>
+                <signal name="expose_event" handler="on_brushes_expose_event"/>
+                <signal name="button_press_event" handler="on_brushes_button_press_event"/>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+                <property name="padding">4</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkDrawingArea" id="tiles">
+                <property name="visible">True</property>
+                <property name="events">GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_MOTION_MASK | GDK_BUTTON1_MOTION_MASK | GDK_BUTTON2_MOTION_MASK | GDK_BUTTON3_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_FOCUS_CHANGE_MASK | GDK_STRUCTURE_MASK | GDK_PROPERTY_CHANGE_MASK | GDK_VISIBILITY_NOTIFY_MASK | GDK_PROXIMITY_IN_MASK | GDK_PROXIMITY_OUT_MASK | GDK_SUBSTRUCTURE_MASK | GDK_SCROLL_MASK</property>
+                <signal name="expose_event" handler="on_tiles_expose_event"/>
+                <signal name="button_press_event" handler="on_tiles_button_press_event"/>
+                <signal name="scroll_event" handler="on_tiles_scroll_event"/>
+              </widget>
+              <packing>
+                <property name="padding">2</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </widget>
+    </child>
+  </widget>
+</glade-interface>
