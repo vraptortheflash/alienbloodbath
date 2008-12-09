@@ -22,8 +22,9 @@ public class Fire extends Entity {
   public Fire() {
     super();
     radius = kRadius;
-    sprite_source =
+    sprite_rect =
         new Rect(0, kSpriteBase, kSpriteWidth, kSpriteBase + kSpriteHeight);
+    sprite_flipped_horizontal = random_.nextBoolean();
   }
 
   public void Step(float time_step) {
@@ -33,8 +34,8 @@ public class Fire extends Entity {
     frame += time_step * kFrameRate;
     int rounded_frame = (int)frame;
     if (rounded_frame <= kFrames) {
-      sprite_source.top = kSpriteBase + kSpriteHeight * rounded_frame;
-      sprite_source.bottom = kSpriteBase + kSpriteHeight * (rounded_frame + 1);
+      sprite_rect.top = kSpriteBase + kSpriteHeight * rounded_frame;
+      sprite_rect.bottom = kSpriteBase + kSpriteHeight * (rounded_frame + 1);
     } else {
       alive = false;  // Signal for deletion.
     }
@@ -49,7 +50,7 @@ public class Fire extends Entity {
 
   private float frame = 0.0f;
 
-  private static final int kFrames = 14;
+  private static final int kFrames = 13;
   private static final float kFrameRate = 10.0f;  // Frames / sec.
   private static final float kRadius = 3.0f;
   private static final int kSpriteBase = 521;

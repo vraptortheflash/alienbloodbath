@@ -30,29 +30,38 @@ import android.com.abb.Blood;
 import android.com.abb.Enemy;
 import android.com.abb.Fire;
 import android.com.abb.Game;
+import android.com.abb.Graphics;
 import android.com.abb.Map;
 
 
 public class GameState implements Game {
   public Avatar avatar = new Avatar(this);
   public ArrayList<Entity> enemies = new ArrayList<Entity>();
-  public Bitmap enemy_sprites;
+  public int enemy_sprites;
   public Map map = new Map(this);
-  public Bitmap misc_sprites;
+  public int misc_sprites;
   public ArrayList<Entity> particles = new ArrayList<Entity>();
   public ArrayList<Entity> projectiles = new ArrayList<Entity>();
 
   public GameState(Context context) {
+    context_ = context;
+
     // Load data resources.
-    Resources resources = context.getResources();
-    avatar.sprite = BitmapFactory.decodeResource(resources, R.drawable.avatar);
-    enemy_sprites = BitmapFactory.decodeResource(resources, R.drawable.enemy_0);
-    misc_sprites = BitmapFactory.decodeResource(resources, R.drawable.misc);
-    map.SetResources(resources);  // Let the map load resources on-demand.
+    map.SetResources(context_.getResources());  // Let the map load resources on-demand.
     Reset();
 
     // Load services.
     vibrator_ = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
+  }
+
+  public void InitializeGraphics(Graphics graphics) {
+    Resources resources = context_.getResources();
+    avatar.sprite_image = graphics.LoadImageFromBitmap(
+        BitmapFactory.decodeResource(resources, R.drawable.avatar));
+    enemy_sprites = graphics.LoadImageFromBitmap(
+        BitmapFactory.decodeResource(resources, R.drawable.enemy_0));
+    misc_sprites = graphics.LoadImageFromBitmap(
+        BitmapFactory.decodeResource(resources, R.drawable.misc));
   }
 
   /** Initialize the game state structure. Upon returning, game_state_ should be
@@ -80,9 +89,9 @@ public class GameState implements Game {
     return false;  // False to indicate not handled.
   }
 
-  public boolean Update(float time_step, Canvas canvas) {
+  public boolean OnFrame(Graphics graphics, float time_step) {
     StepGame(time_step);
-    DrawGame(canvas);
+    DrawGame(graphics);
     return true;  // True to keep updating.
   }
 
@@ -160,30 +169,30 @@ public class GameState implements Game {
 
   /** Draw the game state. The game map and entities are always drawn with the
    * avatar centered in the screen. */
-  protected void DrawGame(Canvas canvas) {
+  protected void DrawGame(Graphics graphics) {
     // Draw the map tiles.
-    map.Draw(canvas, view_x_, view_y_, zoom_);
+    map.Draw(graphics, view_x_, view_y_, zoom_);
 
     // Draw the enemies.
     for (Iterator it = enemies.iterator(); it.hasNext();)
-      ((Entity)it.next()).Draw(canvas, view_x_, view_y_, zoom_);
+      ((Entity)it.next()).Draw(graphics, view_x_, view_y_, zoom_);
 
     // Draw the avatar.
     if (avatar.alive)
-      avatar.Draw(canvas, view_x_, view_y_, zoom_);
+      avatar.Draw(graphics, view_x_, view_y_, zoom_);
 
     // Draw the projectiles.
     for (Iterator it = projectiles.iterator(); it.hasNext();)
-      ((Entity)it.next()).Draw(canvas, view_x_, view_y_, zoom_);
+      ((Entity)it.next()).Draw(graphics, view_x_, view_y_, zoom_);
 
     // Draw the particles.
     for (Iterator it = particles.iterator(); it.hasNext();)
-      ((Entity)it.next()).Draw(canvas, view_x_, view_y_, zoom_);
+      ((Entity)it.next()).Draw(graphics, view_x_, view_y_, zoom_);
   }
 
   public Entity CreateEnemy(float x, float y) {
     Entity enemy = new Enemy(avatar);
-    enemy.sprite = enemy_sprites;
+    enemy.sprite_image = enemy_sprites;
     enemy.x = x;
     enemy.y = y;
     enemies.add(enemy);
@@ -192,7 +201,7 @@ public class GameState implements Game {
 
   public Entity CreateBloodParticle(float x, float y, float dx, float dy) {
     Entity blood = new Blood();
-    blood.sprite = misc_sprites;
+    blood.sprite_image = misc_sprites;
     blood.x = x;
     blood.y = y;
     blood.dx = dx;
@@ -204,7 +213,7 @@ public class GameState implements Game {
 
   public Entity CreateFireProjectile(float x, float y, float dx, float dy) {
     Entity fire = new Fire();
-    fire.sprite = misc_sprites;
+    fire.sprite_image = misc_sprites;
     fire.x = x;
     fire.y = y;
     fire.dx = dx;
@@ -259,6 +268,7 @@ public class GameState implements Game {
     return saved_instance_state;
   }
 
+  private Context context_;
   private float death_timer_ = kDeathTimer;
   private Random random_ = new Random();
   private float target_view_x_ = 0.0f;
@@ -270,8 +280,8 @@ public class GameState implements Game {
   private float zoom_ = kGroundZoom;
 
   private static final float kAirZoom = 0.6f;
-  private static final int kBloodBathSize = 8;  // Number of particles.
-  private static final float kBloodBathVelocity = 70.0f;
+  private static final int kBloodBathSize = 10;  // Number of blood particles.
+  private static final float kBloodBathVelocity = 80.0f;
   private static final float kDeathTimer = 4.0f;
   private static final float kGravity = 200.0f;
   private static final float kGroundZoom = 0.8f;

@@ -17,14 +17,16 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import java.lang.Math;
+import java.util.Random;
 
 
 public class Entity {
   public boolean alive = true;  // Should not be deleted from the game.
   public boolean has_ground_contact;
   public float radius;
-  public Bitmap sprite;
-  public Rect sprite_source;
+  public int sprite_image;
+  public Rect sprite_rect;
+  public boolean sprite_flipped_horizontal;
 
   public float x;    // Position.
   public float y;
@@ -45,7 +47,7 @@ public class Entity {
 
     // The following is a poor hack to simulate "friction" against the ground
     // surface. The problem with this implementation is that it does not account
-    // for the time_step. TODO: Fix this implementation.
+    // for the time_step. TODO(burkhart): Fix this implementation.
     if (has_ground_contact) {
       dx *= (1.0f - kGroundFriction);
     }
@@ -58,24 +60,26 @@ public class Entity {
 
   /** Draw the entity to the canvas such that the specified coordinates are
    * centered. */
-  public void Draw(Canvas canvas, float center_x, float center_y, float zoom) {
-    if (sprite != null) {
-      int canvas_width = canvas.getWidth();
-      int canvas_height = canvas.getHeight();
+  public void Draw(Graphics graphics, float center_x, float center_y, float zoom) {
+    if (sprite_image != -1) {
+      int canvas_width = graphics.GetWidth();
+      int canvas_height = graphics.GetHeight();
 
       RectF sprite_destination =
-          new RectF(0, 0, sprite_source.width() * zoom,
-                    sprite_source.height() * zoom);
+          new RectF(0, 0,
+                    sprite_rect.width() * zoom,
+                    sprite_rect.height() * zoom);
       sprite_destination.offset(
           (x - center_x) * zoom +
-          (canvas_width - sprite_source.width() * zoom) / 2.0f,
+          (canvas_width - sprite_rect.width() * zoom) / 2.0f,
           (y - center_y) * zoom +
-          (canvas_height - sprite_source.height() * zoom) / 2.0f);
-      canvas.drawBitmap(sprite, sprite_source, sprite_destination, paint_);
+          (canvas_height - sprite_rect.height() * zoom) / 2.0f);
+      graphics.DrawImage(sprite_image, sprite_rect, sprite_destination,
+                         sprite_flipped_horizontal);
     }
   }
 
-  private Paint paint_ = new Paint();
+  protected static Random random_ = new Random();
 
   private static final float kGroundFriction = 0.2f;
   private static final float kMaxVelocity = 200.0f;

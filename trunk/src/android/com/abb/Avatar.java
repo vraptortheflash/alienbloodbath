@@ -22,7 +22,7 @@ public class Avatar extends Entity {
   public Avatar(GameState game_state) {
     super();
     game_state_ = game_state;
-    sprite_source = new Rect(0, 0, kSpriteSize, kSpriteSize);
+    sprite_rect = new Rect(0, 0, kSpriteSize, kSpriteSize);
     radius = kRadius;
   }
 
@@ -43,9 +43,9 @@ public class Avatar extends Entity {
 
     // Update the avatar animation frame according the current entity motion.
     if (dx < 0)
-      sprite_offset_ = 9;
+      facing_left_ = true;
     else if (dx > 0)
-      sprite_offset_ = 0;
+      facing_left_ = false;
 
     int sprite_index = 0;
     if (has_ground_contact) {
@@ -62,7 +62,7 @@ public class Avatar extends Entity {
       sprite_index = 5 + (int)(4 * animation_phase_);
     }
 
-    SetSprite(sprite_offset_ + sprite_index);
+    SetSprite(sprite_index, facing_left_);
 
     // Update the shooting mechanism. The choices for shot direction are
     // specialized for each animation case: in the air, facing left, right, and
@@ -75,18 +75,17 @@ public class Avatar extends Entity {
       float shot_velocity = kShotVelocity;
       float x_offset;
       float y_offset;
-      boolean facing_left = (sprite_offset_ == 9);
 
       if (!has_ground_contact) {
         shot_angle = shot_phase_;
-        if (facing_left)
+        if (facing_left_)
           shot_angle = -shot_phase_;
         shot_delay_ -= 2.0f * time_step;
         shot_phase_ += 45.0f * (float)Math.PI / 180.0f;
         shot_velocity *= 0.6f;
         x_offset = kShotDistance * (float)Math.cos(shot_angle);
         y_offset = kShotDistance * (float)Math.sin(shot_angle);
-      } else if (facing_left) {
+      } else if (facing_left_) {
         shot_angle = kShotSpread * (float)Math.sin(shot_phase_) + (float)Math.PI;
         shot_phase_ += 10.0f;
         x_offset = -kShotOffsetX;
@@ -120,17 +119,19 @@ public class Avatar extends Entity {
       shooting_ = (state == 1);
   }
 
-  private void SetSprite(int index) {
-    sprite_source.top = kSpriteSize * index;
-    sprite_source.bottom = kSpriteSize * index + kSpriteSize;
+  private void SetSprite(int index, boolean facing_left) {
+    // Set up the sprite drawing parameters within our *parent* Entity class.
+    sprite_rect.top = kSpriteSize * index;
+    sprite_rect.bottom = kSpriteSize * index + kSpriteSize;
+    sprite_flipped_horizontal = facing_left;
   }
 
   private float animation_phase_ = 0.0f;
+  private boolean facing_left_;
   private GameState game_state_;
   private boolean shooting_;
   private float shot_delay_;
   private float shot_phase_;
-  private int sprite_offset_ = 0;
 
   private static final float kAirAcceleration = 40.0f;
   private static final float kAirAnimationSpeed = 3.0f;

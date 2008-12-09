@@ -15,12 +15,16 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 
+import android.com.abb.Graphics;
+
 
 /** Simple interface which hides most of the Android specifics. All method calls
  * are serialized. */
 public interface Game {
+  void InitializeGraphics(Graphics graphics);
+  void Reset();
+
   boolean OnKeyDown(int key_code);
   boolean OnKeyUp(int key_code);
-  boolean Update(float time_step, Canvas canvas);
-  void Reset();
+  boolean OnFrame(Graphics graphics, float time_step);
 }

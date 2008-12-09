@@ -21,8 +21,9 @@ import android.com.abb.Entity;
 public class Blood extends Entity {
   public Blood() {
     super();
-    sprite_source =
+    sprite_rect =
         new Rect(0, kSpriteBase, kSpriteWidth, kSpriteBase + kSpriteHeight);
+    sprite_flipped_horizontal = random_.nextBoolean();
   }
 
   public void Step(float time_step) {
@@ -36,8 +37,8 @@ public class Blood extends Entity {
 
   private float time_remaining = kTimeRemaining;
 
-  private static final float kTimeRemaining = 0.75f;  // Seconds.
-  private static final int kSpriteBase = 64;
+  private static final float kTimeRemaining = 0.5f;  // Seconds.
+  private static final int kSpriteBase = 1 * 64;
   private static final int kSpriteWidth = 64;
   private static final int kSpriteHeight = 64;
 }
