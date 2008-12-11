@@ -67,6 +67,7 @@ public class GameState implements Game {
   /** Initialize the game state structure. Upon returning, game_state_ should be
    * in a state representing a new game life. */
   public void Reset() {
+    map.Reload();
     particles.clear();
     projectiles.clear();
     enemies.clear();
@@ -122,7 +123,7 @@ public class GameState implements Game {
         for (int n = 0; n < 2 * kBloodBathSize; n++) {
           CreateBloodParticle(
               avatar.x, avatar.y,
-              2.0f * kBloodBathVelocity * (0.5f - random_.nextFloat()) + avatar.dx, 
+              2.0f * kBloodBathVelocity * (0.5f - random_.nextFloat()) + avatar.dx,
               2.0f * kBloodBathVelocity * (0.5f - random_.nextFloat()) + avatar.dy);
         }
       }

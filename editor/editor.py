@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import os, sys, gtk, gtk.glade, pygtk, gobject, thread, gtk.gdk, cairo, Numeric
+import os, sys, gtk, gtk.glade, pygtk, gobject, thread, gtk.gdk, cairo
 
 
 LEVEL_WIDTH = 100
@@ -43,7 +43,9 @@ class GTKWindow:
     self.wTree.signal_autoconnect(signals)
 
     # Misc editor state initialization.
-    self._tiles = Numeric.zeros(LEVEL_WIDTH * LEVEL_HEIGHT)
+    self._tiles = []
+    for n in xrange(0, LEVEL_WIDTH * LEVEL_HEIGHT):
+      self._tiles.append(0)
     self._brushes_surface = None
     self._selected_brush = 0
     self._view_x = 0

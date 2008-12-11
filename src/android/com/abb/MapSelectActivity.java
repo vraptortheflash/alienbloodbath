@@ -101,21 +101,20 @@ public class MapSelectActivity extends ListActivity {
     // parse the contents.
     UnzipMapPackages();
 
-    // Add built-in maps.
-    maps_.add("Classic Map Set");
-    map_uris_.add("content://");
-
     // Add maps located within files.
     for (String root_path : paths_) {
-      String[] map_paths = (new File(root_path)).list();
+      Log.d("MapSelectActivity::LoadMaps", "Listing " + root_path);
+      String[] map_paths = Content.List(Uri.parse(root_path));
       if (map_paths == null)
         continue;
 
       for (String map_path : map_paths) {
-        String full_path = root_path + "/" + map_path;
-        if ((new File(full_path + "/level_0.txt")).exists()) {
+        String full_path = root_path + map_path;
+        Log.d("MapSelectActivity::LoadMaps",
+              "Looking for level_0.txt in " + full_path);
+        if (Content.Exists(Uri.parse(full_path + "level_0.txt"))) {
           maps_.add(full_path);
-          map_uris_.add("file://" + full_path);
+          map_uris_.add(full_path);
         }
       }
     }
@@ -123,7 +122,10 @@ public class MapSelectActivity extends ListActivity {
 
   private ArrayList<String> maps_ = new ArrayList<String>();
   private ArrayList<String> map_uris_ = new ArrayList<String>();
-  private String[] paths_ = { "/sdcard/abb_maps", "/sdcard" };
+  private String[] paths_ = {
+    "content:///",
+    "file:///sdcard/abb_maps/",
+    "file:///sdcard/" };
 
   private final String kMapPackageSuffix = ".abb.zip";
 }
