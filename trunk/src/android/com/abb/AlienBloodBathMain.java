@@ -43,7 +43,7 @@ public class AlienBloodBathMain extends Activity {
     if (saved_instance_state != null) {
       game_state_.LoadStateBundle(saved_instance_state.getBundle("game_state_"));
     } else {
-      game_state_.map.LoadFromUri(Uri.parse("content://"));
+      game_state_.map.SetUri(Uri.parse("content:///Classic/"));
       game_state_.Reset();
     }
   }
@@ -52,7 +52,7 @@ public class AlienBloodBathMain extends Activity {
   public boolean onCreateOptionsMenu(Menu menu) {
     boolean result = super.onCreateOptionsMenu(menu);
     menu.add(0, kSelectMap, 0, "Load Map...").setIcon(R.drawable.load);
-    menu.add(0, kDownloadMap, 0, "More Maps...").setIcon(R.drawable.download);
+    //menu.add(0, kDownloadMap, 0, "More Maps...").setIcon(R.drawable.download);
     menu.add(0, kAbout, 0, "About...").setIcon(R.drawable.about);
     return result;
   }

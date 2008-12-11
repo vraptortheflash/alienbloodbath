@@ -46,16 +46,26 @@ public class Content {
   }
 
   public static boolean Exists(Uri uri) {
+    Log.d("Content::Exists", uri.toString());
+
     // Handle "file://" scheme.
     if (uri.getScheme().equals("file")) {
       return (new File(uri.getPath())).exists();
     }
+
     // Handle "content://" scheme.
     else if (uri.getScheme().equals("content")) {
-      String[] entry_list = List(uri);
-      Arrays.sort(entry_list);
-      return Arrays.binarySearch(entry_list, uri.getPath()) > 0;
+      String entry_name = UriToContentEntry(uri);
+
+      String[] entries = RawContentEntries();
+      Arrays.sort(entries);
+      boolean exists = Arrays.binarySearch(entries, entry_name) > 0;
+      if (!exists) {
+        Log.d("Content::Exists", "Could not find entry: " + entry_name);
+      }
+      return exists;
     }
+
     // Bad uri scheme.
     else {
       Log.e("Content::ListFiles", "Bad URI scheme.");
@@ -64,28 +74,29 @@ public class Content {
   }
 
   public static String[] List(Uri uri) {
+    Log.d("Content::List", uri.toString());
+
     // Handle "file://" scheme.
     if (uri.getScheme().equals("file")) {
       return (new File(uri.getPath())).list();
     }
+
     // Handle "content://" scheme.
     else if (uri.getScheme().equals("content")) {
-      ZipFile content_file;
-      try {
-        content_file = new ZipFile(kTempContentPath);
-      } catch (IOException ex) {
-        Log.e("Content::List", "Unable to open package file.", ex);
-        return null;
+      String path_prefix = UriToContentEntry(uri);
+
+      String[] entries = RawContentEntries();
+      ArrayList<String> list_entries = new ArrayList<String>();
+      for (String entry : entries) {
+        if (entry.startsWith(path_prefix)) {
+          entry = entry.replace(path_prefix, "");
+          Log.d("Content::List", "Found entry: " + entry);
+          list_entries.add(entry);
+        }
       }
-      ArrayList<String> entry_list = new ArrayList<String>();
-      for (Enumeration<? extends ZipEntry> entry_it = content_file.entries();
-           entry_it.hasMoreElements();) {
-        String entry_name = entry_it.nextElement().getName();
-        entry_name = entry_name.replace("content_package", "");
-        entry_list.add(entry_name);
-      }
-      return entry_list.toArray(new String[0]);
+      return list_entries.toArray(new String[0]);
     }
+
     // Bad uri scheme.
     else {
       Log.e("Content::ListFiles", "Bad URI scheme.");
@@ -94,10 +105,13 @@ public class Content {
   }
 
   public static String GetTemporaryFilePath(Uri uri) {
+    Log.d("Content::GetTemporaryFilePath", uri.toString());
+
     // Handle "file://" scheme.
     if (uri.getScheme().equals("file")) {
       return uri.getPath();
     }
+
     // Handle "content://" scheme. We must extract the file to a temporary path
     // in order to handle this request.
     else if (uri.getScheme().equals("content")) {
@@ -105,24 +119,28 @@ public class Content {
       try {
         content_file = new ZipFile(kTempContentPath);
       } catch (IOException ex) {
-        Log.e("Content::GetTemporaryFilePath", "Unable to open package file.", ex);
+        Log.e("Content::GetTemporaryFilePath",
+              "Unable to open package file.", ex);
         return null;
       }
-      String entry_name = "content_package" + uri.getPath();
+      String entry_name = UriToContentEntry(uri);
       ZipEntry content_entry = content_file.getEntry(entry_name);
       if (content_entry == null) {
-        Log.e("Content::GetTemporaryFilePath", "Unable to find entry: " + entry_name);
+        Log.e("Content::GetTemporaryFilePath",
+              "Unable to find entry: " + entry_name);
         return null;
       }
       try {
         InputStream content_stream = content_file.getInputStream(content_entry);
         WriteStreamToFile(content_stream, kTempFilePath);
       } catch (IOException ex) {
-        Log.e("Content::GetTemporaryFilePath", "Unable to write out entry.", ex);
+        Log.e("Content::GetTemporaryFilePath",
+              "Unable to write out entry.", ex);
         return null;
       }
       return kTempFilePath;
     }
+
     // Bad uri scheme.
     else {
       Log.e("Content::ListFiles", "Bad URI scheme.");
@@ -130,16 +148,48 @@ public class Content {
     }
   }
 
+  private static String UriToContentEntry(Uri uri) {
+    String content_name = uri.getHost() + uri.getPath();
+
+    // Strip any leading / since, while it should be in the Uri, the zip file
+    // entries to not contain the "root" slash.
+    if (content_name.length() > 0 && content_name.charAt(0) == '/') {
+      content_name = content_name.substring(1);
+    }
+    return "content_package/" + content_name;
+  }
+
   private static void WriteStreamToFile(InputStream input_stream,
                                         String output_path) throws IOException {
     (new File(output_path)).createNewFile();
     BufferedOutputStream output_stream =
-        new BufferedOutputStream(new FileOutputStream(output_path));
+        new BufferedOutputStream(new FileOutputStream(output_path), 8 * 1024);
     byte[] buffer = new byte[1024];
     int bytes_read;
     while((bytes_read = input_stream.read(buffer)) >= 0)
       output_stream.write(buffer, 0, bytes_read);
     output_stream.close();
+  }
+
+  private static String[] RawContentEntries() {
+    ZipFile content_file;
+    try {
+      content_file = new ZipFile(kTempContentPath);
+    } catch (IOException ex) {
+      Log.e("Content::List", "Unable to open package file.", ex);
+      return null;
+    }
+    if (!content_file.entries().hasMoreElements()) {
+      Log.d("Content::List", "Content package empty.");
+    }
+
+    ArrayList<String> entry_list = new ArrayList<String>();
+    for (Enumeration<? extends ZipEntry> entry_it = content_file.entries();
+         entry_it.hasMoreElements();) {
+      String entry_name = entry_it.nextElement().getName();
+      entry_list.add(entry_name);
+    }
+    return entry_list.toArray(new String[0]);
   }
 
   private static final String kTempFilePath = "/data/data/android.com.abb/abbfile.tmp";

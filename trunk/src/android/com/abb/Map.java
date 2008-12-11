@@ -46,8 +46,18 @@ public class Map {
     resources_ = resources;
   }
 
+  public void SetUri(Uri base_uri) {
+    base_uri_ = base_uri;
+    level_offset_ = 0;
+  }
+
+  public void Reload() {
+    if (base_uri_ != null)
+      LoadFromUri(base_uri_, level_offset_);
+  }
+
   public void AdvanceLevel() {
-    LoadFromUri(base_uri_, level_offset_ + 1);
+    level_offset_ += 1;
   }
 
   public void LoadFromUri(Uri base_uri) {
@@ -55,6 +65,7 @@ public class Map {
   }
 
   public void LoadFromUri(Uri base_uri, int level_offset) {
+    Log.d("Map::LoadFromUri", "Loading Map from " + base_uri.toString());
     base_uri_ = base_uri;
     level_offset_ = level_offset;
 
