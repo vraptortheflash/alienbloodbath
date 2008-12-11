@@ -27,6 +27,7 @@ import java.util.Random;
 
 import android.com.abb.Avatar;
 import android.com.abb.Blood;
+import android.com.abb.Content;
 import android.com.abb.Enemy;
 import android.com.abb.Fire;
 import android.com.abb.Game;
@@ -46,22 +47,28 @@ public class GameState implements Game {
   public GameState(Context context) {
     context_ = context;
 
-    // Load data resources.
-    map.SetResources(context_.getResources());  // Let the map load resources on-demand.
+    map.SetResources(context_.getResources());
     Reset();
 
-    // Load services.
+    // Load system services.
     vibrator_ = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
   }
 
   public void InitializeGraphics(Graphics graphics) {
-    Resources resources = context_.getResources();
-    avatar.sprite_image = graphics.LoadImageFromBitmap(
-        BitmapFactory.decodeResource(resources, R.drawable.avatar));
-    enemy_sprites = graphics.LoadImageFromBitmap(
-        BitmapFactory.decodeResource(resources, R.drawable.enemy_0));
-    misc_sprites = graphics.LoadImageFromBitmap(
-        BitmapFactory.decodeResource(resources, R.drawable.misc));
+    String avatar_sprite_path =
+        Content.GetTemporaryFilePath(Uri.parse("content:///avatar.png"));
+    Bitmap avatar_sprite_bitmap = BitmapFactory.decodeFile(avatar_sprite_path);
+    avatar.sprite_image = graphics.LoadImageFromBitmap(avatar_sprite_bitmap);
+
+    String enemy_sprites_path =
+        Content.GetTemporaryFilePath(Uri.parse("content:///enemy_0.png"));
+    Bitmap enemy_sprites_bitmap = BitmapFactory.decodeFile(enemy_sprites_path);
+    enemy_sprites = graphics.LoadImageFromBitmap(enemy_sprites_bitmap);
+
+    String misc_sprites_path =
+        Content.GetTemporaryFilePath(Uri.parse("content:///misc.png"));
+    Bitmap misc_sprites_bitmap = BitmapFactory.decodeFile(misc_sprites_path);
+    misc_sprites = graphics.LoadImageFromBitmap(misc_sprites_bitmap);
   }
 
   /** Initialize the game state structure. Upon returning, game_state_ should be
