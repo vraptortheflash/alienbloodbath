@@ -17,6 +17,7 @@ import android.util.Log;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,19 +25,21 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import junit.framework.Assert;
 
 
 /** Class to abstract the details of extracting and accessing files from the ABB
  * content zip file in the same was files on disk are accessed. */
 public class Content {
-  public static void Initialize(Resources resources) {
+  public static void initialize(Resources resources) {
     try {
       InputStream content_input_stream =
           resources.openRawResource(R.raw.content_package);
-      WriteStreamToFile(content_input_stream, kTempContentPath);
+      writeStreamToFile(content_input_stream, kTempContentPath);
       content_input_stream.close();
     } catch (IOException ex) {
-      Log.e("Content::Initialize", "Failed extracting content package.", ex);
+      Assert.fail("Content::initialize. " +
+                  "Failed extracting content package: " + ex.toString());
     }
   }
 
@@ -45,8 +48,8 @@ public class Content {
     (new File(kTempContentPath)).delete();
   }
 
-  public static boolean Exists(Uri uri) {
-    Log.d("Content::Exists", uri.toString());
+  public static boolean exists(Uri uri) {
+    Log.d("Content::exists", uri.toString());
 
     // Handle "file://" scheme.
     if (uri.getScheme().equals("file")) {
@@ -55,26 +58,26 @@ public class Content {
 
     // Handle "content://" scheme.
     else if (uri.getScheme().equals("content")) {
-      String entry_name = UriToContentEntry(uri);
+      String entry_name = uriToContentEntry(uri);
 
-      String[] entries = RawContentEntries();
+      String[] entries = rawContentEntries();
       Arrays.sort(entries);
       boolean exists = Arrays.binarySearch(entries, entry_name) > 0;
       if (!exists) {
-        Log.d("Content::Exists", "Could not find entry: " + entry_name);
+        Log.d("Content::exists", "Could not find entry: " + entry_name);
       }
       return exists;
     }
 
     // Bad uri scheme.
     else {
-      Log.e("Content::ListFiles", "Bad URI scheme.");
+      Assert.fail("Content::exists. Bad URI scheme: " + uri.toString());
       return false;
     }
   }
 
-  public static String[] List(Uri uri) {
-    Log.d("Content::List", uri.toString());
+  public static String[] list(Uri uri) {
+    Log.d("Content::list", uri.toString());
 
     // Handle "file://" scheme.
     if (uri.getScheme().equals("file")) {
@@ -83,14 +86,14 @@ public class Content {
 
     // Handle "content://" scheme.
     else if (uri.getScheme().equals("content")) {
-      String path_prefix = UriToContentEntry(uri);
+      String path_prefix = uriToContentEntry(uri);
 
-      String[] entries = RawContentEntries();
+      String[] entries = rawContentEntries();
       ArrayList<String> list_entries = new ArrayList<String>();
       for (String entry : entries) {
         if (entry.startsWith(path_prefix)) {
           entry = entry.replace(path_prefix, "");
-          Log.d("Content::List", "Found entry: " + entry);
+          Log.d("Content::list", "Found entry: " + entry);
           list_entries.add(entry);
         }
       }
@@ -99,13 +102,13 @@ public class Content {
 
     // Bad uri scheme.
     else {
-      Log.e("Content::ListFiles", "Bad URI scheme.");
+      Assert.fail("Content::list. Bad URI scheme: " + uri.toString());
       return null;
     }
   }
 
-  public static String GetTemporaryFilePath(Uri uri) {
-    Log.d("Content::GetTemporaryFilePath", uri.toString());
+  public static String getTemporaryFilePath(Uri uri) {
+    Log.d("Content::getTemporaryFilePath", uri.toString());
 
     // Handle "file://" scheme.
     if (uri.getScheme().equals("file")) {
@@ -119,23 +122,23 @@ public class Content {
       try {
         content_file = new ZipFile(kTempContentPath);
       } catch (IOException ex) {
-        Log.e("Content::GetTemporaryFilePath",
-              "Unable to open package file.", ex);
+        Assert.fail("Content::getTemporaryFilePath. " +
+                    "Unable to open package file: " + ex.toString());
         return null;
       }
-      String entry_name = UriToContentEntry(uri);
+      String entry_name = uriToContentEntry(uri);
       ZipEntry content_entry = content_file.getEntry(entry_name);
       if (content_entry == null) {
-        Log.e("Content::GetTemporaryFilePath",
-              "Unable to find entry: " + entry_name);
+        Assert.fail("Content::getTemporaryFilePath. " +
+                    "Unable to find entry: " + entry_name);
         return null;
       }
       try {
         InputStream content_stream = content_file.getInputStream(content_entry);
-        WriteStreamToFile(content_stream, kTempFilePath);
+        writeStreamToFile(content_stream, kTempFilePath);
       } catch (IOException ex) {
-        Log.e("Content::GetTemporaryFilePath",
-              "Unable to write out entry.", ex);
+        Assert.fail("Content::getTemporaryFilePath. " +
+                    "Unable to write out entry: " + ex.toString());
         return null;
       }
       return kTempFilePath;
@@ -143,12 +146,44 @@ public class Content {
 
     // Bad uri scheme.
     else {
-      Log.e("Content::ListFiles", "Bad URI scheme.");
+      Assert.fail("Content::getTemporaryFilePath. " +
+                  "Bad URI scheme: " + uri.toString());
       return null;
     }
   }
 
-  private static String UriToContentEntry(Uri uri) {
+  static public String[] readFileTokens(String file_path) {
+    // This method reads a splits an ASCII text file along any white space
+    // boundaries.
+    try {
+      FileReader file_reader = new FileReader(new File(file_path));
+      ArrayList<Character> data_array = new ArrayList<Character>();
+      while (file_reader.ready()) {
+        data_array.add(new Character((char)file_reader.read()));
+      }
+      String[] raw_tokens = (new String(toPrimative(data_array))).split("\\s");
+      ArrayList<String> tokens = new ArrayList<String>();
+      for (String token : raw_tokens) {
+        if (token.length() > 0) {
+          tokens.add(token);
+        }
+      }
+      return tokens.toArray(new String[0]);
+    } catch (IOException ex) {
+      Assert.fail("Could not read file: " + file_path + ": " + ex.toString());
+    }
+    return new String[0];
+  }
+
+  static private char[] toPrimative(ArrayList<Character> array_list) {
+    char[] result = new char[array_list.size()];
+    for (int index = 0; index < array_list.size(); ++index) {
+      result[index] = array_list.get(index).charValue();
+    }
+    return result;
+  }
+
+  private static String uriToContentEntry(Uri uri) {
     String content_name = uri.getHost() + uri.getPath();
 
     // Strip any leading / since, while it should be in the Uri, the zip file
@@ -159,7 +194,7 @@ public class Content {
     return "content_package/" + content_name;
   }
 
-  private static void WriteStreamToFile(InputStream input_stream,
+  private static void writeStreamToFile(InputStream input_stream,
                                         String output_path) throws IOException {
     (new File(output_path)).createNewFile();
     BufferedOutputStream output_stream =
@@ -171,16 +206,17 @@ public class Content {
     output_stream.close();
   }
 
-  private static String[] RawContentEntries() {
+  private static String[] rawContentEntries() {
     ZipFile content_file;
     try {
       content_file = new ZipFile(kTempContentPath);
     } catch (IOException ex) {
-      Log.e("Content::List", "Unable to open package file.", ex);
+      Assert.fail("Content::rawContentEntries, " +
+                  "Unable to open package file: " + ex.toString());
       return null;
     }
     if (!content_file.entries().hasMoreElements()) {
-      Log.d("Content::List", "Content package empty.");
+      Log.d("Content::rawContentEntries", "Content package empty.");
     }
 
     ArrayList<String> entry_list = new ArrayList<String>();
@@ -192,6 +228,8 @@ public class Content {
     return entry_list.toArray(new String[0]);
   }
 
-  private static final String kTempFilePath = "/data/data/android.com.abb/abbfile.tmp";
-  private static final String kTempContentPath = "/data/data/android.com.abb/abbpackage.tmp";
+  private static final String kTempFilePath =
+      "/data/data/android.com.abb/abbfile.tmp";
+  private static final String kTempContentPath =
+      "/data/data/android.com.abb/abbpackage.tmp";
 }

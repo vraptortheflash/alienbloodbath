@@ -104,7 +104,7 @@ public class MapSelectActivity extends ListActivity {
     // Add maps located within files.
     for (String root_path : paths_) {
       Log.d("MapSelectActivity::LoadMaps", "Listing " + root_path);
-      String[] map_paths = Content.List(Uri.parse(root_path));
+      String[] map_paths = Content.list(Uri.parse(root_path));
       if (map_paths == null)
         continue;
 
@@ -112,7 +112,7 @@ public class MapSelectActivity extends ListActivity {
         String full_path = root_path + map_path;
         Log.d("MapSelectActivity::LoadMaps",
               "Looking for level_0.txt in " + full_path);
-        if (Content.Exists(Uri.parse(full_path + "level_0.txt"))) {
+        if (Content.exists(Uri.parse(full_path + "level_0.txt"))) {
           maps_.add(full_path);
           map_uris_.add(full_path);
         }

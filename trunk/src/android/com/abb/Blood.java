@@ -23,19 +23,19 @@ public class Blood extends Entity {
     super();
     sprite_rect =
         new Rect(0, kSpriteBase, kSpriteWidth, kSpriteBase + kSpriteHeight);
-    sprite_flipped_horizontal = random_.nextBoolean();
+    sprite_flipped_horizontal = mRandom.nextBoolean();
   }
 
   public void Step(float time_step) {
-    super.Step(time_step);
+    super.step(time_step);
 
-    time_remaining -= time_step;
-    if (time_remaining < 0) {
+    mTimeRemaining -= time_step;
+    if (mTimeRemaining < 0) {
       alive = false;  // Signal for deletion.
     }
   }
 
-  private float time_remaining = kTimeRemaining;
+  private float mTimeRemaining = kTimeRemaining;
 
   private static final float kTimeRemaining = 0.5f;  // Seconds.
   private static final int kSpriteBase = 1 * 64;

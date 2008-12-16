@@ -24,15 +24,15 @@ public class Fire extends Entity {
     radius = kRadius;
     sprite_rect =
         new Rect(0, kSpriteBase, kSpriteWidth, kSpriteBase + kSpriteHeight);
-    sprite_flipped_horizontal = random_.nextBoolean();
+    sprite_flipped_horizontal = mRandom.nextBoolean();
   }
 
-  public void Step(float time_step) {
-    super.Step(time_step);
+  public void step(float time_step) {
+    super.step(time_step);
 
     // Update the sprite to reflect the age / life of the fire entity.
-    frame += time_step * kFrameRate;
-    int rounded_frame = (int)frame;
+    mFrame += time_step * kFrameRate;
+    int rounded_frame = (int)mFrame;
     if (rounded_frame <= kFrames) {
       sprite_rect.top = kSpriteBase + kSpriteHeight * rounded_frame;
       sprite_rect.bottom = kSpriteBase + kSpriteHeight * (rounded_frame + 1);
@@ -41,14 +41,14 @@ public class Fire extends Entity {
     }
   }
 
-  public void CollideEntity(Entity entity) {
+  public void collideEntity(Entity entity) {
     if (Math.abs(entity.x - x) < radius + entity.radius &&
         Math.abs(entity.y - y) < radius + entity.radius) {
       entity.alive = false;  // Anything which collides with fire dies.
     }
   }
 
-  private float frame = 0.0f;
+  private float mFrame = 0.0f;
 
   private static final int kFrames = 13;
   private static final float kFrameRate = 10.0f;  // Frames / sec.

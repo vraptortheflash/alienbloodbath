@@ -54,7 +54,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
       synchronized (game_) {
         graphics_  = new Graphics();
-        graphics_.Initialize(surface_holder_);
+        graphics_.initialize(surface_holder_);
         game_.InitializeGraphics(graphics_);
       }
 
@@ -106,11 +106,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         Canvas canvas = null;
         try {
           synchronized (game_) {
-            graphics_.BeginFrame();
+            graphics_.beginFrame();
             game_.OnFrame(graphics_, time_step);
           }
         } finally {
-          graphics_.EndFrame();
+          graphics_.endFrame();
         }
       }
     }
@@ -125,8 +125,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     public void SurfaceChanged(SurfaceHolder surface_holder,
                                int width, int height) {
-      if (graphics_ != null)
-        graphics_.SurfaceChanged(surface_holder, width, height);
+      if (graphics_ != null) {
+        graphics_.surfaceChanged(surface_holder, width, height);
+      }
     }
 
     public void Halt() {
@@ -148,8 +149,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
   public void SetGame(Game game) {
     game_ = game;
-    if (game_thread_ != null)
+    if (game_thread_ != null) {
       game_thread_.SetGame(game);
+    }
   }
 
   /** Set up the android widget for the title screen to be displayed until any
