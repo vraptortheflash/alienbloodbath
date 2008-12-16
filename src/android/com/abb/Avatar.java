@@ -112,7 +112,7 @@ public class Avatar extends ArticulatedEntity {
 
       float dx_offset = shot_velocity * (float)Math.cos(shot_angle);
       float dy_offset = shot_velocity * (float)Math.sin(shot_angle);
-      game_state_.CreateFireProjectile(
+      game_state_.createFireProjectile(
           x + x_offset, y + y_offset, dx + dx_offset, dy + dy_offset);
     }
   }

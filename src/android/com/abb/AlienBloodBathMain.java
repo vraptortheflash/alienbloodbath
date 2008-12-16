@@ -37,16 +37,16 @@ public class AlienBloodBathMain extends Activity {
 
     game_state_ = new GameState((Context)this);
     game_view_ = (GameView)findViewById(R.id.GAME_VIEW);
-    game_view_.SetTitleView((TextView)findViewById(R.id.TEXT_VIEW));
-    game_view_.SetGame(game_state_);
+    game_view_.setTitleView((TextView)findViewById(R.id.TEXT_VIEW));
+    game_view_.setGame(game_state_);
 
     if (saved_instance_state != null) {
-      game_state_.LoadStateBundle(saved_instance_state.getBundle("game_state_"));
+      game_state_.loadStateBundle(saved_instance_state.getBundle("game_state_"));
     } else {
       //String starting_map = "content:///The_Second_Wave/";
       String starting_map = "content:///Classic/";
-      game_state_.map.SetUri(Uri.parse(starting_map));
-      game_state_.Reset();
+      game_state_.map.setUri(Uri.parse(starting_map));
+      game_state_.reset();
     }
   }
 
@@ -81,8 +81,8 @@ public class AlienBloodBathMain extends Activity {
     switch (request_code) {
       case kSelectMap:
         if (intent != null) {
-          game_state_.map.LoadFromUri(intent.getData());
-          game_state_.Reset();
+          game_state_.map.loadFromUri(intent.getData());
+          game_state_.reset();
         }
         break;
     }
@@ -90,14 +90,14 @@ public class AlienBloodBathMain extends Activity {
 
   @Override
   public void onSaveInstanceState(Bundle saved_instance_state) {
-    saved_instance_state.putBundle("game_state_", game_state_.SaveStateBundle());
+    saved_instance_state.putBundle("game_state_", game_state_.saveStateBundle());
     super.onSaveInstanceState(saved_instance_state);
   }
 
   @Override
   public void onRestoreInstanceState(Bundle saved_instance_state) {
     super.onRestoreInstanceState(saved_instance_state);
-    game_state_.LoadStateBundle(saved_instance_state.getBundle("game_state_"));
+    game_state_.loadStateBundle(saved_instance_state.getBundle("game_state_"));
   }
 
   private GameState game_state_;

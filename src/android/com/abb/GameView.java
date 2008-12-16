@@ -55,7 +55,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       synchronized (game_) {
         graphics_  = new Graphics();
         graphics_.initialize(surface_holder_);
-        game_.InitializeGraphics(graphics_);
+        game_.initializeGraphics(graphics_);
       }
 
       // Since our target platform is a mobile device, we should do what we can
@@ -107,7 +107,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         try {
           synchronized (game_) {
             graphics_.beginFrame();
-            game_.OnFrame(graphics_, time_step);
+            game_.onFrame(graphics_, time_step);
           }
         } finally {
           graphics_.endFrame();
@@ -115,22 +115,22 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       }
     }
 
-    public void SetGame(Game game) {
+    public void setGame(Game game) {
       game_ = game;
     }
 
-    public void Pause(boolean pause) {
+    public void pause(boolean pause) {
       paused_ = pause;
     }
 
-    public void SurfaceChanged(SurfaceHolder surface_holder,
+    public void surfaceChanged(SurfaceHolder surface_holder,
                                int width, int height) {
       if (graphics_ != null) {
         graphics_.surfaceChanged(surface_holder, width, height);
       }
     }
 
-    public void Halt() {
+    public void halt() {
       running_ = false;
     }
 
@@ -147,16 +147,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     getHolder().setType(SurfaceHolder.SURFACE_TYPE_GPU);
   }
 
-  public void SetGame(Game game) {
+  public void setGame(Game game) {
     game_ = game;
     if (game_thread_ != null) {
-      game_thread_.SetGame(game);
+      game_thread_.setGame(game);
     }
   }
 
   /** Set up the android widget for the title screen to be displayed until any
    * key is pressed. */
-  public void SetTitleView(TextView title_view) {
+  public void setTitleView(TextView title_view) {
     title_view_ = title_view;
   }
 
@@ -169,7 +169,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     synchronized (game_) {
-      return game_.OnKeyDown(key_code);
+      return game_.onKeyDown(key_code);
     }
   }
 
@@ -178,7 +178,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   @Override
   public boolean onKeyUp(int key_code, KeyEvent msg) {
     synchronized (game_) {
-      return game_.OnKeyUp(key_code);
+      return game_.onKeyUp(key_code);
     }
   }
 
@@ -187,8 +187,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   @Override
   public void onWindowFocusChanged(boolean window_has_focus) {
     super.onWindowFocusChanged(window_has_focus);
-    if (game_thread_ != null)
-      game_thread_.Pause(!window_has_focus);
+    if (game_thread_ != null) {
+      game_thread_.pause(!window_has_focus);
+    }
   }
 
   /** Callback invoked when the Surface has been created and is ready to be
@@ -201,7 +202,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     getHolder().setType(SurfaceHolder.SURFACE_TYPE_GPU);
 
     game_thread_ = new GameThread(holder);
-    game_thread_.SetGame(game_);
+    game_thread_.setGame(game_);
     game_thread_.start();
     game_thread_started_ = true;
   }
@@ -209,14 +210,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   /** Callback invoked when the surface dimensions change. */
   public void surfaceChanged(SurfaceHolder surface_holder, int format,
                              int width, int height) {
-    game_thread_.SurfaceChanged(surface_holder, width, height);
+    game_thread_.surfaceChanged(surface_holder, width, height);
   }
 
   /** Callback invoked when the Surface has been destroyed and must no longer be
    * touched. */
   public void surfaceDestroyed(SurfaceHolder holder) {
     boolean retry = true;
-    game_thread_.Halt();
+    game_thread_.halt();
     while (retry) {
       try {
         game_thread_.join();

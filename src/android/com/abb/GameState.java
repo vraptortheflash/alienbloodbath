@@ -49,7 +49,7 @@ public class GameState implements Game {
     vibrator_ = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
   }
 
-  public void InitializeGraphics(Graphics graphics) {
+  public void initializeGraphics(Graphics graphics) {
     avatar.loadFromUri(Uri.parse("content:///humanoid.entity"));
 
     String enemy_sprites_path =
@@ -65,8 +65,8 @@ public class GameState implements Game {
 
   /** Initialize the game state structure. Upon returning, game_state_ should be
    * in a state representing a new game life. */
-  public void Reset() {
-    map.Reload();
+  public void reset() {
+    map.reload();
     particles.clear();
     projectiles.clear();
     enemies.clear();
@@ -79,24 +79,24 @@ public class GameState implements Game {
     death_timer_ = kDeathTimer;
   }
 
-  public boolean OnKeyDown(int key_code) {
+  public boolean onKeyDown(int key_code) {
     avatar.setKeyState(key_code, 1);
     return false;  // False to indicate not handled.
   }
 
-  public boolean OnKeyUp(int key_code) {
+  public boolean onKeyUp(int key_code) {
     avatar.setKeyState(key_code, 0);
     return false;  // False to indicate not handled.
   }
 
-  public boolean OnFrame(Graphics graphics, float time_step) {
-    StepGame(time_step);
-    DrawGame(graphics);
+  public boolean onFrame(Graphics graphics, float time_step) {
+    stepGame(time_step);
+    drawGame(graphics);
     return true;  // True to keep updating.
   }
 
   /** Run the game simulation for the specified amount of seconds. */
-  protected void StepGame(float time_step) {
+  protected void stepGame(float time_step) {
     // Update the view parameters.
     if (!avatar.has_ground_contact)
       target_zoom_ = kAirZoom;
@@ -112,15 +112,15 @@ public class GameState implements Game {
     // Step the avatar.
     if (avatar.alive) {
       avatar.step(time_step);
-      map.CollideEntity(avatar);
-      if (Map.TileIsGoal(map.TileAt(avatar.x, avatar.y))) {
-        map.AdvanceLevel();
-        Reset();
+      map.collideEntity(avatar);
+      if (Map.tileIsGoal(map.tileAt(avatar.x, avatar.y))) {
+        map.advanceLevel();
+        reset();
       }
     } else {
       if (death_timer_ == kDeathTimer) {
         for (int n = 0; n < 2 * kBloodBathSize; n++) {
-          CreateBloodParticle(
+          createBloodParticle(
               avatar.x, avatar.y,
               2.0f * kBloodBathVelocity * (0.5f - random_.nextFloat()) + avatar.dx,
               2.0f * kBloodBathVelocity * (0.5f - random_.nextFloat()) + avatar.dy);
@@ -128,18 +128,18 @@ public class GameState implements Game {
       }
       death_timer_ -= time_step;
       if (death_timer_ < 0)
-        Reset();
+        reset();
     }
 
     // Step the enemies.
     for (Iterator it = enemies.iterator(); it.hasNext();) {
       Enemy enemy = (Enemy)it.next();
       enemy.step(time_step);
-      map.CollideEntity(enemy);
+      map.collideEntity(enemy);
       if (!enemy.alive) {
-        Vibrate();
+        vibrate();
         for (int n = 0; n < kBloodBathSize; n++) {
-          CreateBloodParticle(
+          createBloodParticle(
               enemy.x, enemy.y,
               kBloodBathVelocity * (0.5f - random_.nextFloat()) + enemy.dx,
               kBloodBathVelocity * (0.5f - random_.nextFloat()) + enemy.dy);
@@ -169,9 +169,9 @@ public class GameState implements Game {
 
   /** Draw the game state. The game map and entities are always drawn with the
    * avatar centered in the screen. */
-  protected void DrawGame(Graphics graphics) {
+  protected void drawGame(Graphics graphics) {
     // Draw the map tiles.
-    map.Draw(graphics, view_x_, view_y_, zoom_);
+    map.draw(graphics, view_x_, view_y_, zoom_);
 
     // Draw the enemies.
     for (Iterator it = enemies.iterator(); it.hasNext();)
@@ -190,7 +190,7 @@ public class GameState implements Game {
       ((Entity)it.next()).draw(graphics, view_x_, view_y_, zoom_);
   }
 
-  public Entity CreateEnemy(float x, float y) {
+  public Entity createEnemy(float x, float y) {
     Entity enemy = new Enemy(avatar);
     enemy.sprite_image = enemy_sprites;
     enemy.x = x;
@@ -199,7 +199,7 @@ public class GameState implements Game {
     return enemy;
   }
 
-  public Entity CreateBloodParticle(float x, float y, float dx, float dy) {
+  public Entity createBloodParticle(float x, float y, float dx, float dy) {
     Entity blood = new Blood();
     blood.sprite_image = misc_sprites;
     blood.x = x;
@@ -211,7 +211,7 @@ public class GameState implements Game {
     return blood;
   }
 
-  public Entity CreateFireProjectile(float x, float y, float dx, float dy) {
+  public Entity createFireProjectile(float x, float y, float dx, float dy) {
     Entity fire = new Fire();
     fire.sprite_image = misc_sprites;
     fire.x = x;
@@ -223,13 +223,13 @@ public class GameState implements Game {
     return fire;
   }
 
-  public void Vibrate() {
+  public void vibrate() {
     vibrator_.vibrate(kVibrateLength);
   }
 
-  public void LoadStateBundle(Bundle saved_instance_state) {
-    map.LoadStateBundle(saved_instance_state.getBundle("map"));
-    Reset();
+  public void loadStateBundle(Bundle saved_instance_state) {
+    map.loadStateBundle(saved_instance_state.getBundle("map"));
+    reset();
 
     target_view_x_ = saved_instance_state.getFloat("target_view_x_");
     target_view_y_ = saved_instance_state.getFloat("target_view_y_");
@@ -246,11 +246,11 @@ public class GameState implements Game {
     avatar.alive = saved_instance_state.getBoolean("avatar.alive");
   }
 
-  public Bundle SaveStateBundle() {
+  public Bundle saveStateBundle() {
     // Note that particles, projectiles and spawned enemies are lost through
     // serialization.
     Bundle saved_instance_state = new Bundle();
-    saved_instance_state.putBundle("map", map.SaveStateBundle());
+    saved_instance_state.putBundle("map", map.saveStateBundle());
 
     saved_instance_state.putFloat("target_view_x_", target_view_x_);
     saved_instance_state.putFloat("target_view_y_", target_view_y_);

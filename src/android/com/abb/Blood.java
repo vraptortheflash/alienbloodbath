@@ -26,7 +26,7 @@ public class Blood extends Entity {
     sprite_flipped_horizontal = mRandom.nextBoolean();
   }
 
-  public void Step(float time_step) {
+  public void step(float time_step) {
     super.step(time_step);
 
     mTimeRemaining -= time_step;
