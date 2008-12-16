@@ -43,7 +43,9 @@ public class AlienBloodBathMain extends Activity {
     if (saved_instance_state != null) {
       game_state_.LoadStateBundle(saved_instance_state.getBundle("game_state_"));
     } else {
-      game_state_.map.SetUri(Uri.parse("content:///Classic/"));
+      //String starting_map = "content:///The_Second_Wave/";
+      String starting_map = "content:///Classic/";
+      game_state_.map.SetUri(Uri.parse(starting_map));
       game_state_.Reset();
     }
   }
