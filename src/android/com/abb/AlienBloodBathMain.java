@@ -31,7 +31,7 @@ public class AlienBloodBathMain extends Activity {
   @Override
   public void onCreate(Bundle saved_instance_state) {
     super.onCreate(saved_instance_state);
-    Content.Initialize(getResources());
+    Content.initialize(getResources());
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.main);
 

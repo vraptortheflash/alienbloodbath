@@ -11,7 +11,6 @@
 
 package android.com.abb;
 
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -21,13 +20,14 @@ import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import java.lang.Math;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.Math;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import junit.framework.Assert;
 
 import android.com.abb.Content;
 import android.com.abb.Entity;
@@ -40,10 +40,6 @@ public class Map {
 
   public Map(GameState game_state) {
     game_state_ = game_state;
-  }
-
-  public void SetResources(Resources resources) {
-    resources_ = resources;
   }
 
   public void SetUri(Uri base_uri) {
@@ -79,23 +75,23 @@ public class Map {
     // Load level tiles.
     Uri level_uri =
         Uri.withAppendedPath(base_uri_, "level_" + level_offset_ + ".txt");
-    String level_path = Content.GetTemporaryFilePath(level_uri);
+    String level_path = Content.getTemporaryFilePath(level_uri);
     LoadLevelFromFile(level_path);
 
     // Load level tile images.
     Uri tiles_uri =
         Uri.withAppendedPath(base_uri_, "tiles_" + level_offset_ + ".png");
-    if (!Content.Exists(tiles_uri))
+    if (!Content.exists(tiles_uri))
       tiles_uri = Uri.withAppendedPath(base_uri_, "tiles_default.png");
-    String tiles_path = Content.GetTemporaryFilePath(tiles_uri);
+    String tiles_path = Content.getTemporaryFilePath(tiles_uri);
     LoadTilesFromFile(tiles_path);
 
     // Load tile effects.
     Uri effects_uri =
         Uri.withAppendedPath(base_uri_, "effects_" + level_offset_ + ".txt");
-    if (!Content.Exists(effects_uri))
+    if (!Content.exists(effects_uri))
       effects_uri = Uri.withAppendedPath(base_uri_, "effects_default.txt");
-    String effects_path = Content.GetTemporaryFilePath(effects_uri);
+    String effects_path = Content.getTemporaryFilePath(effects_uri);
     LoadEffectsFromFile(effects_path);
   }
 
@@ -121,33 +117,22 @@ public class Map {
   }
 
   public void LoadEffectsFromFile(String file_path) {
-    if (file_path == null)
-      Log.e("Map::LoadEffectsFromFile", "Invalid null argument.");
-    try {
-      FileReader effects_reader = new FileReader(new File(file_path));
-      ArrayList<Character> effects_array = new ArrayList<Character>();
-      while (effects_reader.ready())
-        effects_array.add(new Character((char)effects_reader.read()));
-      String[] effects_tokens =
-          (new String(ToPrimative(effects_array))).split("\\s");
-      if (effects_tokens.length % 2 != 0)
-        Log.e("Map::LoadFromUri", "Improperly formatted effects file.");
+    String[] effects_tokens = Content.readFileTokens(file_path);
+    Assert.assertEquals("Effects file improperly formatted.",
+                        effects_tokens.length % 2, 0);
 
-      effects_death_ = new boolean[kMaxTileCount];
-      effects_explode_ = new boolean[kMaxTileCount];
-      effects_solid_ = new boolean[kMaxTileCount];
-      for (int effect = 0; effect < effects_tokens.length; effect += 2) {
-        int tile_id = Integer.parseInt(effects_tokens[effect]);
-        String tile_effect = effects_tokens[effect + 1];
-        if (tile_effect.equals("death"))
-          effects_death_[tile_id] = true;
-        else if (tile_effect.equals("explode"))
-          effects_explode_[tile_id] = true;
-        else if (tile_effect.equals("solid"))
-          effects_solid_[tile_id] = true;;
-      }
-    } catch (IOException ex) {
-      Log.e("Map::LoadFromUri", "Cannot find: " + file_path, ex);
+    effects_death_ = new boolean[kMaxTileCount];
+    effects_explode_ = new boolean[kMaxTileCount];
+    effects_solid_ = new boolean[kMaxTileCount];
+    for (int effect = 0; effect < effects_tokens.length; effect += 2) {
+      int tile_id = Integer.parseInt(effects_tokens[effect]);
+      String tile_effect = effects_tokens[effect + 1];
+      if (tile_effect.equals("death"))
+        effects_death_[tile_id] = true;
+      else if (tile_effect.equals("explode"))
+        effects_explode_[tile_id] = true;
+      else if (tile_effect.equals("solid"))
+        effects_solid_[tile_id] = true;;
     }
   }
 
@@ -318,13 +303,13 @@ public class Map {
   public void Draw(Graphics graphics, float center_x, float center_y, float zoom) {
     // Load the image if it hasn't been done already.
     if (tiles_bitmap_ != null) {
-      graphics.FreeImage(tiles_image_);
-      tiles_image_ = graphics.LoadImageFromBitmap(tiles_bitmap_);
+      graphics.freeImage(tiles_image_);
+      tiles_image_ = graphics.loadImageFromBitmap(tiles_bitmap_);
       tiles_bitmap_ = null;
     }
 
-    int half_canvas_width = graphics.GetWidth() / 2;
-    int half_canvas_height = graphics.GetHeight() / 2;
+    int half_canvas_width = graphics.getWidth() / 2;
+    int half_canvas_height = graphics.getHeight() / 2;
     float x_min = center_x - half_canvas_width / zoom;
     float x_max = center_x + (half_canvas_width + kTileSize) / zoom;
     float y_min = center_y - half_canvas_height / zoom;
@@ -355,7 +340,7 @@ public class Map {
         tile_destination.offset(
             -center_x * zoom + half_canvas_width - kTileSize / 2 * zoom,
             -center_y * zoom + half_canvas_height - kTileSize / 2 * zoom);
-        graphics.DrawImage(tiles_image_, tile_source, tile_destination, false);
+        graphics.drawImage(tiles_image_, tile_source, tile_destination, false);
       }
     }
   }
@@ -380,7 +365,6 @@ public class Map {
   private GameState game_state_;
   private int level_offset_ = 0;  // Level within the base_uri_ package.
   private Random random_ = new Random();
-  private Resources resources_;
   private char[] tiles_;
   private Bitmap tiles_bitmap_;
   private int tiles_image_ = -1;

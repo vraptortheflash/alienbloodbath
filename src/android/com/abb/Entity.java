@@ -13,11 +13,12 @@ package android.com.abb;
 
 import android.graphics.Canvas;
 import android.graphics.Bitmap;
-import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import java.lang.Math;
 import java.util.Random;
+
+import android.com.abb.Graphics;
 
 
 public class Entity {
@@ -35,11 +36,11 @@ public class Entity {
   public float ddx;  // Acceleration.
   public float ddy;
 
-  public void Stop() {
+  public void stop() {
     dx = dy = ddx = ddy = 0.0f;
   }
 
-  public void Step(float time_step) {
+  public void step(float time_step) {
     x += 0.5f * ddx * time_step * time_step + dx * time_step;
     y += 0.5f * ddy * time_step * time_step + dy * time_step;
     dx += ddx * time_step;
@@ -60,26 +61,28 @@ public class Entity {
 
   /** Draw the entity to the canvas such that the specified coordinates are
    * centered. */
-  public void Draw(Graphics graphics, float center_x, float center_y, float zoom) {
+  public void draw(Graphics graphics, float center_x, float center_y,
+                   float zoom) {
     if (sprite_image != -1) {
-      int canvas_width = graphics.GetWidth();
-      int canvas_height = graphics.GetHeight();
+      int canvas_width = graphics.getWidth();
+      int canvas_height = graphics.getHeight();
 
-      RectF sprite_destination =
-          new RectF(0, 0,
-                    sprite_rect.width() * zoom,
-                    sprite_rect.height() * zoom);
+      RectF sprite_destination = new RectF(
+          0, 0,
+          sprite_rect.width() * zoom,
+          sprite_rect.height() * zoom);
       sprite_destination.offset(
           (x - center_x) * zoom +
           (canvas_width - sprite_rect.width() * zoom) / 2.0f,
           (y - center_y) * zoom +
           (canvas_height - sprite_rect.height() * zoom) / 2.0f);
-      graphics.DrawImage(sprite_image, sprite_rect, sprite_destination,
-                         sprite_flipped_horizontal);
+      graphics.drawImage(
+          sprite_image, sprite_rect, sprite_destination,
+          sprite_flipped_horizontal);
     }
   }
 
-  protected static Random random_ = new Random();
+  protected static Random mRandom = new Random();
 
   private static final float kGroundFriction = 0.2f;
   private static final float kMaxVelocity = 200.0f;

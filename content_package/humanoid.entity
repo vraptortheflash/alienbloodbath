@@ -1,0 +1,11 @@
+content:///avatar.png
+thigh_r	root	0	0	20	10
+thigh_l	root	0	0	20	10
+leg_r	thigh_r	0	10	20	20
+leg_l	thigh_l	0	10	20	20
+torso	root	0	20	20	40
+arm_r   torso	0	40	20	50
+arm_l   torso	0	40	20	50
+farm_r	arm_r	0	50	10	60
+farm_l	arm_l	0	50	10	60
+head	torso	40	0	50	10

@@ -21,26 +21,26 @@ import android.com.abb.Entity;
 public class Enemy extends Entity {
   public Enemy(Entity target) {
     super();
-    target_ = target;
+    mTarget = target;
     radius = kRadius;
     sprite_rect =
         new Rect(0, kSpriteBase, kSpriteWidth, kSpriteBase + kSpriteHeight);
   }
 
-  public void Step(float time_step) {
-    super.Step(time_step);
+  public void step(float time_step) {
+    super.step(time_step);
     ddy = kGravity;
 
     // If we have moved close enough to our target, mark it dead.
-    if (Math.abs(target_.x - x) < kRadius &&
-        Math.abs(target_.y - y) < kRadius) {
-      target_.alive = false;
+    if (Math.abs(mTarget.x - x) < kRadius &&
+        Math.abs(mTarget.y - y) < kRadius) {
+      mTarget.alive = false;
     }
 
     // Always move the enemy towards the target. Set the acceleration and sprite
     // to reflect it.
     int sprite_offset;
-    if (target_.x < x) {
+    if (mTarget.x < x) {
       sprite_offset = 0;
       ddx = -kAcceleration;
     } else {
@@ -56,7 +56,7 @@ public class Enemy extends Entity {
     sprite_rect.bottom = kSpriteBase + kSpriteHeight * (sprite_offset + 1);
   }
 
-  private Entity target_;
+  private Entity mTarget;
 
   private static final float kAcceleration = 40.0f;
   private static final float kGravity = 100.0f;

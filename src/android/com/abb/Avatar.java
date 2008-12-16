@@ -12,13 +12,14 @@
 package android.com.abb;
 
 import android.graphics.Rect;
+import android.net.Uri;
 import android.view.KeyEvent;
 
-import android.com.abb.Entity;
+import android.com.abb.ArticulatedEntity;
 import android.com.abb.GameState;
 
 
-public class Avatar extends Entity {
+public class Avatar extends ArticulatedEntity {
   public Avatar(GameState game_state) {
     super();
     game_state_ = game_state;
@@ -26,8 +27,8 @@ public class Avatar extends Entity {
     radius = kRadius;
   }
 
-  public void Step(float time_step) {
-    super.Step(time_step);
+  public void step(float time_step) {
+    super.step(time_step);
     ddy = kGravity;
 
     // Update the horizontal acceleration acceleration according to the current
@@ -47,6 +48,13 @@ public class Avatar extends Entity {
     else if (dx > 0)
       facing_left_ = false;
 
+    if (has_ground_contact)
+      loadAnimationFromUri(Uri.parse("content:///stand.humanoid.animation"));
+    else
+      loadAnimationFromUri(Uri.parse("content:///jump.humanoid.animation"));
+    stepAnimation(time_step);
+
+    /*
     int sprite_index = 0;
     if (has_ground_contact) {
       if (Math.abs(dx) > kAnimationStopThreshold) {
@@ -62,7 +70,8 @@ public class Avatar extends Entity {
       sprite_index = 5 + (int)(4 * animation_phase_);
     }
 
-    SetSprite(sprite_index, facing_left_);
+    setSprite(sprite_index, facing_left_);
+    */
 
     // Update the shooting mechanism. The choices for shot direction are
     // specialized for each animation case: in the air, facing left, right, and
@@ -108,7 +117,7 @@ public class Avatar extends Entity {
     }
   }
 
-  public void SetKeyState(int key_code, int state) {
+  public void setKeyState(int key_code, int state) {
     if (key_code == kKeyLeft)
       ddx = -kGroundAcceleration * state;
     if (key_code == kKeyRight)
@@ -119,7 +128,7 @@ public class Avatar extends Entity {
       shooting_ = (state == 1);
   }
 
-  private void SetSprite(int index, boolean facing_left) {
+  private void setSprite(int index, boolean facing_left) {
     // Set up the sprite drawing parameters within our *parent* Entity class.
     sprite_rect.top = kSpriteSize * index;
     sprite_rect.bottom = kSpriteSize * index + kSpriteSize;

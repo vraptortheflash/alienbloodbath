@@ -1,0 +1,14 @@
+root	0.0	90
+
+torso	0.0	175
+torso	1.0	185
+torso	2.0	175
+
+thigh_r	0.0	-15
+thigh_l	0.0	15
+
+arm_r   0.0	-140
+arm_l   0.0	140
+
+farm_r   0.0	130
+farm_l   0.0	-130

@@ -46,29 +46,21 @@ public class GameState implements Game {
 
   public GameState(Context context) {
     context_ = context;
-
-    map.SetResources(context_.getResources());
-    Reset();
-
-    // Load system services.
     vibrator_ = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
   }
 
   public void InitializeGraphics(Graphics graphics) {
-    String avatar_sprite_path =
-        Content.GetTemporaryFilePath(Uri.parse("content:///avatar.png"));
-    Bitmap avatar_sprite_bitmap = BitmapFactory.decodeFile(avatar_sprite_path);
-    avatar.sprite_image = graphics.LoadImageFromBitmap(avatar_sprite_bitmap);
+    avatar.loadFromUri(Uri.parse("content:///humanoid.entity"));
 
     String enemy_sprites_path =
-        Content.GetTemporaryFilePath(Uri.parse("content:///enemy_0.png"));
+        Content.getTemporaryFilePath(Uri.parse("content:///enemy_0.png"));
     Bitmap enemy_sprites_bitmap = BitmapFactory.decodeFile(enemy_sprites_path);
-    enemy_sprites = graphics.LoadImageFromBitmap(enemy_sprites_bitmap);
+    enemy_sprites = graphics.loadImageFromBitmap(enemy_sprites_bitmap);
 
     String misc_sprites_path =
-        Content.GetTemporaryFilePath(Uri.parse("content:///misc.png"));
+        Content.getTemporaryFilePath(Uri.parse("content:///misc.png"));
     Bitmap misc_sprites_bitmap = BitmapFactory.decodeFile(misc_sprites_path);
-    misc_sprites = graphics.LoadImageFromBitmap(misc_sprites_bitmap);
+    misc_sprites = graphics.loadImageFromBitmap(misc_sprites_bitmap);
   }
 
   /** Initialize the game state structure. Upon returning, game_state_ should be
@@ -78,7 +70,7 @@ public class GameState implements Game {
     particles.clear();
     projectiles.clear();
     enemies.clear();
-    avatar.Stop();
+    avatar.stop();
     avatar.alive = true;
     avatar.x = map.starting_x;
     avatar.y = map.starting_y;
@@ -88,12 +80,12 @@ public class GameState implements Game {
   }
 
   public boolean OnKeyDown(int key_code) {
-    avatar.SetKeyState(key_code, 1);
+    avatar.setKeyState(key_code, 1);
     return false;  // False to indicate not handled.
   }
 
   public boolean OnKeyUp(int key_code) {
-    avatar.SetKeyState(key_code, 0);
+    avatar.setKeyState(key_code, 0);
     return false;  // False to indicate not handled.
   }
 
@@ -119,7 +111,7 @@ public class GameState implements Game {
 
     // Step the avatar.
     if (avatar.alive) {
-      avatar.Step(time_step);
+      avatar.step(time_step);
       map.CollideEntity(avatar);
       if (Map.TileIsGoal(map.TileAt(avatar.x, avatar.y))) {
         map.AdvanceLevel();
@@ -142,7 +134,7 @@ public class GameState implements Game {
     // Step the enemies.
     for (Iterator it = enemies.iterator(); it.hasNext();) {
       Enemy enemy = (Enemy)it.next();
-      enemy.Step(time_step);
+      enemy.step(time_step);
       map.CollideEntity(enemy);
       if (!enemy.alive) {
         Vibrate();
@@ -159,9 +151,9 @@ public class GameState implements Game {
     // Step the projectiles and collide them against the enemies.
     for (Iterator it = projectiles.iterator(); it.hasNext();) {
       Fire projectile = (Fire)it.next();
-      projectile.Step(time_step);
+      projectile.step(time_step);
       for (Iterator enemy_it = enemies.iterator(); enemy_it.hasNext();)
-        projectile.CollideEntity((Entity)enemy_it.next());
+        projectile.collideEntity((Entity)enemy_it.next());
       if (!projectile.alive)
         it.remove();
     }
@@ -169,7 +161,7 @@ public class GameState implements Game {
     // Step the particles.
     for (Iterator it = particles.iterator(); it.hasNext();) {
       Entity particle = (Entity)it.next();
-      particle.Step(time_step);
+      particle.step(time_step);
       if (!particle.alive)
         it.remove();
     }
@@ -183,19 +175,19 @@ public class GameState implements Game {
 
     // Draw the enemies.
     for (Iterator it = enemies.iterator(); it.hasNext();)
-      ((Entity)it.next()).Draw(graphics, view_x_, view_y_, zoom_);
+      ((Entity)it.next()).draw(graphics, view_x_, view_y_, zoom_);
 
     // Draw the avatar.
     if (avatar.alive)
-      avatar.Draw(graphics, view_x_, view_y_, zoom_);
+      avatar.draw(graphics, view_x_, view_y_, zoom_);
 
     // Draw the projectiles.
     for (Iterator it = projectiles.iterator(); it.hasNext();)
-      ((Entity)it.next()).Draw(graphics, view_x_, view_y_, zoom_);
+      ((Entity)it.next()).draw(graphics, view_x_, view_y_, zoom_);
 
     // Draw the particles.
     for (Iterator it = particles.iterator(); it.hasNext();)
-      ((Entity)it.next()).Draw(graphics, view_x_, view_y_, zoom_);
+      ((Entity)it.next()).draw(graphics, view_x_, view_y_, zoom_);
   }
 
   public Entity CreateEnemy(float x, float y) {
@@ -289,7 +281,7 @@ public class GameState implements Game {
 
   private static final float kAirZoom = 0.6f;
   private static final int kBloodBathSize = 10;  // Number of blood particles.
-  private static final float kBloodBathVelocity = 80.0f;
+  private static final float kBloodBathVelocity = 60.0f;
   private static final float kDeathTimer = 4.0f;
   private static final float kGravity = 200.0f;
   private static final float kGroundZoom = 0.8f;
