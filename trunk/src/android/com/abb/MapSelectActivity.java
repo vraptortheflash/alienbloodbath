@@ -35,9 +35,10 @@ public class MapSelectActivity extends ListActivity {
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    int item_layout_id = R.layout.mapselect_item;
-    LoadMaps();
+    loadMaps();
     String[] maps = maps_.toArray(new String[0]);
+
+    int item_layout_id = R.layout.mapselect_item;
     setListAdapter(new ArrayAdapter<String>(this, item_layout_id, maps));
     getListView().setTextFilterEnabled(true);
   }
@@ -51,11 +52,12 @@ public class MapSelectActivity extends ListActivity {
     finish();
   }
 
-  private void UnzipMapPackages() {
+  private void unzipMapPackages() {
     for (String root_path : paths_) {
       String[] files = (new File(root_path)).list();
-      if (files == null)
+      if (files == null) {
         continue;
+      }
 
       for (String file : files) {
         if (!file.endsWith(kMapPackageSuffix)) {
@@ -63,7 +65,8 @@ public class MapSelectActivity extends ListActivity {
             // Create the new map directory.
             String zip_file_path = root_path + "/" + file;
             ZipFile zip_file = new ZipFile(zip_file_path);
-            String map_path = root_path + "/" + file.replace(kMapPackageSuffix, "");
+            String map_path =
+                root_path + "/" + file.replace(kMapPackageSuffix, "");
             (new File(map_path)).mkdir();
 
             // Populate the map directory with the zipped contents.
@@ -79,8 +82,9 @@ public class MapSelectActivity extends ListActivity {
                   new BufferedOutputStream(new FileOutputStream(output_path));
               byte[] buffer = new byte[1024];
               int bytes_read;
-              while((bytes_read = input_stream.read(buffer)) >= 0)
+              while((bytes_read = input_stream.read(buffer)) >= 0) {
                 output_stream.write(buffer, 0, bytes_read);
+              }
               input_stream.close();
               output_stream.close();
             }
@@ -96,10 +100,10 @@ public class MapSelectActivity extends ListActivity {
     }
   }
 
-  private void LoadMaps() {
+  private void loadMaps() {
     // Unzip map package files locaded on the SD card to we can easily find
     // parse the contents.
-    UnzipMapPackages();
+    unzipMapPackages();
 
     // Add maps located within files.
     for (String root_path : paths_) {

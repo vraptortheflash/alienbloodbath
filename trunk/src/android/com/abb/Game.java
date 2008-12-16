@@ -21,10 +21,10 @@ import android.com.abb.Graphics;
 /** Simple interface which hides most of the Android specifics. All method calls
  * are serialized. */
 public interface Game {
-  void InitializeGraphics(Graphics graphics);
-  void Reset();
+  void initializeGraphics(Graphics graphics);
+  void reset();
 
-  boolean OnKeyDown(int key_code);
-  boolean OnKeyUp(int key_code);
-  boolean OnFrame(Graphics graphics, float time_step);
+  boolean onKeyDown(int key_code);
+  boolean onKeyUp(int key_code);
+  boolean onFrame(Graphics graphics, float time_step);
 }

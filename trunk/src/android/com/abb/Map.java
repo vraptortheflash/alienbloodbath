@@ -42,26 +42,26 @@ public class Map {
     game_state_ = game_state;
   }
 
-  public void SetUri(Uri base_uri) {
+  public void setUri(Uri base_uri) {
     base_uri_ = base_uri;
     level_offset_ = 0;
   }
 
-  public void Reload() {
+  public void reload() {
     if (base_uri_ != null)
-      LoadFromUri(base_uri_, level_offset_);
+      loadFromUri(base_uri_, level_offset_);
   }
 
-  public void AdvanceLevel() {
+  public void advanceLevel() {
     level_offset_ += 1;
   }
 
-  public void LoadFromUri(Uri base_uri) {
-    LoadFromUri(base_uri, 0);
+  public void loadFromUri(Uri base_uri) {
+    loadFromUri(base_uri, 0);
   }
 
-  public void LoadFromUri(Uri base_uri, int level_offset) {
-    Log.d("Map::LoadFromUri", "Loading Map from " + base_uri.toString());
+  public void loadFromUri(Uri base_uri, int level_offset) {
+    Log.d("Map::loadFromUri", "Loading Map from " + base_uri.toString());
     base_uri_ = base_uri;
     level_offset_ = level_offset;
 
@@ -76,7 +76,7 @@ public class Map {
     Uri level_uri =
         Uri.withAppendedPath(base_uri_, "level_" + level_offset_ + ".txt");
     String level_path = Content.getTemporaryFilePath(level_uri);
-    LoadLevelFromFile(level_path);
+    loadLevelFromFile(level_path);
 
     // Load level tile images.
     Uri tiles_uri =
@@ -84,7 +84,7 @@ public class Map {
     if (!Content.exists(tiles_uri))
       tiles_uri = Uri.withAppendedPath(base_uri_, "tiles_default.png");
     String tiles_path = Content.getTemporaryFilePath(tiles_uri);
-    LoadTilesFromFile(tiles_path);
+    loadTilesFromFile(tiles_path);
 
     // Load tile effects.
     Uri effects_uri =
@@ -92,31 +92,31 @@ public class Map {
     if (!Content.exists(effects_uri))
       effects_uri = Uri.withAppendedPath(base_uri_, "effects_default.txt");
     String effects_path = Content.getTemporaryFilePath(effects_uri);
-    LoadEffectsFromFile(effects_path);
+    loadEffectsFromFile(effects_path);
   }
 
-  public void LoadLevelFromFile(String file_path) {
+  public void loadLevelFromFile(String file_path) {
     if (file_path == null)
-      Log.e("Map::LoadLevelFromFile", "Invalid null argument.");
+      Log.e("Map::loadLevelFromFile", "Invalid null argument.");
     try {
       FileReader level_reader = new FileReader(new File(file_path));
       tiles_ = new char[kMapWidth * kMapHeight];
       level_reader.read(tiles_, 0, kMapWidth * kMapHeight);
-      LoadLevelFromArray(DecodeArray(tiles_));
+      loadLevelFromArray(decodeArray(tiles_));
     } catch (IOException ex) {
-      Log.e("Map::LoadLevelFromFile", "Cannot find: " + file_path, ex);
+      Log.e("Map::loadLevelFromFile", "Cannot find: " + file_path, ex);
     }
   }
 
-  public void LoadTilesFromFile(String file_path) {
+  public void loadTilesFromFile(String file_path) {
     if (file_path == null)
-      Log.e("Map::LoadTilesFromFile", "Invalid null argument.");
+      Log.e("Map::loadTilesFromFile", "Invalid null argument.");
     tiles_bitmap_ = BitmapFactory.decodeFile(file_path);
     if (tiles_bitmap_ == null)
-      Log.e("Map::LoadTilesFromFile", "Cannot find: " + file_path);
+      Log.e("Map::loadTilesFromFile", "Cannot find: " + file_path);
   }
 
-  public void LoadEffectsFromFile(String file_path) {
+  public void loadEffectsFromFile(String file_path) {
     String[] effects_tokens = Content.readFileTokens(file_path);
     Assert.assertEquals("Effects file improperly formatted.",
                         effects_tokens.length % 2, 0);
@@ -136,21 +136,21 @@ public class Map {
     }
   }
 
-  static private char[] DecodeArray(char[] tiles) {
+  static private char[] decodeArray(char[] tiles) {
     for (int n = 0; n < kMapWidth * kMapHeight; ++n) {
       tiles[n] -= kBaseValue;
     }
     return tiles;
   }
 
-  static private char[] ToPrimative(ArrayList<Character> array_list) {
+  static private char[] toPrimative(ArrayList<Character> array_list) {
     char[] result = new char[array_list.size()];
     for (int index = 0; index < array_list.size(); ++index)
       result[index] = array_list.get(index).charValue();
     return result;
   }
 
-  private void LoadLevelFromArray(char[] tiles) {
+  private void loadLevelFromArray(char[] tiles) {
     tiles_ = tiles;
     for (int n = 0; n < kMapWidth * kMapHeight; ++n) {
       if (tiles_[n] == kStartingTile) {
@@ -160,7 +160,7 @@ public class Map {
     }
   }
 
-  public int TileIndexAt(float x, float y) {
+  public int tileIndexAt(float x, float y) {
     int index_x = (int)(x / kTileSize + 0.5f);
     int index_y = (int)(y / kTileSize + 0.5f);
     if (index_x < 0 || index_y < 0 ||
@@ -169,29 +169,29 @@ public class Map {
     return kMapWidth * index_x + index_y;
   }
 
-  public void SetTileAt(float x, float y, char tile_id) {
-    int tile_index = TileIndexAt(x, y);
+  public void setTileAt(float x, float y, char tile_id) {
+    int tile_index = tileIndexAt(x, y);
     if (tile_index >= 0)
       tiles_[tile_index] = tile_id;
   }
 
-  public int TileAt(float x, float y) {
-    int tile_index = TileIndexAt(x, y);
+  public int tileAt(float x, float y) {
+    int tile_index = tileIndexAt(x, y);
     if (tile_index >= 0)
       return tiles_[tile_index];
     else
       return -1;  // Tile out of map range.
   }
 
-  public static boolean TileIsEnemy(int tile_id) {
+  public static boolean tileIsEnemy(int tile_id) {
     return (tile_id == 12);
   }
 
-  public static boolean TileIsGoal(int tile_id) {
+  public static boolean tileIsGoal(int tile_id) {
     return (tile_id == kEndingTile);
   }
 
-  public void CollideEntity(Entity entity) {
+  public void collideEntity(Entity entity) {
     if (entity.radius <= 0)
       return;  // Collision disabled for this entity.
 
@@ -203,7 +203,7 @@ public class Map {
     float radius = Math.max(entity.radius, half_tile_size);
     for (float x = entity.x - radius; x <= entity.x + radius; x += kTileSize) {
       for (float y = entity.y - radius; y <= entity.y + radius; y += kTileSize) {
-        int tile_id = TileAt(x, y);
+        int tile_id = tileAt(x, y);
         boolean tile_deadly = effects_death_[tile_id];
         boolean tile_exploadable = effects_explode_[tile_id];
         boolean tile_solid = effects_solid_[tile_id];
@@ -240,12 +240,12 @@ public class Map {
         }
         if (tile_exploadable) {
           entity.dy = Math.min(entity.dy, -kExplosionStrength);
-          SetTileAt(x, y, (char)0);  // Clear the exploding tile.
-          game_state_.Vibrate();
+          setTileAt(x, y, (char)0);  // Clear the exploding tile.
+          game_state_.vibrate();
           for (int n = 0; n < kExplosionSize; n++) {
             float random_angle = random_.nextFloat() * 2.0f * (float)Math.PI;
             float random_magnitude = kExplosionStrength * random_.nextFloat() / 3.0f;
-            game_state_.CreateFireProjectile(
+            game_state_.createFireProjectile(
                 tile_x, tile_y,
                 random_magnitude * (float)Math.cos(random_angle),
                 random_magnitude * (float)Math.sin(random_angle));
@@ -300,7 +300,8 @@ public class Map {
   /** Draw the entity to the canvas such that the specified coordinates are
    * centered. Tile locations in world coordinates correspond to the *center* of
    * the tile, eg. (0, 0) is the center of the first tile. */
-  public void Draw(Graphics graphics, float center_x, float center_y, float zoom) {
+  public void draw(Graphics graphics, float center_x, float center_y,
+                   float zoom) {
     // Load the image if it hasn't been done already.
     if (tiles_bitmap_ != null) {
       graphics.freeImage(tiles_image_);
@@ -317,12 +318,12 @@ public class Map {
     for (float x = x_min; x < x_max; x += kTileSize) {
       for (float y = y_min; y < y_max; y += kTileSize) {
         // Determine tile id for this world position x, y.
-        int tile_id = TileAt(x, y);
+        int tile_id = tileAt(x, y);
 
         // Spawn enemies if we happen to pass over an enemy tile.
-        if (TileIsEnemy(tile_id)) {
-          game_state_.CreateEnemy(x, y);
-          SetTileAt(x, y, (char)0);  // Clear the tile.
+        if (tileIsEnemy(tile_id)) {
+          game_state_.createEnemy(x, y);
+          setTileAt(x, y, (char)0);  // Clear the tile.
         }
 
         if (tile_id < 1 || tile_id > 11)
@@ -345,13 +346,13 @@ public class Map {
     }
   }
 
-  public void LoadStateBundle(Bundle saved_instance_state) {
+  public void loadStateBundle(Bundle saved_instance_state) {
     base_uri_ = Uri.parse(saved_instance_state.getString("base_uri_"));
     level_offset_ = saved_instance_state.getInt("level_offset_");
-    LoadFromUri(base_uri_, level_offset_);
+    loadFromUri(base_uri_, level_offset_);
   }
 
-  public Bundle SaveStateBundle() {
+  public Bundle saveStateBundle() {
     Bundle saved_instance_state = new Bundle();
     saved_instance_state.putString("base_uri_", base_uri_.toString());
     saved_instance_state.putInt("level_offset_", level_offset_);
