@@ -341,7 +341,8 @@ public class Map {
         tile_destination.offset(
             -center_x * zoom + half_canvas_width - kTileSize / 2 * zoom,
             -center_y * zoom + half_canvas_height - kTileSize / 2 * zoom);
-        graphics.drawImage(tiles_image_, tile_source, tile_destination, false);
+        graphics.drawImage(
+            tiles_image_, tile_source, tile_destination, false, false);
       }
     }
   }

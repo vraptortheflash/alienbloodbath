@@ -1,13 +1,13 @@
 content:///avatar.png
-thigh_r		root		2	0	40	22
-thigh_l		root		2	0	40	22
-leg_r		thigh_r		71	0	128	26
-leg_l		thigh_l		71	0	128	26
-torso		root		2	44	70	78
-shoulder_r	root		0	254	55	255
-shoulder_l	root		0	254	55	255
-arm_r   	shoulder_r	0	100	42	120
-arm_l   	shoulder_l	0	100	42	120
-farm_r		arm_r		84	102	132	124
-farm_l		arm_l		84	102	132	124
-head		torso		89	48	126	81
+thigh_r		root		102	0	124	38
+thigh_l		root		102	0	124	38
+leg_r		thigh_r		98	71	125	131
+leg_l		thigh_l		98	71	125	131
+torso		root		44	0	80	68
+shoulder_r	root		254	0	255	55
+shoulder_l	root		254	0	255	55
+arm_r   	shoulder_r	0	0	20	42
+arm_l   	shoulder_l	0	0	20	42
+farm_r		arm_r		0	84	22	131
+farm_l		arm_l		0	84	22	131
+head		torso		45	89	76	126

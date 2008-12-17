@@ -146,29 +146,33 @@ public class Graphics {
   }
 
   public void drawImage(int image_handle, Rect source_rect, RectF dest_rect,
-                        boolean flipped_horizontal) {
+                        boolean flipped_horizontal, boolean flipped_vertical) {
+    Assert.assertTrue("Invalid image handle in drawImage", image_handle >= 0);
+
     switch (backend_type_) {
       case ANDROID2D:
         drawImageAndroid2D(image_handle, source_rect, dest_rect,
-                           flipped_horizontal);
+                           flipped_horizontal, flipped_vertical);
         break;
       case OPENGL:
         drawImageOpenGL(image_handle, source_rect, dest_rect,
-                        flipped_horizontal);
+                        flipped_horizontal, flipped_vertical);
         break;
     }
   }
 
   public void drawImage(int image_handle, Rect source_rect, Matrix dest_matrix,
-                        boolean flipped_horizontal) {
+                        boolean flipped_horizontal, boolean flipped_vertical) {
+    Assert.assertTrue("Invalid image handle in drawImage", image_handle >= 0);
+
     switch (backend_type_) {
       case ANDROID2D:
         drawImageAndroid2D(image_handle, source_rect, dest_matrix,
-                           flipped_horizontal);
+                           flipped_horizontal, flipped_vertical);
         break;
       case OPENGL:
         drawImageOpenGL(image_handle, source_rect, dest_matrix,
-                        flipped_horizontal);
+                        flipped_horizontal, flipped_vertical);
         break;
     }
   }
@@ -250,12 +254,11 @@ public class Graphics {
 
   private void drawImageAndroid2D(int image_handle,
                                   Rect source_rect, RectF dest_rect,
-                                  boolean flipped_horizontal) {
-    if (image_handle < 1) {
-      Log.d("Graphics::DrawImageAndroid2D",
-            "Invalid image handle encountered.");
-      return;  // Uninitialized / invalid image handle.
-    }
+                                  boolean flipped_horizontal,
+                                  boolean flipped_vertical) {
+    Assert.assertTrue("Vertical flipping not yet implemented.",
+                      !flipped_vertical);
+
     if (flipped_horizontal) {
       transformation_android2D_.setScale(-1.0f, 1.0f);
       transformation_android2D_.postTranslate(
@@ -272,7 +275,8 @@ public class Graphics {
 
   private void drawImageAndroid2D(int image_handle,
                                   Rect source_rect, Matrix dest_matrix,
-                                  boolean flipped_horizontal) {
+                                  boolean flipped_horizontal,
+                                  boolean flipped_vertical) {
     Assert.fail("Method not yet implemented.");
   }
 
@@ -475,7 +479,8 @@ public class Graphics {
 
   private void drawImageOpenGL(int image_handle,
                                Rect source_rect, RectF dest_rect,
-                               boolean flipped_horizontal) {
+                               boolean flipped_horizontal,
+                               boolean flipped_vertical) {
     if (image_handle != current_texture_) {
       current_texture_ = image_handle;
       gl_.glBindTexture(GL10.GL_TEXTURE_2D, image_handle);
@@ -487,16 +492,24 @@ public class Graphics {
     // column-major layout.
     float texture_width = texture_widths_.get(image_handle);
     float texture_height = texture_heights_.get(image_handle);
+
     matrix4x4_[1] = matrix4x4_[2] = matrix4x4_[4] =
         matrix4x4_[6] = matrix4x4_[8] = matrix4x4_[9] = 0.0f;
-    matrix4x4_[0] = (source_rect.right - source_rect.left) / texture_width;
-    matrix4x4_[5] = (source_rect.bottom - source_rect.top) / texture_height;
-    matrix4x4_[12] = source_rect.left / texture_width;
-    matrix4x4_[13] = source_rect.top / texture_height;
-    if (flipped_horizontal) {
-      matrix4x4_[0] *= -1.0f;
-      matrix4x4_[12] = 1.0f - matrix4x4_[12];
+    if (flipped_vertical) {
+      matrix4x4_[5] = (source_rect.top - source_rect.bottom) / texture_height;
+      matrix4x4_[13] = source_rect.bottom / texture_height;
+    } else {
+      matrix4x4_[5] = (source_rect.bottom - source_rect.top) / texture_height;
+      matrix4x4_[13] = source_rect.top / texture_height;
     }
+    if (flipped_horizontal) {
+      matrix4x4_[0] = (source_rect.left - source_rect.right) / texture_width;
+      matrix4x4_[12] = source_rect.right / texture_width;
+    } else {
+      matrix4x4_[0] = (source_rect.right - source_rect.left) / texture_width;
+      matrix4x4_[12] = source_rect.left / texture_width;
+    }
+
     gl_.glMatrixMode(GL10.GL_TEXTURE);
     gl_.glLoadMatrixf(matrix4x4_, 0);
 
@@ -512,7 +525,8 @@ public class Graphics {
 
   private void drawImageOpenGL(int image_handle,
                                Rect source_rect, Matrix dest_matrix,
-                               boolean flipped_horizontal) {
+                               boolean flipped_horizontal,
+                               boolean flipped_vertical) {
     if (image_handle != current_texture_) {
       current_texture_ = image_handle;
       gl_.glBindTexture(GL10.GL_TEXTURE_2D, image_handle);
@@ -524,16 +538,24 @@ public class Graphics {
     // column-major layout.
     float texture_width = texture_widths_.get(image_handle);
     float texture_height = texture_heights_.get(image_handle);
+
     matrix4x4_[1] = matrix4x4_[2] = matrix4x4_[4] =
         matrix4x4_[6] = matrix4x4_[8] = matrix4x4_[9] = 0.0f;
-    matrix4x4_[0] = (source_rect.right - source_rect.left) / texture_width;
-    matrix4x4_[5] = (source_rect.bottom - source_rect.top) / texture_height;
-    matrix4x4_[12] = source_rect.left / texture_width;
-    matrix4x4_[13] = source_rect.top / texture_height;
-    if (flipped_horizontal) {
-      matrix4x4_[0] *= -1.0f;
-      matrix4x4_[12] = 1.0f - matrix4x4_[12];
+    if (flipped_vertical) {
+      matrix4x4_[5] = (source_rect.top - source_rect.bottom) / texture_height;
+      matrix4x4_[13] = source_rect.bottom / texture_height;
+    } else {
+      matrix4x4_[5] = (source_rect.bottom - source_rect.top) / texture_height;
+      matrix4x4_[13] = source_rect.top / texture_height;
     }
+    if (flipped_horizontal) {
+      matrix4x4_[0] = (source_rect.left - source_rect.right) / texture_width;
+      matrix4x4_[12] = source_rect.right / texture_width;
+    } else {
+      matrix4x4_[0] = (source_rect.right - source_rect.left) / texture_width;
+      matrix4x4_[12] = source_rect.left / texture_width;
+    }
+
     gl_.glMatrixMode(GL10.GL_TEXTURE);
     gl_.glLoadMatrixf(matrix4x4_, 0);
 
