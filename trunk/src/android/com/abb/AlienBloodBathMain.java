@@ -41,10 +41,11 @@ public class AlienBloodBathMain extends Activity {
     game_view_.setGame(game_state_);
 
     if (saved_instance_state != null) {
-      game_state_.loadStateBundle(saved_instance_state.getBundle("game_state_"));
+      game_state_.loadStateBundle(
+          saved_instance_state.getBundle("game_state_"));
     } else {
-      //String starting_map = "content:///The_Second_Wave/";
-      String starting_map = "content:///Classic/";
+      String starting_map = "content:///The_Second_Wave/";
+      //String starting_map = "content:///Classic/";
       game_state_.map.setUri(Uri.parse(starting_map));
       game_state_.reset();
     }
@@ -77,7 +78,8 @@ public class AlienBloodBathMain extends Activity {
   }
 
   @Override
-  public void onActivityResult(int request_code, int result_code, Intent intent)  {
+  public void onActivityResult(int request_code, int result_code,
+                               Intent intent) {
     switch (request_code) {
       case kSelectMap:
         if (intent != null) {
@@ -90,7 +92,8 @@ public class AlienBloodBathMain extends Activity {
 
   @Override
   public void onSaveInstanceState(Bundle saved_instance_state) {
-    saved_instance_state.putBundle("game_state_", game_state_.saveStateBundle());
+    saved_instance_state.putBundle(
+        "game_state_", game_state_.saveStateBundle());
     super.onSaveInstanceState(saved_instance_state);
   }
 
