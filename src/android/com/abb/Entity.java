@@ -28,6 +28,7 @@ public class Entity {
   public int sprite_image;
   public Rect sprite_rect;
   public boolean sprite_flipped_horizontal;
+  public boolean sprite_flipped_vertical;
 
   public float x;    // Position.
   public float y;
@@ -78,7 +79,7 @@ public class Entity {
           (canvas_height - sprite_rect.height() * zoom) / 2.0f);
       graphics.drawImage(
           sprite_image, sprite_rect, sprite_destination,
-          sprite_flipped_horizontal);
+          sprite_flipped_horizontal, sprite_flipped_vertical);
     }
   }
 

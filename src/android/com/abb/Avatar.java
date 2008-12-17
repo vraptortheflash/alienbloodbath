@@ -23,8 +23,7 @@ public class Avatar extends ArticulatedEntity {
   public Avatar(GameState game_state) {
     super();
     game_state_ = game_state;
-    setDrawingScale(0.4f);
-    //sprite_rect = new Rect(0, 0, kSpriteSize, kSpriteSize);
+    setDrawingScale(kDrawingScale);
     radius = kRadius;
   }
 
@@ -44,10 +43,13 @@ public class Avatar extends ArticulatedEntity {
       ddx = -kAirAcceleration;
 
     // Update the avatar animation frame according the current entity motion.
-    if (dx < 0)
+    if (dx < 0) {
       facing_left_ = true;
-    else if (dx > 0)
+      sprite_flipped_horizontal = facing_left_;
+    } else if (dx > 0) {
       facing_left_ = false;
+      sprite_flipped_horizontal = facing_left_;
+    }
 
     if (has_ground_contact)
       loadAnimationFromUri(Uri.parse("content:///stand.humanoid.animation"));
@@ -129,13 +131,6 @@ public class Avatar extends ArticulatedEntity {
       shooting_ = (state == 1);
   }
 
-  private void setSprite(int index, boolean facing_left) {
-    // Set up the sprite drawing parameters within our *parent* Entity class.
-    sprite_rect.top = kSpriteSize * index;
-    sprite_rect.bottom = kSpriteSize * index + kSpriteSize;
-    sprite_flipped_horizontal = facing_left;
-  }
-
   private float animation_phase_ = 0.0f;
   private boolean facing_left_;
   private GameState game_state_;
@@ -146,6 +141,7 @@ public class Avatar extends ArticulatedEntity {
   private static final float kAirAcceleration = 40.0f;
   private static final float kAirAnimationSpeed = 3.0f;
   private static final float kAnimationStopThreshold = 40.0f;
+  private static final float kDrawingScale = 0.4f;
   private static final float kGravity = 200.0f;
   private static final float kGroundAcceleration = 700.0f;
   private static final float kGroundAnimationSpeed = 1.0f / 600.0f;

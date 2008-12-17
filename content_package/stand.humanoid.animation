@@ -1,10 +1,10 @@
-root		0.0	90
+root		0.0	0
 
-thigh_r		0.0	-35
-thigh_l		0.0	35
+thigh_r		0.0	-40
+thigh_l		0.0	40
 
-leg_r		0.0	30
-leg_l		0.0	-30
+leg_r		0.0	20
+leg_l		0.0	-20
 
 torso		0.0	179
 torso		1.0	181

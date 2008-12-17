@@ -143,21 +143,27 @@ public class ArticulatedEntity extends Entity {
 
     public void draw(Graphics graphics, int image_handle,
                      Matrix base_transformation, Animation animation) {
-      int joint_size = image_rect.height() / 4;
+      int joint_size = image_rect.width() / 4;
+      float joint_angle = animation.getPartAngle(name);
+
+      if (sprite_flipped_horizontal) {
+        joint_angle = -joint_angle;
+      }
 
       // Draw self.
       if (image_handle != -1) {
         transformation.set(base_transformation);
-        transformation.preRotate(animation.getPartAngle(name));
-        transformation.preTranslate(0.0f, -image_rect.height() / 2);
+        transformation.preRotate(joint_angle);
+        transformation.preTranslate(-image_rect.width() / 2, 0.0f);
         transformation.preScale(image_rect.width(), image_rect.height());
-        graphics.drawImage(image_handle, image_rect, transformation, false);
+        graphics.drawImage(image_handle, image_rect, transformation,
+                           sprite_flipped_horizontal, false);
       }
 
       // Draw children.
       transformation.set(base_transformation);
-      transformation.preRotate(animation.getPartAngle(name));
-      transformation.preTranslate(image_rect.width() - joint_size, 0);
+      transformation.preRotate(joint_angle);
+      transformation.preTranslate(0.0f, image_rect.height() - joint_size);
       for (int child_index = 0; child_index < children.size(); ++child_index) {
         children.get(child_index).draw(
             graphics, image_handle, transformation, animation);
