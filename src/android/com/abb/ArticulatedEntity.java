@@ -96,6 +96,13 @@ public class ArticulatedEntity extends Entity {
     mAnimation.step(time_step);
   }
 
+  /** The drawing scale of the entire articulated sprite may be altered in order
+   * to decouple the source sprite image resolution from the screen display
+   * size. */
+  public void setDrawingScale(float drawing_scale) {
+    mDrawingScale = drawing_scale;
+  }
+
   @Override
   public void draw(Graphics graphics, float center_x, float center_y,
                    float zoom) {
@@ -113,7 +120,7 @@ public class ArticulatedEntity extends Entity {
     root_transformation.preTranslate(
         graphics.getWidth() / 2 + (x - center_x) * zoom,
         graphics.getHeight() / 2 + (y - center_y) * zoom);
-    root_transformation.preScale(zoom, zoom);
+    root_transformation.preScale(mDrawingScale * zoom, mDrawingScale * zoom);
     mRoot.draw(graphics, mImageHandle, root_transformation, mAnimation);
   }
 
@@ -129,27 +136,31 @@ public class ArticulatedEntity extends Entity {
   /** The Part class structure represents a single element of the articulated
    * entity. */
   private class Part {
+    public ArrayList<Part> children = new ArrayList<Part>();
     public String name;
     public Rect image_rect = new Rect();
-    public ArrayList<Part> children = new ArrayList<Part>();
+    public Matrix transformation = new Matrix();
 
     public void draw(Graphics graphics, int image_handle,
                      Matrix base_transformation, Animation animation) {
+      int joint_size = image_rect.height() / 4;
+
+      // Draw self.
+      if (image_handle != -1) {
+        transformation.set(base_transformation);
+        transformation.preRotate(animation.getPartAngle(name));
+        transformation.preTranslate(0.0f, -image_rect.height() / 2);
+        transformation.preScale(image_rect.width(), image_rect.height());
+        graphics.drawImage(image_handle, image_rect, transformation, false);
+      }
+
       // Draw children.
-      Matrix transformation = new Matrix(base_transformation);
+      transformation.set(base_transformation);
       transformation.preRotate(animation.getPartAngle(name));
-      transformation.preTranslate(image_rect.width(), 0.0f);
+      transformation.preTranslate(image_rect.width() - joint_size, 0);
       for (int child_index = 0; child_index < children.size(); ++child_index) {
         children.get(child_index).draw(
             graphics, image_handle, transformation, animation);
-      }
-
-      // Draw self.
-      if (image_handle != -1) {  // The root is not drawn.
-        transformation.preTranslate(-image_rect.width(),
-                                    -image_rect.height() / 2);
-        transformation.preScale(image_rect.width(), image_rect.height());
-        graphics.drawImage(image_handle, image_rect, transformation, false);
       }
     }
 
@@ -271,6 +282,7 @@ public class ArticulatedEntity extends Entity {
   private Animation mAnimation = new Animation();
   private TreeMap<Uri, Animation> mAnimationCache =
       new TreeMap<Uri, Animation>();
+  private float mDrawingScale = 1.0f;
   private int mImageHandle = -1;
   private Uri mImageUri;
   private Part mRoot = new Part();

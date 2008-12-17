@@ -299,10 +299,7 @@ public class Graphics {
     Log.d("Graphics::initializeOpenGL",
           "Found version: " + version[0] + "." + version[1]);
 
-    int attrib_list[] = {
-      EGL10.EGL_RED_SIZE, 0,    // 0 indicates default bit depth.
-      EGL10.EGL_GREEN_SIZE, 0,
-      EGL10.EGL_BLUE_SIZE, 0,
+    int attrib_list[] = {  // Use default bit depths.
       EGL10.EGL_NONE
     };
 
@@ -389,10 +386,9 @@ public class Graphics {
     gl_.glDisable(GL10.GL_CULL_FACE);
     gl_.glDisable(GL10.GL_DEPTH_TEST);
     gl_.glEnable(GL10.GL_BLEND);
+    gl_.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     gl_.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
     gl_.glDisable(GL10.GL_ALPHA_TEST);
-    gl_.glAlphaFunc(GL10.GL_ALWAYS, 1.0f);
-    gl_.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
   }
 
   private void destroyOpenGL() {

@@ -23,7 +23,8 @@ public class Avatar extends ArticulatedEntity {
   public Avatar(GameState game_state) {
     super();
     game_state_ = game_state;
-    sprite_rect = new Rect(0, 0, kSpriteSize, kSpriteSize);
+    setDrawingScale(0.4f);
+    //sprite_rect = new Rect(0, 0, kSpriteSize, kSpriteSize);
     radius = kRadius;
   }
 
