@@ -20,6 +20,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 import android.com.abb.Content;
@@ -33,6 +34,9 @@ public class AlienBloodBathMain extends Activity {
     super.onCreate(saved_instance_state);
     Content.initialize(getResources());
     requestWindowFeature(Window.FEATURE_NO_TITLE);
+    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                         WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
     setContentView(R.layout.main);
 
     game_state_ = new GameState((Context)this);
@@ -44,9 +48,7 @@ public class AlienBloodBathMain extends Activity {
       game_state_.loadStateBundle(
           saved_instance_state.getBundle("game_state_"));
     } else {
-      String starting_map = "content:///The_Second_Wave/";
-      //String starting_map = "content:///Classic/";
-      game_state_.map.setUri(Uri.parse(starting_map));
+      game_state_.map.setUri(Uri.parse(kStartupMap));
       game_state_.reset();
     }
   }
@@ -111,4 +113,5 @@ public class AlienBloodBathMain extends Activity {
   private final String kAboutPage = "http://code.google.com/p/alienbloodbath";
   private final String kMapsPage = "http://abbserver.appspot.com";
   private final int kSelectMap = 1;
+  private final String kStartupMap = "content:///The_Second_Wave/";
 }
