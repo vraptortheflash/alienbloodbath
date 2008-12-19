@@ -1,4 +1,4 @@
-// Copyright 2008 and onwards Matthew Burkhart.
+// Copyright 2008 and onwards Matthew Burkhart and Matt Barnes.
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free Software
@@ -33,7 +33,7 @@ import android.com.abb.Fire;
 import android.com.abb.Game;
 import android.com.abb.Graphics;
 import android.com.abb.Map;
-
+import android.com.abb.Weapon;
 
 public class GameState implements Game {
   public Avatar avatar = new Avatar(this);
@@ -112,6 +112,7 @@ public class GameState implements Game {
     // Step the avatar.
     if (avatar.alive) {
       avatar.step(time_step);
+      avatar.mWeapon.step(time_step);
       map.collideEntity(avatar);
       if (Map.tileIsGoal(map.tileAt(avatar.x, avatar.y))) {
         map.advanceLevel();
@@ -177,10 +178,11 @@ public class GameState implements Game {
     for (Iterator it = enemies.iterator(); it.hasNext();)
       ((Entity)it.next()).draw(graphics, view_x_, view_y_, zoom_);
 
-    // Draw the avatar.
+    // Draw the avatar and weapon.
     if (avatar.alive)
       avatar.draw(graphics, view_x_, view_y_, zoom_);
-
+	avatar.mWeapon.setImage(graphics);
+	avatar.mWeapon.draw(graphics, view_x_, view_y_, zoom_);
     // Draw the projectiles.
     for (Iterator it = projectiles.iterator(); it.hasNext();)
       ((Entity)it.next()).draw(graphics, view_x_, view_y_, zoom_);
