@@ -218,6 +218,10 @@ public class Map {
     for (float x = entity.x - radius; x <= entity.x + radius; x += kTileSize) {
       for (float y = entity.y - radius; y <= entity.y + radius; y += kTileSize) {
         int tile_id = tileAt(x, y);
+        if (tile_id <= 0) {
+          continue;  // Not a collideable tile.
+        }
+
         boolean tile_deadly = mEffectsDeath[tile_id];
         boolean tile_exploadable = mEffectsExplode[tile_id];
         boolean tile_solid = mEffectsSolid[tile_id];
