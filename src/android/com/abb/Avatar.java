@@ -17,6 +17,7 @@ import android.view.KeyEvent;
 
 import android.com.abb.ArticulatedEntity;
 import android.com.abb.GameState;
+import android.com.abb.Weapon;
 
 
 public class Avatar extends ArticulatedEntity {
@@ -29,6 +30,8 @@ public class Avatar extends ArticulatedEntity {
 
   public void step(float time_step) {
     super.step(time_step);
+    mWeapon.x = x;
+    mWeapon.y = y;
     ddy = kGravity;
 
     // Update the horizontal acceleration acceleration according to the current
@@ -75,6 +78,7 @@ public class Avatar extends ArticulatedEntity {
 
     setSprite(sprite_index, facing_left_);
     */
+    mWeapon.setSprite(facing_left_);
 
     // Update the shooting mechanism. The choices for shot direction are
     // specialized for each animation case: in the air, facing left, right, and
@@ -131,12 +135,20 @@ public class Avatar extends ArticulatedEntity {
       shooting_ = (state == 1);
   }
 
+    private void setSprite(int index, boolean facing_left) {
+    // Set up the sprite drawing parameters within our *parent* Entity class.
+    sprite_rect.top = kSpriteSize * index;
+    sprite_rect.bottom = kSpriteSize * index + kSpriteSize;
+    sprite_flipped_horizontal = facing_left;
+  }
+
   private float animation_phase_ = 0.0f;
   private boolean facing_left_;
   private GameState game_state_;
   private boolean shooting_;
   private float shot_delay_;
   private float shot_phase_;
+  public Weapon mWeapon = new Weapon(game_state_);
 
   private static final float kAirAcceleration = 40.0f;
   private static final float kAirAnimationSpeed = 3.0f;
