@@ -3,8 +3,8 @@ root		0.0	0
 thigh_r		0.0	-40
 thigh_l		0.0	40
 
-leg_r		0.0	20
-leg_l		0.0	-20
+leg_r		0.0	10
+leg_l		0.0	-10
 
 torso		0.0	179
 torso		1.0	181
@@ -18,8 +18,8 @@ shoulder_l	0.0	200
 shoulder_l	1.0	195
 shoulder_l	2.0	200
 
-arm_r   	0.0	-140
+arm_r   	0.0	-110
 arm_l   	0.0	140
 
-farm_r   	0.0	130
-farm_l   	0.0	-130
+farm_r   	0.0	-110
+farm_l   	0.0	-80

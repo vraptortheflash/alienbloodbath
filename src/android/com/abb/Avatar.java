@@ -54,30 +54,19 @@ public class Avatar extends ArticulatedEntity {
       sprite_flipped_horizontal = facing_left_;
     }
 
-    if (has_ground_contact)
-      loadAnimationFromUri(Uri.parse("content:///stand.humanoid.animation"));
-    else
-      loadAnimationFromUri(Uri.parse("content:///jump.humanoid.animation"));
-    stepAnimation(time_step);
-
-    /*
-    int sprite_index = 0;
     if (has_ground_contact) {
       if (Math.abs(dx) > kAnimationStopThreshold) {
-        animation_phase_ += kGroundAnimationSpeed * Math.abs(dx);
-        while (animation_phase_ > 1.0f)
-          animation_phase_ -= 1.0f;
-        sprite_index = 1 + (int)(3 * animation_phase_);
+        loadAnimationFromUri(Uri.parse("content:///run.humanoid.animation"));
+        stepAnimation(kGroundAnimationSpeed * Math.abs(dx));
+      } else {
+        loadAnimationFromUri(Uri.parse("content:///stand.humanoid.animation"));
+        stepAnimation(time_step);
       }
-    } else {  // In the air
-      animation_phase_ += kAirAnimationSpeed * time_step;
-      while (animation_phase_ > 1.0f)
-        animation_phase_ -= 1.0f;
-      sprite_index = 5 + (int)(4 * animation_phase_);
+    } else {
+      loadAnimationFromUri(Uri.parse("content:///jump.humanoid.animation"));
+      stepAnimation(time_step);
     }
 
-    setSprite(sprite_index, facing_left_);
-    */
     mWeapon.setSprite(facing_left_);
 
     // Update the shooting mechanism. The choices for shot direction are
@@ -151,7 +140,6 @@ public class Avatar extends ArticulatedEntity {
   public Weapon mWeapon = new Weapon(game_state_);
 
   private static final float kAirAcceleration = 40.0f;
-  private static final float kAirAnimationSpeed = 3.0f;
   private static final float kAnimationStopThreshold = 40.0f;
   private static final float kDrawingScale = 0.4f;
   private static final float kGravity = 200.0f;
