@@ -179,10 +179,12 @@ public class GameState implements Game {
       ((Entity)it.next()).draw(graphics, view_x_, view_y_, zoom_);
 
     // Draw the avatar and weapon.
-    if (avatar.alive)
+    if (avatar.alive) {
       avatar.draw(graphics, view_x_, view_y_, zoom_);
-	avatar.mWeapon.setImage(graphics);
-	avatar.mWeapon.draw(graphics, view_x_, view_y_, zoom_);
+      avatar.mWeapon.setImage(graphics);
+      avatar.mWeapon.draw(graphics, view_x_, view_y_, zoom_);
+    }
+
     // Draw the projectiles.
     for (Iterator it = projectiles.iterator(); it.hasNext();)
       ((Entity)it.next()).draw(graphics, view_x_, view_y_, zoom_);

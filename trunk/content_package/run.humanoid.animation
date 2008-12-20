@@ -1,0 +1,39 @@
+root		0.0	0
+
+thigh_r		0.0	-60
+thigh_r		1.0	50
+thigh_r		2.0	-60
+
+thigh_l		0.0	50
+thigh_l		1.0	-60
+thigh_l		2.0	50
+
+leg_r		0.0	20
+leg_r		1.0	40
+leg_r		2.0	20
+
+leg_l		0.0	40
+leg_l		1.0	20
+leg_l		2.0	40
+
+torso		0.0	179
+torso		1.0	181
+torso		2.0	179
+
+shoulder_r	0.0	160
+shoulder_r	1.0	170
+shoulder_r	2.0	160
+
+shoulder_l	0.0	190
+shoulder_l	1.0	200
+shoulder_l	2.0	190
+
+arm_r   	0.0	-110
+arm_l   	0.0	140
+
+farm_r   	0.0	-110
+farm_l   	0.0	-80
+
+head		0.0	0
+head		1.0	20
+head		2.0	0
