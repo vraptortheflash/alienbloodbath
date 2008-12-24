@@ -23,10 +23,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
 
-import android.com.abb.Content;
-import android.com.abb.GameState;
-import android.com.abb.GameView;
-
 
 public class AlienBloodBathMain extends Activity {
   @Override

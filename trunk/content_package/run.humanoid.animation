@@ -28,8 +28,13 @@ shoulder_l	0.0	190
 shoulder_l	1.0	200
 shoulder_l	2.0	190
 
-arm_r   	0.0	-110
-arm_l   	0.0	140
+arm_r   	0.0	-120
+arm_r   	1.0	-100
+arm_r   	2.0	-120
+
+arm_l   	0.0	150
+arm_l   	1.0	130
+arm_l   	2.0	150
 
 farm_r   	0.0	-110
 farm_l   	0.0	-80

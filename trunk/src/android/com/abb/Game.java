@@ -15,8 +15,6 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 
-import android.com.abb.Graphics;
-
 
 /** Simple interface which hides most of the Android specifics. All method calls
  * are serialized. */
