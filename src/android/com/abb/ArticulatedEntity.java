@@ -26,15 +26,11 @@ import java.util.Random;
 import java.util.Stack;
 import junit.framework.Assert;
 
-import android.com.abb.Content;
-import android.com.abb.Entity;
-import android.com.abb.Graphics;
 
-
-/** An ArticulatedEntity is a functional replacement to an Entity. It represents
- * a single drawable, collideable game unit. The ArticulatedEntity class
- * provides, on top of Entity, the drawing of an articulated model and joint
- * animations. */
+/** An ArticulatedEntity is a functional replacement to an Entity instance. It
+ * represents a single drawable, physical game object. The ArticulatedEntity
+ * class provides, on top of Entity, the drawing of an articulated model and
+ * joint animations. */
 public class ArticulatedEntity extends Entity {
   public ArticulatedEntity() {
     super();
@@ -124,6 +120,17 @@ public class ArticulatedEntity extends Entity {
     mRoot.draw(graphics, mImageHandle, root_transformation, mAnimation);
   }
 
+  /** Return the 3x3 transformation matrix used to draw child parts. In other
+   * words, the returned matrix transforms points into screen coordinates with
+   * the origin at the tip / end of the part. For example, multiplying by the
+   * vector (0, 0, 1)^T will yield (x, y, w) screen coordinates at the tip of
+   * the part. */
+  public Matrix getPartTransformation(String part_name) {
+    Part part = findPartByName(part_name);
+    Assert.assertNotNull("Unknown part name: " + part_name, part);
+    return part.transformation;
+  }
+
   private Part findPartByName(String part_name) {
     if (part_name.equals("root")) {
       return mRoot;
@@ -131,7 +138,6 @@ public class ArticulatedEntity extends Entity {
       return mRoot.findPartByName(part_name);
     }
   }
-
 
   /** The Part class structure represents a single element of the articulated
    * entity. */
@@ -182,6 +188,8 @@ public class ArticulatedEntity extends Entity {
       }
       return null;
     }
+
+    private float[] mTransformationData = new float[9];
   }
 
   /** The Animation class stores and provides access to a independent, time
@@ -236,6 +244,11 @@ public class ArticulatedEntity extends Entity {
     }
 
     public float getPartAngle(String part_name) {
+      ArrayList<KeyFrame> part_keyframes = mKeyFrames.get(part_name);
+      if (part_keyframes == null) {
+        return 0.0f;  // No animation track for this part exists.
+      }
+
       // We need to find the two nearest key frames and interpolate between
       // them. The following assumes the key frames are sorted within each track
       // prior to this call.
@@ -243,11 +256,6 @@ public class ArticulatedEntity extends Entity {
       float angle_a = 0.0f;
       float time_b = 0.0f;
       float angle_b = 0.0f;
-
-      ArrayList<KeyFrame> part_keyframes = mKeyFrames.get(part_name);
-      if (part_keyframes == null) {
-        return 0.0f;
-      }
 
       for (int index = 0; index < part_keyframes.size(); ++index) {
         KeyFrame keyframe_a = part_keyframes.get(index);

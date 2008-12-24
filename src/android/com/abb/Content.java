@@ -29,7 +29,8 @@ import junit.framework.Assert;
 
 
 /** Class to abstract the details of extracting and accessing files from the ABB
- * content zip file in the same was files on disk are accessed. */
+ * content zip file in the same was files on disk are accessed. TODO: This class
+ * is not thread-safe. Extracted files are not cached. */
 public class Content {
   public static void initialize(Resources resources) {
     try {

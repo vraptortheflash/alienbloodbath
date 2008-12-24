@@ -36,7 +36,7 @@ public class MapSelectActivity extends ListActivity {
     super.onCreate(savedInstanceState);
 
     loadMaps();
-    String[] maps = maps_.toArray(new String[0]);
+    String[] maps = mMaps.toArray(new String[0]);
 
     int item_layout_id = R.layout.mapselect_item;
     setListAdapter(new ArrayAdapter<String>(this, item_layout_id, maps));
@@ -46,14 +46,14 @@ public class MapSelectActivity extends ListActivity {
   @Override
   protected void onListItemClick(ListView l, View v, int position, long id) {
     Intent intent = new Intent(Intent.ACTION_VIEW,
-                               Uri.parse(map_uris_.get(position)),
+                               Uri.parse(mMapUris.get(position)),
                                this, AlienBloodBathMain.class);
     setResult(RESULT_OK, intent);
     finish();
   }
 
   private void unzipMapPackages() {
-    for (String root_path : paths_) {
+    for (String root_path : mSearchPaths) {
       String[] files = (new File(root_path)).list();
       if (files == null) {
         continue;
@@ -106,27 +106,28 @@ public class MapSelectActivity extends ListActivity {
     unzipMapPackages();
 
     // Add maps located within files.
-    for (String root_path : paths_) {
+    for (String root_path : mSearchPaths) {
       Log.d("MapSelectActivity::LoadMaps", "Listing " + root_path);
       String[] map_paths = Content.list(Uri.parse(root_path));
-      if (map_paths == null)
+      if (map_paths == null) {
         continue;
+      }
 
       for (String map_path : map_paths) {
         String full_path = root_path + map_path;
         Log.d("MapSelectActivity::LoadMaps",
               "Looking for level_0.txt in " + full_path);
         if (Content.exists(Uri.parse(full_path + "level_0.txt"))) {
-          maps_.add(full_path);
-          map_uris_.add(full_path);
+          mMaps.add(full_path);
+          mMapUris.add(full_path);
         }
       }
     }
   }
 
-  private ArrayList<String> maps_ = new ArrayList<String>();
-  private ArrayList<String> map_uris_ = new ArrayList<String>();
-  private String[] paths_ = {
+  private ArrayList<String> mMaps = new ArrayList<String>();
+  private ArrayList<String> mMapUris = new ArrayList<String>();
+  private String[] mSearchPaths = {
     "content:///",
     "file:///sdcard/abb_maps/",
     "file:///sdcard/" };

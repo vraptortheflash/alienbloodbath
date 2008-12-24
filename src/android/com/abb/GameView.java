@@ -32,9 +32,7 @@ import android.widget.TextView;
 import java.lang.Math;
 import java.lang.System;
 import java.lang.Thread;
-
-import android.com.abb.Game;
-import android.com.abb.Graphics;
+import junit.framework.Assert;
 
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
@@ -53,7 +51,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       }
 
       synchronized (game_) {
-        graphics_  = new Graphics();
+        Assert.assertEquals(
+            "GameView thread must only be run once.", graphics_, null);
+        graphics_ = new Graphics();
         graphics_.initialize(surface_holder_);
         game_.initializeGraphics(graphics_);
       }
@@ -64,7 +64,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       // possible. Here we define the maximum framerate which needs to make the
       // trade off between graphics fluidity and power savings.
       final float kMaxFrameRate = 15.0f;  // Frames / second.
-      final float kMinFrameRate = 4.0f;   // Frames / second.
+      final float kMinFrameRate = 5.0f;   // Frames / second.
       final float kMinTimeStep = 1.0f / kMaxFrameRate;  // Seconds.
       final float kMaxTimeStep = 1.0f / kMinFrameRate;  // Seconds.
 
@@ -99,6 +99,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             // If someone has notified this thread, just forget about it and
             // continue on. It's not worth the cycles to handle.
           }
+        } else {
+          // In the case where the thread took too long, let the thread yield to
+          // other processes. This should usually only happen in the case
+          // something "big" is happening and we don't need / want to starve the
+          // more important system threads.
+          try {
+            Thread.sleep(0);  // Yield.
+          } catch (InterruptedException ex) {}
         }
         time_step = Math.max(time_step, kMinTimeStep);
         time_step = Math.min(time_step, kMaxTimeStep);
@@ -113,6 +121,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
           graphics_.endFrame();
         }
       }
+      graphics_.destroy();
     }
 
     public void setGame(Game game) {

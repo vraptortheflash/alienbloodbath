@@ -15,19 +15,18 @@ import android.graphics.Rect;
 import android.net.Uri;
 import android.view.KeyEvent;
 
-import android.com.abb.ArticulatedEntity;
-import android.com.abb.GameState;
-import android.com.abb.Weapon;
-
 
 public class Avatar extends ArticulatedEntity {
   public Avatar(GameState game_state) {
     super();
-    game_state_ = game_state;
+    mGameState = game_state;
+    mWeapon = new Weapon(mGameState);
+
     setDrawingScale(kDrawingScale);
     radius = kRadius;
   }
 
+  @Override
   public void step(float time_step) {
     super.step(time_step);
     mWeapon.x = x;
@@ -36,22 +35,21 @@ public class Avatar extends ArticulatedEntity {
 
     // Update the horizontal acceleration acceleration according to the current
     // controls and the contact with the ground.
-    if (ddx > 0 && has_ground_contact)
+    if (ddx > 0 && has_ground_contact) {
       ddx = +kGroundAcceleration;
-    if (ddx > 0 && !has_ground_contact)
+    } else if (ddx > 0 && !has_ground_contact) {
       ddx = +kAirAcceleration;
-    if (ddx < 0 && has_ground_contact)
+    } else if (ddx < 0 && has_ground_contact) {
       ddx = -kGroundAcceleration;
-    if (ddx < 0 && !has_ground_contact)
+    } else if (ddx < 0 && !has_ground_contact) {
       ddx = -kAirAcceleration;
+    }
 
     // Update the avatar animation frame according the current entity motion.
     if (dx < 0) {
-      facing_left_ = true;
-      sprite_flipped_horizontal = facing_left_;
+      sprite_flipped_horizontal = true;
     } else if (dx > 0) {
-      facing_left_ = false;
-      sprite_flipped_horizontal = facing_left_;
+      sprite_flipped_horizontal = false;
     }
 
     if (has_ground_contact) {
@@ -67,14 +65,15 @@ public class Avatar extends ArticulatedEntity {
       stepAnimation(time_step);
     }
 
-    mWeapon.setSprite(facing_left_);
+    mWeapon.setSprite(sprite_flipped_horizontal);
 
     // Update the shooting mechanism. The choices for shot direction are
     // specialized for each animation case: in the air, facing left, right, and
-    // considering the avatar's speed.
-    shot_delay_ -= time_step;
-    if (shooting_ && shot_delay_ < time_step) {
-      shot_delay_ = kShotDelay;
+    // considering the avatar's speed. TODO(barnes): Replace all of this with
+    // the equivalent in Weapon.java.
+    mShotDelay -= time_step;
+    if (mShooting && mShotDelay < time_step) {
+      mShotDelay = kShotDelay;
       float shot_angle;
       float shot_distance = kShotDistance;
       float shot_velocity = kShotVelocity;
@@ -82,69 +81,64 @@ public class Avatar extends ArticulatedEntity {
       float y_offset;
 
       if (!has_ground_contact) {
-        shot_angle = shot_phase_;
-        if (facing_left_)
-          shot_angle = -shot_phase_;
-        shot_delay_ -= 2.0f * time_step;
-        shot_phase_ += 45.0f * (float)Math.PI / 180.0f;
+        shot_angle = mShotPhase;
+        if (sprite_flipped_horizontal) {
+          shot_angle = -mShotPhase;
+        }
+        mShotDelay -= 2.0f * time_step;
+        mShotPhase += 45.0f * (float)Math.PI / 180.0f;
         shot_velocity *= 0.6f;
         x_offset = kShotDistance * (float)Math.cos(shot_angle);
         y_offset = kShotDistance * (float)Math.sin(shot_angle);
-      } else if (facing_left_) {
-        shot_angle = kShotSpread * (float)Math.sin(shot_phase_) + (float)Math.PI;
-        shot_phase_ += 10.0f;
+      } else if (sprite_flipped_horizontal) {
+        shot_angle = kShotSpread * (float)(Math.sin(mShotPhase) + Math.PI);
+        mShotPhase += 10.0f;
         x_offset = -kShotOffsetX;
         y_offset = kShotOffsetY;
-        if (Math.abs(dx) > kAnimationStopThreshold)
-          y_offset += kShotDistance / 2.0f * (float)Math.sin(shot_phase_);
+        if (Math.abs(dx) > kAnimationStopThreshold) {
+          y_offset += kShotDistance / 2.0f * (float)Math.sin(mShotPhase);
+        }
       } else {
-        shot_angle = kShotSpread * (float)Math.sin(shot_phase_);
-        shot_phase_ += 10.0f;
+        shot_angle = kShotSpread * (float)Math.sin(mShotPhase);
+        mShotPhase += 10.0f;
         x_offset = kShotOffsetX;
         y_offset = kShotOffsetY;
-        if (Math.abs(dx) > kAnimationStopThreshold)
-          y_offset += kShotDistance / 2.0f * (float)Math.sin(shot_phase_);
+        if (Math.abs(dx) > kAnimationStopThreshold) {
+          y_offset += kShotDistance / 2.0f * (float)Math.sin(mShotPhase);
+        }
       }
 
       float dx_offset = shot_velocity * (float)Math.cos(shot_angle);
       float dy_offset = shot_velocity * (float)Math.sin(shot_angle);
-      game_state_.createFireProjectile(
+      mGameState.createFireProjectile(
           x + x_offset, y + y_offset, dx + dx_offset, dy + dy_offset);
     }
   }
 
   public void setKeyState(int key_code, int state) {
-    if (key_code == kKeyLeft)
+    if (key_code == kKeyLeft) {
       ddx = -kGroundAcceleration * state;
-    if (key_code == kKeyRight)
+    } else if (key_code == kKeyRight) {
       ddx = +kGroundAcceleration * state;
-    if (key_code == kKeyJump && state == 1 && has_ground_contact)
+    } else if (key_code == kKeyJump && state == 1 && has_ground_contact) {
       dy -= kJumpVelocity;
-    if (key_code == kKeyShoot)
-      shooting_ = (state == 1);
+    } else if (key_code == kKeyShoot) {
+      mShooting = (state == 1);
+    }
   }
 
-    private void setSprite(int index, boolean facing_left) {
-    // Set up the sprite drawing parameters within our *parent* Entity class.
-    sprite_rect.top = kSpriteSize * index;
-    sprite_rect.bottom = kSpriteSize * index + kSpriteSize;
-    sprite_flipped_horizontal = facing_left;
-  }
-
-  private float animation_phase_ = 0.0f;
-  private boolean facing_left_;
-  private GameState game_state_;
-  private boolean shooting_;
-  private float shot_delay_;
-  private float shot_phase_;
-  public Weapon mWeapon = new Weapon(game_state_);
+  private GameState mGameState;
+  private float mShotDelay;
+  private boolean mShooting;
+  private float mShotPhase;
+  public Weapon mWeapon;
 
   private static final float kAirAcceleration = 40.0f;
   private static final float kAnimationStopThreshold = 40.0f;
   private static final float kDrawingScale = 0.4f;
   private static final float kGravity = 200.0f;
   private static final float kGroundAcceleration = 700.0f;
-  private static final float kGroundAnimationSpeed = 1.0f / 600.0f;
+  private static final float kGroundAnimationSpeed = 1.0f / 500.0f;
   private static final float kJumpVelocity = 250.0f;
   private static final int kKeyLeft = KeyEvent.KEYCODE_A;
   private static final int kKeyRight = KeyEvent.KEYCODE_S;

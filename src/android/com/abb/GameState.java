@@ -25,15 +25,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
 
-import android.com.abb.Avatar;
-import android.com.abb.Blood;
-import android.com.abb.Content;
-import android.com.abb.Enemy;
-import android.com.abb.Fire;
-import android.com.abb.Game;
-import android.com.abb.Graphics;
-import android.com.abb.Map;
-import android.com.abb.Weapon;
 
 public class GameState implements Game {
   public Avatar avatar = new Avatar(this);
@@ -45,8 +36,8 @@ public class GameState implements Game {
   public ArrayList<Entity> projectiles = new ArrayList<Entity>();
 
   public GameState(Context context) {
-    context_ = context;
-    vibrator_ = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
+    mContext = context;
+    mVibrator = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
   }
 
   public void initializeGraphics(Graphics graphics) {
@@ -63,8 +54,8 @@ public class GameState implements Game {
     misc_sprites = graphics.loadImageFromBitmap(misc_sprites_bitmap);
   }
 
-  /** Initialize the game state structure. Upon returning, game_state_ should be
-   * in a state representing a new game life. */
+  /** Initialize the game state structure. Upon returning the game state should
+   * be in a state representing a new game "life". */
   public void reset() {
     map.reload();
     particles.clear();
@@ -72,11 +63,11 @@ public class GameState implements Game {
     enemies.clear();
     avatar.stop();
     avatar.alive = true;
-    avatar.x = map.starting_x;
-    avatar.y = map.starting_y;
-    view_x_ = target_view_x_ = avatar.x;
-    view_y_ = target_view_y_ = avatar.y;
-    death_timer_ = kDeathTimer;
+    avatar.x = map.getStartingX();
+    avatar.y = map.getStartingY();
+    mViewX = mTargetViewX = avatar.x;
+    mViewY = mTargetViewY = avatar.y;
+    mDeathTimer = kDeathTimer;
   }
 
   public boolean onKeyDown(int key_code) {
@@ -98,16 +89,17 @@ public class GameState implements Game {
   /** Run the game simulation for the specified amount of seconds. */
   protected void stepGame(float time_step) {
     // Update the view parameters.
-    if (!avatar.has_ground_contact)
-      target_zoom_ = kAirZoom;
-    else
-      target_zoom_ = kGroundZoom;
-    target_view_x_ = avatar.x + kViewLead * avatar.dx;
-    target_view_y_ = avatar.y + kViewLead * avatar.dy;
+    if (!avatar.has_ground_contact) {
+      mTargetZoom = kAirZoom;
+    } else {
+      mTargetZoom = kGroundZoom;
+    }
+    mTargetViewX = avatar.x + kViewLead * avatar.dx;
+    mTargetViewY = avatar.y + kViewLead * avatar.dy;
 
-    zoom_ += (target_zoom_ - zoom_) * kZoomSpeed;
-    view_x_ += (target_view_x_ - view_x_) * kViewSpeed;
-    view_y_ += (target_view_y_ - view_y_) * kViewSpeed;
+    mZoom += (mTargetZoom - mZoom) * kZoomSpeed;
+    mViewX += (mTargetViewX - mViewX) * kViewSpeed;
+    mViewY += (mTargetViewY - mViewY) * kViewSpeed;
 
     // Step the avatar.
     if (avatar.alive) {
@@ -119,17 +111,18 @@ public class GameState implements Game {
         reset();
       }
     } else {
-      if (death_timer_ == kDeathTimer) {
+      if (mDeathTimer == kDeathTimer) {
         for (int n = 0; n < 2 * kBloodBathSize; n++) {
           createBloodParticle(
               avatar.x, avatar.y,
-              2.0f * kBloodBathVelocity * (0.5f - random_.nextFloat()) + avatar.dx,
-              2.0f * kBloodBathVelocity * (0.5f - random_.nextFloat()) + avatar.dy);
+              2.0f * kBloodBathVelocity * (0.5f - mRandom.nextFloat()) + avatar.dx,
+              2.0f * kBloodBathVelocity * (0.5f - mRandom.nextFloat()) + avatar.dy);
         }
       }
-      death_timer_ -= time_step;
-      if (death_timer_ < 0)
+      mDeathTimer -= time_step;
+      if (mDeathTimer < 0) {
         reset();
+      }
     }
 
     // Step the enemies.
@@ -142,8 +135,8 @@ public class GameState implements Game {
         for (int n = 0; n < kBloodBathSize; n++) {
           createBloodParticle(
               enemy.x, enemy.y,
-              kBloodBathVelocity * (0.5f - random_.nextFloat()) + enemy.dx,
-              kBloodBathVelocity * (0.5f - random_.nextFloat()) + enemy.dy);
+              kBloodBathVelocity * (0.5f - mRandom.nextFloat()) + enemy.dx,
+              kBloodBathVelocity * (0.5f - mRandom.nextFloat()) + enemy.dy);
         }
         it.remove();
       }
@@ -153,18 +146,21 @@ public class GameState implements Game {
     for (Iterator it = projectiles.iterator(); it.hasNext();) {
       Fire projectile = (Fire)it.next();
       projectile.step(time_step);
-      for (Iterator enemy_it = enemies.iterator(); enemy_it.hasNext();)
+      for (Iterator enemy_it = enemies.iterator(); enemy_it.hasNext();) {
         projectile.collideEntity((Entity)enemy_it.next());
-      if (!projectile.alive)
+      }
+      if (!projectile.alive) {
         it.remove();
+      }
     }
 
     // Step the particles.
     for (Iterator it = particles.iterator(); it.hasNext();) {
       Entity particle = (Entity)it.next();
       particle.step(time_step);
-      if (!particle.alive)
+      if (!particle.alive) {
         it.remove();
+      }
     }
   }
 
@@ -172,26 +168,29 @@ public class GameState implements Game {
    * avatar centered in the screen. */
   protected void drawGame(Graphics graphics) {
     // Draw the map tiles.
-    map.draw(graphics, view_x_, view_y_, zoom_);
+    map.draw(graphics, mViewX, mViewY, mZoom);
 
     // Draw the enemies.
-    for (Iterator it = enemies.iterator(); it.hasNext();)
-      ((Entity)it.next()).draw(graphics, view_x_, view_y_, zoom_);
+    for (Iterator it = enemies.iterator(); it.hasNext();) {
+      ((Entity)it.next()).draw(graphics, mViewX, mViewY, mZoom);
+    }
 
     // Draw the avatar and weapon.
     if (avatar.alive) {
-      avatar.draw(graphics, view_x_, view_y_, zoom_);
+      avatar.draw(graphics, mViewX, mViewY, mZoom);
       avatar.mWeapon.setImage(graphics);
-      avatar.mWeapon.draw(graphics, view_x_, view_y_, zoom_);
+      //avatar.mWeapon.draw(graphics, mViewX, mViewY, mZoom);
     }
 
     // Draw the projectiles.
-    for (Iterator it = projectiles.iterator(); it.hasNext();)
-      ((Entity)it.next()).draw(graphics, view_x_, view_y_, zoom_);
+    for (Iterator it = projectiles.iterator(); it.hasNext();) {
+      ((Entity)it.next()).draw(graphics, mViewX, mViewY, mZoom);
+    }
 
     // Draw the particles.
-    for (Iterator it = particles.iterator(); it.hasNext();)
-      ((Entity)it.next()).draw(graphics, view_x_, view_y_, zoom_);
+    for (Iterator it = particles.iterator(); it.hasNext();) {
+      ((Entity)it.next()).draw(graphics, mViewX, mViewY, mZoom);
+    }
   }
 
   public Entity createEnemy(float x, float y) {
@@ -228,18 +227,18 @@ public class GameState implements Game {
   }
 
   public void vibrate() {
-    vibrator_.vibrate(kVibrateLength);
+    mVibrator.vibrate(kVibrateLength);
   }
 
   public void loadStateBundle(Bundle saved_instance_state) {
     map.loadStateBundle(saved_instance_state.getBundle("map"));
     reset();
 
-    target_view_x_ = saved_instance_state.getFloat("target_view_x_");
-    target_view_y_ = saved_instance_state.getFloat("target_view_y_");
-    view_x_ = saved_instance_state.getFloat("view_x_");
-    view_y_ = saved_instance_state.getFloat("view_y_");
-    zoom_ = saved_instance_state.getFloat("zoom_");
+    mTargetViewX = saved_instance_state.getFloat("mTargetViewX");
+    mTargetViewY = saved_instance_state.getFloat("mTargetViewY");
+    mViewX = saved_instance_state.getFloat("mViewX");
+    mViewY = saved_instance_state.getFloat("mViewY");
+    mZoom = saved_instance_state.getFloat("mZoom");
 
     avatar.x = saved_instance_state.getFloat("avatar.x");
     avatar.y = saved_instance_state.getFloat("avatar.y");
@@ -256,11 +255,11 @@ public class GameState implements Game {
     Bundle saved_instance_state = new Bundle();
     saved_instance_state.putBundle("map", map.saveStateBundle());
 
-    saved_instance_state.putFloat("target_view_x_", target_view_x_);
-    saved_instance_state.putFloat("target_view_y_", target_view_y_);
-    saved_instance_state.putFloat("view_x_", view_x_);
-    saved_instance_state.putFloat("view_y_", view_y_);
-    saved_instance_state.putFloat("zoom_", zoom_);
+    saved_instance_state.putFloat("mTargetViewX", mTargetViewX);
+    saved_instance_state.putFloat("mTargetViewY", mTargetViewY);
+    saved_instance_state.putFloat("mViewX", mViewX);
+    saved_instance_state.putFloat("mViewY", mViewY);
+    saved_instance_state.putFloat("mZoom", mZoom);
 
     saved_instance_state.putFloat("avatar.x", avatar.x);
     saved_instance_state.putFloat("avatar.y", avatar.y);
@@ -272,16 +271,16 @@ public class GameState implements Game {
     return saved_instance_state;
   }
 
-  private Context context_;
-  private float death_timer_ = kDeathTimer;
-  private Random random_ = new Random();
-  private float target_view_x_ = 0.0f;
-  private float target_view_y_ = 0.0f;
-  private float target_zoom_ = kGroundZoom;
-  private Vibrator vibrator_;
-  private float view_x_ = 0.0f;
-  private float view_y_ = 0.0f;
-  private float zoom_ = kGroundZoom;
+  private Context mContext;
+  private float mDeathTimer = kDeathTimer;
+  private Random mRandom = new Random();
+  private float mTargetViewX = 0.0f;
+  private float mTargetViewY = 0.0f;
+  private float mTargetZoom = kGroundZoom;
+  private Vibrator mVibrator;
+  private float mViewX = 0.0f;
+  private float mViewY = 0.0f;
+  private float mZoom = kGroundZoom;
 
   private static final float kAirZoom = 0.6f;
   private static final int kBloodBathSize = 10;  // Number of blood particles.

@@ -23,7 +23,6 @@ import android.opengl.GLU;
 import android.opengl.GLUtils;
 import android.util.Log;
 import android.view.SurfaceHolder;
-
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -59,7 +58,7 @@ public class Graphics {
     surfaceChanged(
         surface_holder, surface_frame.width(), surface_frame.height());
 
-    switch (backend_type_) {
+    switch (mBackendType) {
       case ANDROID2D:
         Log.d("Graphics::Initialize", "Initializing Android2D rendering.");
         initializeAndroid2D();
@@ -73,23 +72,23 @@ public class Graphics {
 
   public void surfaceChanged(SurfaceHolder surface_holder,
                              int width, int height) {
-    surface_holder_ = surface_holder;
-    surface_width_ = width;
-    surface_height_ = height;
-    Log.d("Graphics::SurfaceChanged",
-          "Size = " + surface_width_ + "x" + surface_height_ + ".");
+    mSurfaceHolder = surface_holder;
+    mSurfaceWidth = width;
+    mSurfaceHeight = height;
+    Log.d("Graphics::surfaceChanged",
+          "Size = " + mSurfaceWidth + "x" + mSurfaceHeight + ".");
 
-    switch (backend_type_) {
+    switch (mBackendType) {
       case ANDROID2D:
         break;  // Don't care.
       case OPENGL:
-        gl_surface_initialized_ = false;
+        mGlSurfaceInitialized = false;
         break;
     }
   }
 
   public void destroy() {
-    switch (backend_type_) {
+    switch (mBackendType) {
       case ANDROID2D:
         break;  // Don't care.
       case OPENGL:
@@ -99,7 +98,7 @@ public class Graphics {
   }
 
   public int getWidth() {
-    switch (backend_type_) {
+    switch (mBackendType) {
       case ANDROID2D:
         return getWidthAndroid2D();
       case OPENGL:
@@ -109,7 +108,7 @@ public class Graphics {
   }
 
   public int getHeight() {
-    switch (backend_type_) {
+    switch (mBackendType) {
       case ANDROID2D:
         return getHeightAndroid2D();
       case OPENGL:
@@ -125,7 +124,7 @@ public class Graphics {
     Assert.assertNotNull(
         "Null bitmap specified in LoadImageFromBitmap", bitmap);
 
-    switch (backend_type_) {
+    switch (mBackendType) {
       case ANDROID2D:
         return loadImageFromBitmapAndroid2D(bitmap);
       case OPENGL:
@@ -135,7 +134,7 @@ public class Graphics {
   }
 
   public void freeImage(int image_handle) {
-    switch (backend_type_) {
+    switch (mBackendType) {
       case ANDROID2D:
         freeImageAndroid2D(image_handle);
         break;
@@ -149,7 +148,7 @@ public class Graphics {
                         boolean flipped_horizontal, boolean flipped_vertical) {
     Assert.assertTrue("Invalid image handle in drawImage", image_handle >= 0);
 
-    switch (backend_type_) {
+    switch (mBackendType) {
       case ANDROID2D:
         drawImageAndroid2D(image_handle, source_rect, dest_rect,
                            flipped_horizontal, flipped_vertical);
@@ -165,7 +164,7 @@ public class Graphics {
                         boolean flipped_horizontal, boolean flipped_vertical) {
     Assert.assertTrue("Invalid image handle in drawImage", image_handle >= 0);
 
-    switch (backend_type_) {
+    switch (mBackendType) {
       case ANDROID2D:
         drawImageAndroid2D(image_handle, source_rect, dest_matrix,
                            flipped_horizontal, flipped_vertical);
@@ -178,7 +177,7 @@ public class Graphics {
   }
 
   public void beginFrame() {
-   switch (backend_type_) {
+   switch (mBackendType) {
       case ANDROID2D:
         beginFrameAndroid2D();
         break;
@@ -189,7 +188,7 @@ public class Graphics {
   }
 
   public void endFrame() {
-    switch (backend_type_) {
+    switch (mBackendType) {
       case ANDROID2D:
         endFrameAndroid2D();
         break;
@@ -199,57 +198,65 @@ public class Graphics {
     }
   }
 
+  public boolean hasHardwareAcceleration() {
+    return mHasHardwareAcceleration;
+  }
+
   /**
    * Private shared methods  and state.
    */
 
   void determineBackendType() {
-    // Determine which rendering backend to use based off of the system setup,
+    // Determine which rendering back-end to use based off of the system setup,
     // specifically the presence of rendering hardware. OpenGL appears to be
     // faster on both the Emulator and the HTC Dream handset than the Android2D
-    // back end.
-    backend_type_ = BackendType.OPENGL;
+    // back end. The software OpenGL rasterizer is faster than the Android2D
+    // graphics API so it should be preferred in nearly all situations. However,
+    // when using either software back-end, pixel fill rate has been
+    // experimentally been shown to be bottleneck.
+    mBackendType = BackendType.OPENGL;
   }
 
   private enum BackendType { ANDROID2D, OPENGL }
-  private BackendType backend_type_;
-  private SurfaceHolder surface_holder_;
-  private int surface_height_;
-  private int surface_width_;
+  private BackendType mBackendType;
+  private SurfaceHolder mSurfaceHolder;
+  private int mSurfaceHeight;
+  private int mSurfaceWidth;
 
   /**
    * Private Android 2D backend methods and state.
    */
 
   private void initializeAndroid2D() {
-    surface_holder_.setType(SurfaceHolder.SURFACE_TYPE_HARDWARE);
+    mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_HARDWARE);
   }
 
   private int loadImageFromBitmapAndroid2D(Bitmap bitmap) {
-    images_android2D_.add(bitmap);
-    return images_android2D_.size();
+    mImagesAndroid2D.add(bitmap);
+    return mImagesAndroid2D.size();
   }
 
   private void freeImageAndroid2D(int image_handle) {
-    if (image_handle >= 1)
-      images_android2D_.set(image_handle - 1, null);
+    if (image_handle >= 1) {
+      mImagesAndroid2D.set(image_handle - 1, null);
+    }
   }
 
   private int getWidthAndroid2D() {
-    return surface_width_;
+    return mSurfaceWidth;
   }
 
   private int getHeightAndroid2D() {
-    return surface_height_;
+    return mSurfaceHeight;
   }
 
   private void beginFrameAndroid2D() {
-    canvas_android2D_ = surface_holder_.lockCanvas(null);
-    canvas_android2D_.drawRGB(0, 0, 0);
+    mCanvasAndroid2D = mSurfaceHolder.lockCanvas(null);
+    mCanvasAndroid2D.drawRGB(0, 0, 0);
   }
 
   private void endFrameAndroid2D() {
-    surface_holder_.unlockCanvasAndPost(canvas_android2D_);
+    mSurfaceHolder.unlockCanvasAndPost(mCanvasAndroid2D);
   }
 
   private void drawImageAndroid2D(int image_handle,
@@ -260,17 +267,17 @@ public class Graphics {
                       !flipped_vertical);
 
     if (flipped_horizontal) {
-      transformation_android2D_.setScale(-1.0f, 1.0f);
-      transformation_android2D_.postTranslate(
+      mTransformationAndroid2D.setScale(-1.0f, 1.0f);
+      mTransformationAndroid2D.postTranslate(
           2.0f * dest_rect.left + dest_rect.width(), 0.0f);
     } else {
-      transformation_android2D_.setScale(1.0f, 1.0f);
+      mTransformationAndroid2D.setScale(1.0f, 1.0f);
     }
 
-    Bitmap bitmap = images_android2D_.get(image_handle - 1);
-    canvas_android2D_.setMatrix(transformation_android2D_);
-    canvas_android2D_.drawBitmap(
-        bitmap, source_rect, dest_rect, paint_android2D_);
+    Bitmap bitmap = mImagesAndroid2D.get(image_handle - 1);
+    mCanvasAndroid2D.setMatrix(mTransformationAndroid2D);
+    mCanvasAndroid2D.drawBitmap(
+        bitmap, source_rect, dest_rect, mPaintAndroid2D);
   }
 
   private void drawImageAndroid2D(int image_handle,
@@ -280,10 +287,10 @@ public class Graphics {
     Assert.fail("Method not yet implemented.");
   }
 
-  private Canvas canvas_android2D_;
-  private ArrayList<Bitmap> images_android2D_ = new ArrayList<Bitmap>();
-  private Paint paint_android2D_ = new Paint();
-  private Matrix transformation_android2D_ = new Matrix();
+  private Canvas mCanvasAndroid2D;
+  private ArrayList<Bitmap> mImagesAndroid2D = new ArrayList<Bitmap>();
+  private Paint mPaintAndroid2D = new Paint();
+  private Matrix mTransformationAndroid2D = new Matrix();
 
   /**
    * Private OpenGL backend methods and state.
@@ -294,12 +301,12 @@ public class Graphics {
     // http://java.sun.com/javame/reference/apis/jsr239/javax/microedition
     //                                         /khronos/opengles/GL10.html
 
-    egl_ = (EGL10)EGLContext.getEGL();
-    egl_display_ = egl_.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
+    mEgl = (EGL10)EGLContext.getEGL();
+    mEglDisplay = mEgl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
 
     // We can now initialize EGL for that display.
     int[] version = new int[2];
-    egl_.eglInitialize(egl_display_, version);
+    mEgl.eglInitialize(mEglDisplay, version);
     Log.d("Graphics::initializeOpenGL",
           "Found version: " + version[0] + "." + version[1]);
 
@@ -309,21 +316,21 @@ public class Graphics {
 
     EGLConfig[] configs = new EGLConfig[1];
     int[] num_config = new int[1];
-    egl_.eglChooseConfig(egl_display_, attrib_list, configs, 1, num_config);
-    egl_config_ = configs[0];
-    egl_context_ = egl_.eglCreateContext(
-        egl_display_, egl_config_, EGL10.EGL_NO_CONTEXT, null);
-    gl_ = (GL10)egl_context_.getGL();
+    mEgl.eglChooseConfig(mEglDisplay, attrib_list, configs, 1, num_config);
+    mEglConfig = configs[0];
+    mEglContext = mEgl.eglCreateContext(
+        mEglDisplay, mEglConfig, EGL10.EGL_NO_CONTEXT, null);
+    mGl = (GL10)mEglContext.getGL();
 
     final boolean kEnableOpenGLDebugging = false;
     if (kEnableOpenGLDebugging) {
       int debugging_flags = (GLDebugHelper.CONFIG_LOG_ARGUMENT_NAMES |
                              GLDebugHelper.CONFIG_CHECK_THREAD |
                              GLDebugHelper.CONFIG_CHECK_GL_ERROR);
-      egl_ = (EGL10)GLDebugHelper.wrap(
-          egl_, debugging_flags, new PrintWriter(System.out));
-      gl_ = (GL10)GLDebugHelper.wrap(
-          gl_, debugging_flags, new PrintWriter(System.out));
+      mEgl = (EGL10)GLDebugHelper.wrap(
+          mEgl, debugging_flags, new PrintWriter(System.out));
+      mGl = (GL10)GLDebugHelper.wrap(
+          mGl, debugging_flags, new PrintWriter(System.out));
     }
 
     // Create a place holder surface so we can continue with initialization.
@@ -335,26 +342,29 @@ public class Graphics {
   /** Create a new rendering surface. This is indented to be called whenever the
    * window size changes, for example. */
   private void initializeOpenGLSurface() {
-    Log.d("Graphics::initializeOpenGLSurface", "Creating OpenGL surface.");
+    Log.d("Graphics::initializeOpenGLSurface", "Freeing old OpenGL surface.");
 
-    surface_holder_.setType(SurfaceHolder.SURFACE_TYPE_GPU);
+    mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_GPU);
 
-    if (egl_surface_ != null) {
+    if (mEglSurface != null) {
       // Unbind and destroy the old EGL surface, if there is one.
-      egl_.eglMakeCurrent(egl_display_,
+      mEgl.eglMakeCurrent(mEglDisplay,
                           EGL10.EGL_NO_SURFACE,
                           EGL10.EGL_NO_SURFACE,
                           EGL10.EGL_NO_CONTEXT);
-      egl_.eglDestroySurface(egl_display_, egl_surface_);
+      mEgl.eglDestroySurface(mEglDisplay, mEglSurface);
+      mEglSurface = null;
     }
 
     // Create an EGL surface we can render into.
-    egl_surface_ = egl_.eglCreateWindowSurface(
-        egl_display_, egl_config_, surface_holder_, null);
+    Log.d("Graphics::initializeOpenGLSurface", "Creating new OpenGL surface.");
+    mEglSurface = mEgl.eglCreateWindowSurface(
+        mEglDisplay, mEglConfig, mSurfaceHolder, null);
 
     // Before we can issue GL commands, we need to make sure the context is
     // current and bound to a surface.
-    egl_.eglMakeCurrent(egl_display_, egl_surface_, egl_surface_, egl_context_);
+    Log.d("Graphics::initializeOpenGLSurface", "Updating OpenGL context.");
+    mEgl.eglMakeCurrent(mEglDisplay, mEglSurface, mEglSurface, mEglContext);
 
     initializeOpenGLClientState();
   }
@@ -362,17 +372,35 @@ public class Graphics {
   private void initializeOpenGLClientState() {
     Log.d("Graphics::initializeOpenGLClientState", "Setting up client state.");
 
+    String gl_renderer = mGl.glGetString(GL10.GL_RENDERER);
+    Log.d("Graphics::initializeOpenGLClientState",
+          "Found renderer: " + gl_renderer);
+
+    // Default settings for unknown hardware considerations. We choose to be on
+    // the save side with respect to performance considerations.
+    mHasHardwareAcceleration = false;
+
+    // Dream / G1.
+    if (gl_renderer.indexOf("Q3Dimension") != -1) {
+      mHasHardwareAcceleration = true;
+    }
+
+    // Emulator / Software drivers.
+    if (gl_renderer.indexOf("PixelFlinger") != -1) {
+      mHasHardwareAcceleration = false;
+    }
+
     // Initialize the orthographic projection within our surface. This must
     // happen whenever the surface size changes.
-    gl_.glViewport(0, 0, getWidthOpenGL(), getHeightOpenGL());
-    gl_.glMatrixMode(GL10.GL_PROJECTION);
-    gl_.glLoadIdentity();
-    gl_.glOrthof(0, getWidthOpenGL(), 0, getHeightOpenGL(), -1, 1);
+    mGl.glViewport(0, 0, getWidthOpenGL(), getHeightOpenGL());
+    mGl.glMatrixMode(GL10.GL_PROJECTION);
+    mGl.glLoadIdentity();
+    mGl.glOrthof(0, getWidthOpenGL(), 0, getHeightOpenGL(), -1, 1);
 
     // Since we will only be rendering quads, set up a shared vertex and texture
     // coordinate array. The following is so convoluted I really wonder if this
     // is right of if the Java / OpenGL ES folks need their heads examined.
-    float[] corner_array = { 0, 0,  1, 0,  1, 1, 0, 0,  1, 1,  0, 1 };
+    float[] corner_array = { 0, 0,  1, 0,  1, 1, 0, 1 };
     ByteBuffer corner_byte_buffer =
         ByteBuffer.allocateDirect(4 * corner_array.length);
     corner_byte_buffer.order(ByteOrder.nativeOrder());
@@ -380,44 +408,46 @@ public class Graphics {
     corner_float_buffer.put(corner_array);
     corner_float_buffer.position(0);
 
-    gl_.glVertexPointer(2, GL10.GL_FLOAT, 0, corner_float_buffer);
-    gl_.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-    gl_.glTexCoordPointer(2, GL10.GL_FLOAT, 0, corner_float_buffer);
-    gl_.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
+    mGl.glVertexPointer(2, GL10.GL_FLOAT, 0, corner_float_buffer);
+    mGl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
+    mGl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, corner_float_buffer);
+    mGl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
 
     // OpenGL rendering state configuration.
-    gl_.glEnable(GL10.GL_TEXTURE_2D);
-    gl_.glDisable(GL10.GL_CULL_FACE);
-    gl_.glDisable(GL10.GL_DEPTH_TEST);
-    gl_.glEnable(GL10.GL_BLEND);
-    gl_.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    gl_.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
-    gl_.glDisable(GL10.GL_ALPHA_TEST);
+    mGl.glEnable(GL10.GL_TEXTURE_2D);
+    mGl.glDisable(GL10.GL_CULL_FACE);
+    mGl.glDisable(GL10.GL_DEPTH_TEST);
+    mGl.glEnable(GL10.GL_BLEND);
+    mGl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    mGl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
+    mGl.glDisable(GL10.GL_ALPHA_TEST);
   }
 
   private void destroyOpenGL() {
-    if (egl_surface_ != null) {
-      egl_.eglMakeCurrent(egl_display_,
+    Log.d("Graphics::destroyOpenGL", "Destroying open gl.");
+
+    if (mEglSurface != null) {
+      mEgl.eglMakeCurrent(mEglDisplay,
                           EGL10.EGL_NO_SURFACE,
                           EGL10.EGL_NO_SURFACE,
                           EGL10.EGL_NO_CONTEXT);
-      egl_.eglDestroySurface(egl_display_, egl_surface_);
-      egl_surface_ = null;
+      mEgl.eglDestroySurface(mEglDisplay, mEglSurface);
+      mEglSurface = null;
     }
-    if (egl_context_ != null) {
-      egl_.eglDestroyContext(egl_display_, egl_context_);
-      egl_context_ = null;
+    if (mEglContext != null) {
+      mEgl.eglDestroyContext(mEglDisplay, mEglContext);
+      mEglContext = null;
     }
-    if (egl_display_ != null) {
-      egl_.eglTerminate(egl_display_);
-      egl_display_ = null;
+    if (mEglDisplay != null) {
+      mEgl.eglTerminate(mEglDisplay);
+      mEglDisplay = null;
     }
   }
 
   private int loadImageFromBitmapOpenGL(Bitmap bitmap) {
     // Allocate a texture handle within the OpenGL context.
     int[] texture_names = new int[1];
-    gl_.glGenTextures(1, texture_names, 0);
+    mGl.glGenTextures(1, texture_names, 0);
     int texture_name = texture_names[0];
     Log.d("Graphics::loadImageFromBitmapOpenGL",
           "Allocated texture handle: " + texture_name);
@@ -436,8 +466,8 @@ public class Graphics {
                         ((0x000000FF & pixel) << 16));  // Blue.
     }
     IntBuffer bitmap_data_buffer = IntBuffer.wrap(bitmap_data);
-    gl_.glBindTexture(GL10.GL_TEXTURE_2D, texture_name);
-    gl_.glTexImage2D(GL10.GL_TEXTURE_2D,
+    mGl.glBindTexture(GL10.GL_TEXTURE_2D, texture_name);
+    mGl.glTexImage2D(GL10.GL_TEXTURE_2D,
                      0,                      // Mipmap level.
                      GL10.GL_RGBA,           // Internal format.
                      bitmap.getWidth(),
@@ -446,22 +476,24 @@ public class Graphics {
                      GL10.GL_RGBA,           // Format.
                      GL10.GL_UNSIGNED_BYTE,
                      bitmap_data_buffer);
-    gl_.glTexParameterf(GL10.GL_TEXTURE_2D,
-                       GL10.GL_TEXTURE_MIN_FILTER,
-                       GL10.GL_NEAREST);
-    gl_.glTexParameterf(GL10.GL_TEXTURE_2D,
-                       GL10.GL_TEXTURE_MAG_FILTER,
-                       GL10.GL_NEAREST);
+    mGl.glTexParameterf(GL10.GL_TEXTURE_2D,
+                        GL10.GL_TEXTURE_MIN_FILTER,
+                        GL10.GL_NEAREST);
+    mGl.glTexParameterf(GL10.GL_TEXTURE_2D,
+                        GL10.GL_TEXTURE_MAG_FILTER,
+                        GL10.GL_NEAREST);
 
     // The size must be manually stored for retrieval during the rendering
     // process since the texture coordinate scheme under OpenGL is normalized
     // where as under the Android2D back end, texture coordinates are absolute.
-    if (texture_widths_.size() <= texture_name)
-      texture_widths_.setSize(texture_name + 1);
-    if (texture_heights_.size() <= texture_name)
-      texture_heights_.setSize(texture_name + 1);
-    texture_widths_.set(texture_name, bitmap.getWidth());
-    texture_heights_.set(texture_name, bitmap.getHeight());
+    if (mTextureWidths.size() <= texture_name) {
+      mTextureWidths.setSize(texture_name + 1);
+    }
+    if (mTextureHeights.size() <= texture_name) {
+      mTextureHeights.setSize(texture_name + 1);
+    }
+    mTextureWidths.set(texture_name, bitmap.getWidth());
+    mTextureHeights.set(texture_name, bitmap.getHeight());
     return texture_name;
   }
 
@@ -470,153 +502,155 @@ public class Graphics {
   }
 
   private int getWidthOpenGL() {
-    return surface_width_;
+    return mSurfaceWidth;
   }
 
   private int getHeightOpenGL() {
-    return surface_height_;
+    return mSurfaceHeight;
   }
 
   private void drawImageOpenGL(int image_handle,
                                Rect source_rect, RectF dest_rect,
                                boolean flipped_horizontal,
                                boolean flipped_vertical) {
-    if (image_handle != current_texture_) {
-      current_texture_ = image_handle;
-      gl_.glBindTexture(GL10.GL_TEXTURE_2D, image_handle);
+    if (image_handle != mCurrentTexture) {
+      mCurrentTexture = image_handle;
+      mGl.glBindTexture(GL10.GL_TEXTURE_2D, image_handle);
     }
 
     // The vertex and texture coordinate arrays have already been initialized.
     // All that is left is to set up the texture and model view transformation
     // matrices and render. Note that the OpenGL API expects matrices with a
     // column-major layout.
-    float texture_width = texture_widths_.get(image_handle);
-    float texture_height = texture_heights_.get(image_handle);
+    float texture_width = mTextureWidths.get(image_handle);
+    float texture_height = mTextureHeights.get(image_handle);
 
-    matrix4x4_[1] = matrix4x4_[2] = matrix4x4_[4] =
-        matrix4x4_[6] = matrix4x4_[8] = matrix4x4_[9] = 0.0f;
+    mMatrix4x4[1] = mMatrix4x4[2] = mMatrix4x4[4] =
+        mMatrix4x4[6] = mMatrix4x4[8] = mMatrix4x4[9] = 0.0f;
     if (flipped_vertical) {
-      matrix4x4_[5] = (source_rect.top - source_rect.bottom) / texture_height;
-      matrix4x4_[13] = source_rect.bottom / texture_height;
+      mMatrix4x4[5] = (source_rect.top - source_rect.bottom) / texture_height;
+      mMatrix4x4[13] = source_rect.bottom / texture_height;
     } else {
-      matrix4x4_[5] = (source_rect.bottom - source_rect.top) / texture_height;
-      matrix4x4_[13] = source_rect.top / texture_height;
+      mMatrix4x4[5] = (source_rect.bottom - source_rect.top) / texture_height;
+      mMatrix4x4[13] = source_rect.top / texture_height;
     }
     if (flipped_horizontal) {
-      matrix4x4_[0] = (source_rect.left - source_rect.right) / texture_width;
-      matrix4x4_[12] = source_rect.right / texture_width;
+      mMatrix4x4[0] = (source_rect.left - source_rect.right) / texture_width;
+      mMatrix4x4[12] = source_rect.right / texture_width;
     } else {
-      matrix4x4_[0] = (source_rect.right - source_rect.left) / texture_width;
-      matrix4x4_[12] = source_rect.left / texture_width;
+      mMatrix4x4[0] = (source_rect.right - source_rect.left) / texture_width;
+      mMatrix4x4[12] = source_rect.left / texture_width;
     }
 
-    gl_.glMatrixMode(GL10.GL_TEXTURE);
-    gl_.glLoadMatrixf(matrix4x4_, 0);
+    mGl.glMatrixMode(GL10.GL_TEXTURE);
+    mGl.glLoadMatrixf(mMatrix4x4, 0);
 
-    matrix4x4_[0] = dest_rect.right - dest_rect.left;
-    matrix4x4_[5] = dest_rect.top - dest_rect.bottom;
-    matrix4x4_[12] = dest_rect.left;
-    matrix4x4_[13] = surface_height_ - dest_rect.top;
-    gl_.glMatrixMode(GL10.GL_MODELVIEW);
-    gl_.glLoadMatrixf(matrix4x4_, 0);
+    mMatrix4x4[0] = dest_rect.right - dest_rect.left;
+    mMatrix4x4[5] = dest_rect.top - dest_rect.bottom;
+    mMatrix4x4[12] = dest_rect.left;
+    mMatrix4x4[13] = mSurfaceHeight - dest_rect.top;
+    mGl.glMatrixMode(GL10.GL_MODELVIEW);
+    mGl.glLoadMatrixf(mMatrix4x4, 0);
 
-    gl_.glDrawArrays(GL10.GL_TRIANGLES, 0, 6);
+    mGl.glDrawArrays(GL10.GL_TRIANGLE_FAN, 0, 4);
   }
 
   private void drawImageOpenGL(int image_handle,
                                Rect source_rect, Matrix dest_matrix,
                                boolean flipped_horizontal,
                                boolean flipped_vertical) {
-    if (image_handle != current_texture_) {
-      current_texture_ = image_handle;
-      gl_.glBindTexture(GL10.GL_TEXTURE_2D, image_handle);
+    if (image_handle != mCurrentTexture) {
+      mCurrentTexture = image_handle;
+      mGl.glBindTexture(GL10.GL_TEXTURE_2D, image_handle);
     }
 
     // The vertex and texture coordinate arrays have already been initialized.
     // All that is left is to set up the texture and model view transformation
     // matrices and render. Note that the OpenGL API expects matrices with a
     // column-major layout.
-    float texture_width = texture_widths_.get(image_handle);
-    float texture_height = texture_heights_.get(image_handle);
+    float texture_width = mTextureWidths.get(image_handle);
+    float texture_height = mTextureHeights.get(image_handle);
 
-    matrix4x4_[1] = matrix4x4_[2] = matrix4x4_[4] =
-        matrix4x4_[6] = matrix4x4_[8] = matrix4x4_[9] = 0.0f;
+    mMatrix4x4[1] = mMatrix4x4[2] = mMatrix4x4[4] =
+        mMatrix4x4[6] = mMatrix4x4[8] = mMatrix4x4[9] = 0.0f;
     if (flipped_vertical) {
-      matrix4x4_[5] = (source_rect.top - source_rect.bottom) / texture_height;
-      matrix4x4_[13] = source_rect.bottom / texture_height;
+      mMatrix4x4[5] = (source_rect.top - source_rect.bottom) / texture_height;
+      mMatrix4x4[13] = source_rect.bottom / texture_height;
     } else {
-      matrix4x4_[5] = (source_rect.bottom - source_rect.top) / texture_height;
-      matrix4x4_[13] = source_rect.top / texture_height;
+      mMatrix4x4[5] = (source_rect.bottom - source_rect.top) / texture_height;
+      mMatrix4x4[13] = source_rect.top / texture_height;
     }
     if (flipped_horizontal) {
-      matrix4x4_[0] = (source_rect.left - source_rect.right) / texture_width;
-      matrix4x4_[12] = source_rect.right / texture_width;
+      mMatrix4x4[0] = (source_rect.left - source_rect.right) / texture_width;
+      mMatrix4x4[12] = source_rect.right / texture_width;
     } else {
-      matrix4x4_[0] = (source_rect.right - source_rect.left) / texture_width;
-      matrix4x4_[12] = source_rect.left / texture_width;
+      mMatrix4x4[0] = (source_rect.right - source_rect.left) / texture_width;
+      mMatrix4x4[12] = source_rect.left / texture_width;
     }
 
-    gl_.glMatrixMode(GL10.GL_TEXTURE);
-    gl_.glLoadMatrixf(matrix4x4_, 0);
+    mGl.glMatrixMode(GL10.GL_TEXTURE);
+    mGl.glLoadMatrixf(mMatrix4x4, 0);
 
-    screen_matrix_ = new Matrix();
-    screen_matrix_.preTranslate(0.0f, surface_height_);
-    screen_matrix_.preScale(1.0f, -1.0f);
-    screen_matrix_.preConcat(dest_matrix);
-    screen_matrix_.getValues(matrix3x3_);
-    matrix4x4_[0] = matrix3x3_[0];
-    matrix4x4_[1] = matrix3x3_[3];
-    matrix4x4_[2] = matrix3x3_[6];
-    matrix4x4_[4] = matrix3x3_[1];
-    matrix4x4_[5] = matrix3x3_[4];
-    matrix4x4_[6] = matrix3x3_[6];
-    matrix4x4_[12] = matrix3x3_[2];
-    matrix4x4_[13] = matrix3x3_[5];
-    gl_.glMatrixMode(GL10.GL_MODELVIEW);
-    gl_.glLoadMatrixf(matrix4x4_, 0);
+    mScreenMatrix.reset();
+    mScreenMatrix.preTranslate(0.0f, mSurfaceHeight);
+    mScreenMatrix.preScale(1.0f, -1.0f);
+    mScreenMatrix.preConcat(dest_matrix);
+    mScreenMatrix.getValues(mMatrix3x3);
+    mMatrix4x4[0] = mMatrix3x3[0];
+    mMatrix4x4[1] = mMatrix3x3[3];
+    mMatrix4x4[2] = mMatrix3x3[6];
+    mMatrix4x4[4] = mMatrix3x3[1];
+    mMatrix4x4[5] = mMatrix3x3[4];
+    mMatrix4x4[6] = mMatrix3x3[6];
+    mMatrix4x4[12] = mMatrix3x3[2];
+    mMatrix4x4[13] = mMatrix3x3[5];
+    mGl.glMatrixMode(GL10.GL_MODELVIEW);
+    mGl.glLoadMatrixf(mMatrix4x4, 0);
 
-    gl_.glDrawArrays(GL10.GL_TRIANGLES, 0, 6);
+    mGl.glDrawArrays(GL10.GL_TRIANGLE_FAN, 0, 4);
   }
 
   private void beginFrameOpenGL() {
-    if (!gl_surface_initialized_) {
+    if (!mGlSurfaceInitialized) {
       initializeOpenGLSurface();
-      gl_surface_initialized_ = true;
+      mGlSurfaceInitialized = true;
     }
-    if (!gl_state_initialized_) {
+    if (!mGlStateInitialized) {
       initializeOpenGLClientState();
-      gl_state_initialized_ = true;
+      mGlStateInitialized = true;
     }
-    gl_.glClear(GL10.GL_COLOR_BUFFER_BIT);
+    mGl.glClear(GL10.GL_COLOR_BUFFER_BIT);
   }
 
   private void endFrameOpenGL() {
-    egl_.eglSwapBuffers(egl_display_, egl_surface_);
+    mEgl.eglSwapBuffers(mEglDisplay, mEglSurface);
 
     // Always check for EGL_CONTEXT_LOST, which means the context and all
     // associated data were lost (For instance because the device went to
     // sleep). We need to sleep until we get a new surface.
-    if (egl_.eglGetError() == EGL11.EGL_CONTEXT_LOST)
+    if (mEgl.eglGetError() == EGL11.EGL_CONTEXT_LOST) {
       Log.d("Graphics::endFrameBufferOpenGL", "Context Lost.");
+    }
   }
 
-  private int current_texture_ = -1;
-  private Vector<Integer> texture_widths_ = new Vector<Integer>();
-  private Vector<Integer> texture_heights_ = new Vector<Integer>();
-  private EGL10 egl_;
-  private EGLConfig egl_config_;
-  private EGLContext egl_context_;
-  private EGLDisplay egl_display_;
-  private EGLSurface egl_surface_;
-  private GL10 gl_;
-  private boolean gl_state_initialized_ = false;
-  private boolean gl_surface_initialized_ = false;
+  private int mCurrentTexture = -1;
+  private Vector<Integer> mTextureWidths = new Vector<Integer>();
+  private Vector<Integer> mTextureHeights = new Vector<Integer>();
+  private EGL10 mEgl;
+  private EGLConfig mEglConfig;
+  private EGLContext mEglContext;
+  private EGLDisplay mEglDisplay;
+  private EGLSurface mEglSurface;
+  private GL10 mGl;
+  private boolean mGlStateInitialized = false;
+  private boolean mGlSurfaceInitialized = false;
+  private boolean mHasHardwareAcceleration = false;
 
   // The following matrix definitions are used to avoid any allocations within
   // the draw methods.
-  private Matrix screen_matrix_ = new Matrix();
-  private float[] matrix3x3_ = new float[] {
+  private Matrix mScreenMatrix = new Matrix();
+  private float[] mMatrix3x3 = new float[] {
     1, 0, 0, 0, 1, 0, 0, 0, 1 };
-  private float[] matrix4x4_ = new float[] {
+  private float[] mMatrix4x4 = new float[] {
     1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
 }

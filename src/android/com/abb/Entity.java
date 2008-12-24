@@ -18,9 +18,9 @@ import android.graphics.RectF;
 import java.lang.Math;
 import java.util.Random;
 
-import android.com.abb.Graphics;
 
-
+/** The Entity class is intended to be lowest level, drawable, physical
+ * in-game object. */
 public class Entity {
   public boolean alive = true;  // Should not be deleted from the game.
   public boolean has_ground_contact;
@@ -49,9 +49,9 @@ public class Entity {
 
     // The following is a poor hack to simulate "friction" against the ground
     // surface. The problem with this implementation is that it does not account
-    // for the time_step. TODO(burkhart): Fix this implementation.
+    // for the time_step. TODO(burkhart): Fix this friction implementation.
     if (has_ground_contact) {
-      dx *= (1.0f - kGroundFriction);
+      dx *= (1.0f - kGroundKineticFriction);
     }
 
     dx = Math.max(dx, -kMaxVelocity);
@@ -85,6 +85,6 @@ public class Entity {
 
   protected static Random mRandom = new Random();
 
-  private static final float kGroundFriction = 0.2f;
+  private static final float kGroundKineticFriction = 0.2f;
   private static final float kMaxVelocity = 200.0f;
 }

@@ -15,8 +15,6 @@ import android.graphics.Rect;
 import android.view.KeyEvent;
 import java.lang.Math;
 
-import android.com.abb.Entity;
-
 
 public class Enemy extends Entity {
   public Enemy(Entity target) {

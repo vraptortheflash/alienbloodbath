@@ -1,8 +1,8 @@
 root		0.0	0
-root		1.0	360
+root		0.75	360
 
 thigh_r		0.0	-45
-thigh_l		0.0	-45
+thigh_l		0.0	-40
 
 leg_r		0.0	50
 leg_l		0.0	50
@@ -13,7 +13,7 @@ shoulder_r	0.0	-110
 shoulder_l	0.0	-110
 
 arm_r   	0.0	140
-arm_l   	0.0	140
+arm_l   	0.0	135
 
 farm_r   	0.0	-90
 farm_l   	0.0	-90

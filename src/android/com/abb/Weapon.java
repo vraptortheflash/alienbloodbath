@@ -23,10 +23,6 @@ import java.io.IOException;
 import java.util.Random;
 import junit.framework.Assert;
 
-import android.com.abb.Avatar;
-import android.com.abb.Content;
-import android.com.abb.Entity;
-import android.com.abb.GameState;
 
 public class Weapon extends Entity {
   public Weapon(GameState game_state) {
@@ -55,7 +51,8 @@ public class Weapon extends Entity {
       mWeaponString = file_data.toString();
       Log.d("Weapon String", mWeaponString);
     } catch (IOException ex) {
-      Assert.fail("Weapon::loadWeaponFromFile. Cannot find:  " + weapons_path + ".");
+      Assert.fail("Weapon::loadWeaponFromFile. " +
+                  "Cannot find:  " + weapons_path + ".");
     }
   }
 
@@ -70,7 +67,8 @@ public class Weapon extends Entity {
       Assert.fail("Weapon::loadWeaponImagesFromFile. Invalid argument.");
     mWeaponsBitmap = BitmapFactory.decodeFile(weapon_images_path);
     if (mWeaponsBitmap == null)
-    Assert.fail("Weapon::loadWeaponImagesFromFile. Cannot find:  " + weapon_images_path + ".");
+    Assert.fail("Weapon::loadWeaponImagesFromFile. " +
+                "Cannot find:  " + weapon_images_path + ".");
   }
 
   public void setImage(Graphics graphics) {
@@ -101,5 +99,4 @@ public class Weapon extends Entity {
   private float shotSpread = 15.0f * (float)Math.PI / 180.0f;
   private float shotVelocity = 60.0f;
   private static final int kSpriteSize = 64;
-
 }
