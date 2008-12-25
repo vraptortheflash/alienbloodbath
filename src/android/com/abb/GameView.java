@@ -20,6 +20,7 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
@@ -38,24 +39,25 @@ import junit.framework.Assert;
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   class GameThread extends Thread {
     public GameThread(SurfaceHolder surface_holder) {
-      surface_holder_ = surface_holder;
+      mSurfaceHolder = surface_holder;
     }
 
     @Override
     public void run() {
-      while (game_ == null) {
-        try {
-          Thread.sleep(100);  // Wait 100ms.
-        } catch (InterruptedException ex) {}
-        continue;
-      }
+      synchronized (this) {
+        while (mGame == null && mRunning) {
+          try {
+            wait();  // Sleep thread until notification.
+          } catch (java.lang.InterruptedException ex) {
+            continue;
+          }
+        }
 
-      synchronized (game_) {
         Assert.assertEquals(
-            "GameView thread must only be run once.", graphics_, null);
-        graphics_ = new Graphics();
-        graphics_.initialize(surface_holder_);
-        game_.initializeGraphics(graphics_);
+            "GameView thread must only be run once.", mGraphics, null);
+        mGraphics = new Graphics();
+        mGraphics.initialize(mSurfaceHolder);
+        mGame.initializeGraphics(mGraphics);
       }
 
       // Since our target platform is a mobile device, we should do what we can
@@ -73,17 +75,20 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       // http://blogs.sun.com/dholmes/entry/inside_the_hotspot_vm_clocks
       long time = System.nanoTime();
 
-      while (running_) {
-        if (paused_) {
-          try {
-            Thread.sleep(100);  // Wait 100ms.
-          } catch (InterruptedException ex) {}
-          continue;
+      while (mRunning) {
+        synchronized (this) {
+          while (mPaused && mRunning) {
+            try {
+              wait();  // Sleep thread until notification.
+            } catch (java.lang.InterruptedException ex) {
+              continue;
+            }
+          }
         }
 
         // Calculate the interval between this and the previous frame. See note
         // above regarding system timers. If we have exceeded our framerate
-        // budget, sleep. TODO: Look into the cost of these clocks.
+        // budget, sleep.
         long current_time = System.nanoTime();
         float time_step = (float)(current_time - time) * 1.0e-9f;
         time = current_time;
@@ -104,50 +109,51 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
           // other processes. This should usually only happen in the case
           // something "big" is happening and we don't need / want to starve the
           // more important system threads.
-          try {
-            Thread.sleep(0);  // Yield.
-          } catch (InterruptedException ex) {}
+          yield();
         }
         time_step = Math.max(time_step, kMinTimeStep);
         time_step = Math.min(time_step, kMaxTimeStep);
 
         Canvas canvas = null;
         try {
-          synchronized (game_) {
-            graphics_.beginFrame();
-            game_.onFrame(graphics_, time_step);
+          synchronized (this) {
+            mGraphics.beginFrame();
+            mGame.onFrame(mGraphics, time_step);
           }
         } finally {
-          graphics_.endFrame();
+          mGraphics.endFrame();
         }
       }
-      graphics_.destroy();
+      mGraphics.destroy();
     }
 
-    public void setGame(Game game) {
-      game_ = game;
+    synchronized public void setGame(Game game) {
+      mGame = game;
+      notifyAll();
     }
 
-    public void pause(boolean pause) {
-      paused_ = pause;
+    synchronized public void pause(boolean pause) {
+      mPaused = pause;
+      notifyAll();
     }
 
-    public void surfaceChanged(SurfaceHolder surface_holder,
-                               int width, int height) {
-      if (graphics_ != null) {
-        graphics_.surfaceChanged(surface_holder, width, height);
+    synchronized public void surfaceChanged(SurfaceHolder surface_holder,
+                                            int width, int height) {
+      if (mGraphics != null) {
+        mGraphics.surfaceChanged(surface_holder, width, height);
       }
     }
 
-    public void halt() {
-      running_ = false;
+    synchronized public void halt() {
+      mRunning = false;
+      notifyAll();
     }
 
-    boolean running_ = true;
-    boolean paused_ = false;
-    Game game_;
-    Graphics graphics_;
-    SurfaceHolder surface_holder_;
+    boolean mRunning = true;
+    boolean mPaused = false;
+    Game mGame;
+    Graphics mGraphics;
+    SurfaceHolder mSurfaceHolder;
   }
 
   public GameView(Context context, AttributeSet attrs) {
@@ -157,28 +163,38 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   public void setGame(Game game) {
-    game_ = game;
-    if (game_thread_ != null) {
-      game_thread_.setGame(game);
+    mGame = game;
+    if (mGameThread != null) {
+      mGameThread.setGame(game);
     }
   }
 
   /** Set up the android widget for the title screen to be displayed until any
    * key is pressed. */
   public void setTitleView(TextView title_view) {
-    title_view_ = title_view;
+    mTitleView = title_view;
   }
 
   /** Standard override to get key-press events. */
   @Override
   public boolean onKeyDown(int key_code, KeyEvent msg) {
-    if (!title_view_hidden_) {
-      title_view_.setText("");
-      title_view_hidden_ = true;
+    if (!mTitleViewHidden) {
+      mTitleView.setText("");
+      mTitleViewHidden = true;
     }
 
-    synchronized (game_) {
-      return game_.onKeyDown(key_code);
+    if (key_code == kProfileKey) {
+      if (!mProfiling) {
+        Debug.startMethodTracing(kProfilePath);
+        mProfiling = true;
+      } else {
+        Debug.stopMethodTracing();
+        mProfiling = false;
+      }
+    }
+
+    synchronized (mGame) {
+      return mGame.onKeyDown(key_code);
     }
   }
 
@@ -186,8 +202,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
    * off the engine or stop rotating. */
   @Override
   public boolean onKeyUp(int key_code, KeyEvent msg) {
-    synchronized (game_) {
-      return game_.onKeyUp(key_code);
+    synchronized (mGame) {
+      return mGame.onKeyUp(key_code);
     }
   }
 
@@ -196,8 +212,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   @Override
   public void onWindowFocusChanged(boolean window_has_focus) {
     super.onWindowFocusChanged(window_has_focus);
-    if (game_thread_ != null) {
-      game_thread_.pause(!window_has_focus);
+    if (mGameThread != null) {
+      mGameThread.pause(!window_has_focus);
     }
   }
 
@@ -210,35 +226,39 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     getHolder().addCallback(this);
     getHolder().setType(SurfaceHolder.SURFACE_TYPE_GPU);
 
-    game_thread_ = new GameThread(holder);
-    game_thread_.setGame(game_);
-    game_thread_.start();
-    game_thread_started_ = true;
+    mGameThread = new GameThread(holder);
+    mGameThread.setGame(mGame);
+    mGameThread.start();
+    mGameThreadStarted = true;
   }
 
   /** Callback invoked when the surface dimensions change. */
   public void surfaceChanged(SurfaceHolder surface_holder, int format,
                              int width, int height) {
-    game_thread_.surfaceChanged(surface_holder, width, height);
+    mGameThread.surfaceChanged(surface_holder, width, height);
   }
 
   /** Callback invoked when the Surface has been destroyed and must no longer be
    * touched. */
   public void surfaceDestroyed(SurfaceHolder holder) {
     boolean retry = true;
-    game_thread_.halt();
+    mGameThread.halt();
     while (retry) {
       try {
-        game_thread_.join();
-        game_thread_ = null;
+        mGameThread.join();
+        mGameThread = null;
         retry = false;
       } catch (InterruptedException e) {}
     }
   }
 
-  private Game game_;
-  private GameThread game_thread_;
-  private boolean game_thread_started_ = false;
-  private TextView title_view_;
-  private boolean title_view_hidden_ = false;
+  private Game mGame;
+  private GameThread mGameThread;
+  private boolean mGameThreadStarted = false;
+  private boolean mProfiling = false;
+  private TextView mTitleView;
+  private boolean mTitleViewHidden = false;
+
+  private static final int kProfileKey = KeyEvent.KEYCODE_T;
+  private static final String kProfilePath = "abb.trace";
 }

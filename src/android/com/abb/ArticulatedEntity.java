@@ -166,9 +166,22 @@ public class ArticulatedEntity extends Entity {
                            sprite_flipped_horizontal, false);
       }
 
-      // Draw children.
+      // Draw children. The root node transformation is handled specially to
+      // rotate *around* the offset coordinates specified in the animation file
+      // instead of the origin.
       transformation.set(base_transformation);
-      transformation.preRotate(joint_angle);
+      if (name.equals("root")) {
+        float offset_x = animation.getOffsetX();
+        float offset_y = animation.getOffsetY();
+        if (sprite_flipped_horizontal) {
+          offset_x = -offset_x;
+        }
+        transformation.preTranslate(-offset_x, -offset_y);
+        transformation.preRotate(joint_angle);
+        transformation.preTranslate(offset_x, offset_y);
+      } else {
+        transformation.preRotate(joint_angle);
+      }
       transformation.preTranslate(0.0f, image_rect.height() - joint_size);
       for (int child_index = 0; child_index < children.size(); ++child_index) {
         children.get(child_index).draw(
@@ -197,28 +210,34 @@ public class ArticulatedEntity extends Entity {
   private class Animation {
     public void loadFromUri(Uri uri) {
       // The file format is expected to be an ASCII text file laid out with a
-      // single key-frame per line. Each line / key frame must have the format
-      // "<part name> <time in seconds> <angle>". Animations are expected to
-      // repeat exactly after the final key frame. Key frames must be specified
-      // in temporal order with respect to each track, but tracks may be
-      // interleaved. Angle units are *degrees*.
+      // single key-frame per line. The first two lines must contain "offset_x
+      // #" and "offset_y #". Each consecutive line / key frame must have the
+      // format "<part name> <time in seconds> <angle>". Animations are expected
+      // to repeat exactly after the final key frame. Key frames must be
+      // specified in temporal order with respect to each track, but tracks may
+      // be interleaved. Angle units are *degrees*.
       //
       // For example:
-      // thigh  0.0  45
-      // thigh  0.5  60
-      // leg    0.0  180
-      // leg    0.5  170
+      // offset_x  10
+      // offset_y  0
+      // thigh     0.0  45
+      // thigh     0.5  60
+      // leg       0.0  180
+      // leg       0.5  170
 
       String file_path = Content.getTemporaryFilePath(uri);
       String[] tokens = Content.readFileTokens(file_path);
 
       final int kLineTokenCount = 3;
       Assert.assertTrue("Animation file empty.", tokens.length > 0);
-      Assert.assertEquals("Animation file improperly formatted.",
-                          tokens.length % kLineTokenCount, 0);
+      Assert.assertEquals("Animation improperly formatted: " + uri.toString(),
+                          (tokens.length - 4) % kLineTokenCount, 0);
+
+      mOffsetX = Float.parseFloat(tokens[1]);
+      mOffsetY = Float.parseFloat(tokens[3]);
 
       mLength = 0.0f;
-      for (int index = 0; index < tokens.length; index += kLineTokenCount) {
+      for (int index = 4; index < tokens.length; index += kLineTokenCount) {
         KeyFrame key_frame = new KeyFrame();
         key_frame.time = Float.parseFloat(tokens[index + 1]);
         key_frame.angle = Float.parseFloat(tokens[index + 2]);
@@ -241,6 +260,14 @@ public class ArticulatedEntity extends Entity {
       while (mTime > mLength) {
         mTime -= mLength;
       }
+    }
+
+    public float getOffsetX() {
+      return mOffsetX;
+    }
+
+    public float getOffsetY() {
+      return mOffsetY;
     }
 
     public float getPartAngle(String part_name) {
@@ -288,6 +315,8 @@ public class ArticulatedEntity extends Entity {
     }
 
     private float mLength;
+    private float mOffsetX;
+    private float mOffsetY;
     private float mTime;
     private TreeMap<String, ArrayList<KeyFrame>> mKeyFrames =
         new TreeMap<String, ArrayList<KeyFrame>>();
