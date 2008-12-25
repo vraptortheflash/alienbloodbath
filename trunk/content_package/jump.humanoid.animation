@@ -1,5 +1,8 @@
+offsey_x	-50
+offset_y	-20
+
 root		0.0	0
-root		0.75	360
+root		0.5	360
 
 thigh_r		0.0	-45
 thigh_l		0.0	-40
