@@ -1,4 +1,4 @@
-offsey_x	0
+offset_x	0
 offset_y	0
 
 root		0.0	0
@@ -31,17 +31,17 @@ shoulder_l	0.0	190
 shoulder_l	1.0	200
 shoulder_l	2.0	190
 
-arm_r   	0.0	-120
-arm_r   	1.0	-100
-arm_r   	2.0	-120
+arm_r   	0.0	-100
+arm_r   	1.0	-120
+arm_r   	2.0	-100
 
-arm_l   	0.0	150
-arm_l   	1.0	130
-arm_l   	2.0	150
+arm_l   	0.0	130
+arm_l   	1.0	150
+arm_l   	2.0	130
 
 farm_r   	0.0	-110
 farm_l   	0.0	-80
 
-head		0.0	0
-head		1.0	20
-head		2.0	0
+head		0.0	10
+head		1.0	25
+head		2.0	10
