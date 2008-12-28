@@ -12,26 +12,31 @@
 package android.com.abb;
 
 import android.graphics.Rect;
+import android.net.Uri;
+import android.util.Log;
 import android.view.KeyEvent;
 import java.lang.Math;
+import java.util.TreeMap;
+import junit.framework.Assert;
 
 
-public class Enemy extends Entity {
+public class Enemy extends ArticulatedEntity {
   public Enemy(Entity target) {
     super();
     mTarget = target;
-    radius = kRadius;
+    radius = kDefaultRadius;
     sprite_rect =
         new Rect(0, kSpriteBase, kSpriteWidth, kSpriteBase + kSpriteHeight);
   }
 
   public void step(float time_step) {
     super.step(time_step);
-    ddy = kGravity;
+
+    ddy = mGravity;
 
     // If we have moved close enough to our target, mark it dead.
-    if (Math.abs(mTarget.x - x) < kRadius &&
-        Math.abs(mTarget.y - y) < kRadius) {
+    if (Math.abs(mTarget.x - x) < radius &&
+        Math.abs(mTarget.y - y) < radius) {
       mTarget.alive = false;
     }
 
@@ -54,12 +59,38 @@ public class Enemy extends Entity {
     sprite_rect.bottom = kSpriteBase + kSpriteHeight * (sprite_offset + 1);
   }
 
+  public void loadFromUri(Uri uri) {
+    TreeMap<String, Object> enemy_parameters = new TreeMap<String, Object>();
+    enemy_parameters.put(kParameterEntity, "none");
+    enemy_parameters.put(kParameterGravity, new Float(kDefaultGravity));
+    enemy_parameters.put(kParameterLife, new Float(kDefaultLife));
+    enemy_parameters.put(kParameterRadius, new Float(kDefaultRadius));
+
+    String file_path = Content.getTemporaryFilePath(uri);
+    String[] tokens = Content.readFileTokens(file_path);
+    Content.mergeKeyValueTokensWithMap(tokens, enemy_parameters);
+
+    mGravity = ((Float)enemy_parameters.get(kParameterGravity)).floatValue();
+    mLife = ((Float)enemy_parameters.get(kParameterLife)).floatValue();
+    radius = ((Float)enemy_parameters.get(kParameterRadius)).floatValue();
+
+    String entity = (String)enemy_parameters.get(kParameterEntity);
+    loadFromUri(Uri.parse(entity));
+  }
+
+  private float mGravity;
+  private float mLife;
   private Entity mTarget;
 
   private static final float kAcceleration = 40.0f;
-  private static final float kGravity = 100.0f;
+  private static final float kDefaultGravity = 100.0f;
+  private static final float kDefaultLife = 1.0f;
+  private static final float kDefaultRadius = 20.0f;
   private static final float kJumpVelocity = 100.0f;
-  private static final float kRadius = 20.0f;
+  private static final String kParameterEntity = "entity";
+  private static final String kParameterGravity = "gravity";
+  private static final String kParameterLife = "life";
+  private static final String kParameterRadius = "radius";
   private static final int kSpriteBase = 0;
   private static final int kSpriteWidth = 64;
   private static final int kSpriteHeight = 64;

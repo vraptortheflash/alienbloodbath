@@ -100,15 +100,17 @@ public class Map {
   }
 
   public void loadLevelFromFile(String file_path) {
-    if (file_path == null)
-      Log.e("Map::loadLevelFromFile", "Invalid null argument.");
-    try {
-      FileReader level_reader = new FileReader(new File(file_path));
-      mTiles = new char[kMapWidth * kMapHeight];
-      level_reader.read(mTiles, 0, kMapWidth * kMapHeight);
-      loadLevelFromArray(decodeArray(mTiles));
-    } catch (IOException ex) {
-      Log.e("Map::loadLevelFromFile", "Cannot find: " + file_path, ex);
+    Assert.assertNotNull(
+        "Map::loadLevelFromFile: Invalid null argument.", file_path);
+
+    String[] level_tokens = Content.readFileTokens(file_path);
+    Assert.assertTrue("Level file empty.", level_tokens.length > 0);
+    char[] raw_tiles = level_tokens[0].toCharArray();
+    Assert.assertEquals("Invalid level tile count.",
+                        raw_tiles.length, kMapHeight * kMapWidth);
+    loadLevelFromArray(decodeArray(raw_tiles));
+    for (int trigger = 1; trigger < level_tokens.length; ++trigger) {
+      // TODO(burkhart): Parse level triggers.
     }
   }
 

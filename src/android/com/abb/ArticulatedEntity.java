@@ -55,9 +55,9 @@ public class ArticulatedEntity extends Entity {
     String[] tokens = Content.readFileTokens(file_path);
 
     final int kLineTokenCount = 6;
-    Assert.assertTrue("Articulated entity file empty.", tokens.length > 0);
+    Assert.assertTrue("Articulated entity file empty.", tokens.length > 1);
     Assert.assertEquals("Articulated entity file improperly formatted.",
-                        tokens.length % kLineTokenCount, 1);
+                        (tokens.length - 1) % kLineTokenCount, 0);
 
     mImageUri = Uri.parse(tokens[0]);
 
@@ -229,9 +229,13 @@ public class ArticulatedEntity extends Entity {
       String[] tokens = Content.readFileTokens(file_path);
 
       final int kLineTokenCount = 3;
-      Assert.assertTrue("Animation file empty.", tokens.length > 0);
+      Assert.assertTrue("Animation file empty.", tokens.length > 4);
       Assert.assertEquals("Animation improperly formatted: " + uri.toString(),
                           (tokens.length - 4) % kLineTokenCount, 0);
+      Assert.assertEquals("Expected offset_x specification in animation file.",
+                          tokens[0], "offset_x");
+      Assert.assertEquals("Expected offset_y specification in animation file.",
+                          tokens[2], "offset_y");
 
       mOffsetX = Float.parseFloat(tokens[1]);
       mOffsetY = Float.parseFloat(tokens[3]);

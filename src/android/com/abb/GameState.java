@@ -112,6 +112,7 @@ public class GameState implements Game {
       }
     } else {
       if (mDeathTimer == kDeathTimer) {
+        mVibrator.vibrate(400);  // Milliseconds.
         for (int n = 0; n < 2 * kBloodBathSize; n++) {
           createBloodParticle(
               avatar.x, avatar.y,
