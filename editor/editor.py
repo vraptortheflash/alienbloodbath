@@ -89,7 +89,7 @@ class EditorWindow:
     self._tiles = []
     for n in xrange(0, LEVEL_WIDTH * LEVEL_HEIGHT):
       self._tiles.append(0)
-      self._triggers = []
+    self._triggers = []
     for n in xrange(0, LEVEL_WIDTH * LEVEL_HEIGHT):
       self._triggers.append(None)
     self._brushes_surface = None
@@ -132,6 +132,9 @@ class EditorWindow:
     raw_tiles = level_lines[0].strip()
     for tile in xrange(LEVEL_WIDTH * LEVEL_HEIGHT):
       self._tiles[tile] = ord(raw_tiles[tile]) - ord('a')
+    self._triggers = []
+    for n in xrange(0, LEVEL_WIDTH * LEVEL_HEIGHT):
+      self._triggers.append(None)
     trigger_re = re.compile('(\\d+),(\\d+),"([^"]+)"')
     for raw_trigger in level_lines[1:]:
       match = trigger_re.match(raw_trigger.strip())

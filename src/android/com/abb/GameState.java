@@ -29,7 +29,6 @@ import java.util.Random;
 public class GameState implements Game {
   public Avatar avatar = new Avatar(this);
   public ArrayList<Entity> enemies = new ArrayList<Entity>();
-  public int enemy_sprites;
   public Map map = new Map(this);
   public int misc_sprites;
   public ArrayList<Entity> particles = new ArrayList<Entity>();
@@ -42,11 +41,6 @@ public class GameState implements Game {
 
   public void initializeGraphics(Graphics graphics) {
     avatar.loadFromUri(Uri.parse("content:///humanoid.entity"));
-
-    String enemy_sprites_path =
-        Content.getTemporaryFilePath(Uri.parse("content:///enemy_0.png"));
-    Bitmap enemy_sprites_bitmap = BitmapFactory.decodeFile(enemy_sprites_path);
-    enemy_sprites = graphics.loadImageFromBitmap(enemy_sprites_bitmap);
 
     String misc_sprites_path =
         Content.getTemporaryFilePath(Uri.parse("content:///misc.png"));
@@ -89,10 +83,12 @@ public class GameState implements Game {
   /** Run the game simulation for the specified amount of seconds. */
   protected void stepGame(float time_step) {
     // Update the view parameters.
-    if (!avatar.has_ground_contact) {
-      mTargetZoom = kAirZoom;
-    } else {
-      mTargetZoom = kGroundZoom;
+    if (avatar.alive) {
+      if (!avatar.has_ground_contact) {
+        mTargetZoom = kAirZoom;
+      } else {
+        mTargetZoom = kGroundZoom;
+      }
     }
     mTargetViewX = avatar.x + kViewLead * avatar.dx;
     mTargetViewY = avatar.y + kViewLead * avatar.dy;
@@ -112,7 +108,9 @@ public class GameState implements Game {
       }
     } else {
       if (mDeathTimer == kDeathTimer) {
+        avatar.stop();
         mVibrator.vibrate(400);  // Milliseconds.
+        mTargetZoom = kDeathZoom;
         for (int n = 0; n < 2 * kBloodBathSize; n++) {
           createBloodParticle(
               avatar.x, avatar.y,
@@ -194,9 +192,9 @@ public class GameState implements Game {
     }
   }
 
-  public Entity createEnemy(float x, float y) {
-    Entity enemy = new Enemy(avatar);
-    enemy.sprite_image = enemy_sprites;
+  public Entity createEnemy(Uri enemy_uri, float x, float y) {
+    Enemy enemy = new Enemy(avatar);
+    enemy.loadFromUri(enemy_uri);
     enemy.x = x;
     enemy.y = y;
     enemies.add(enemy);
@@ -287,6 +285,7 @@ public class GameState implements Game {
   private static final int kBloodBathSize = 10;  // Number of blood particles.
   private static final float kBloodBathVelocity = 60.0f;
   private static final float kDeathTimer = 4.0f;
+  private static final float kDeathZoom = 1.5f;
   private static final float kGravity = 200.0f;
   private static final float kGroundZoom = 0.8f;
   private static final long kVibrateLength = 30;  // Milliseconds.

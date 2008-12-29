@@ -27,6 +27,8 @@ import java.lang.Math;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import junit.framework.Assert;
 
 
@@ -109,8 +111,17 @@ public class Map {
     Assert.assertEquals("Invalid level tile count.",
                         raw_tiles.length, kMapHeight * kMapWidth);
     loadLevelFromArray(decodeArray(raw_tiles));
+
+    mTriggers = new String[kMapWidth * kMapHeight];
+    Pattern pattern = Pattern.compile("(\\d+),(\\d+),\"([^\"]+)\"");
     for (int trigger = 1; trigger < level_tokens.length; ++trigger) {
-      // TODO(burkhart): Parse level triggers.
+      Matcher match = pattern.matcher(level_tokens[trigger]);
+      Assert.assertTrue("Invalid level format.", match.matches());
+      int x = Integer.parseInt(match.group(1));
+      int y = Integer.parseInt(match.group(2));
+      String trigger_string = match.group(3);
+      int index = kMapHeight * x + y;
+      mTriggers[index] = trigger_string;
     }
   }
 
@@ -180,15 +191,23 @@ public class Map {
     mTiles[tile_index] = tile_id;
   }
 
-  public int tileAt(float x, float y) {
+  public int indexAt(float x, float y) {
     int index_x = (int)(x / kTileSize + 0.5f);
     int index_y = (int)(y / kTileSize + 0.5f);
     if (index_x < 0 || index_y < 0 ||
         index_x >= kMapWidth || index_y >= kMapHeight) {
       return -1;  // Tile out of map range.
     }
-    int tile_index = kMapWidth * index_x + index_y;
-    return mTiles[tile_index];
+    return kMapWidth * index_x + index_y;
+  }
+
+  public int tileAt(float x, float y) {
+    int index = indexAt(x, y);
+    if (index >= 0) {
+      return mTiles[index];
+    } else {
+      return -1;
+    }
   }
 
   public static boolean tileIsGoal(int tile_id) {
@@ -216,23 +235,22 @@ public class Map {
     float radius = Math.max(entity.radius, half_tile_size);
     for (float x = entity.x - radius; x <= entity.x + radius; x += kTileSize) {
       for (float y = entity.y - radius; y <= entity.y + radius; y += kTileSize) {
-        int tile_id = tileAt(x, y);
-        if (tile_id <= 0) {
+        int tile_index = indexAt(x, y);
+        if (tile_index <= 0) {
           continue;  // Not a collideable tile.
         }
-
+        int tile_id = mTiles[tile_index];
         boolean tile_deadly = mEffectsDeath[tile_id];
         boolean tile_exploadable = mEffectsExplode[tile_id];
         boolean tile_solid = mEffectsSolid[tile_id];
 
+        if (!tile_solid && !tile_exploadable && !tile_deadly) {
+          continue;  // Not a collideable tile.
+        }
         int index_x = (int)(x / kTileSize + 0.5f);
         int index_y = (int)(y / kTileSize + 0.5f);
         float tile_x = kTileSize * index_x;
         float tile_y = kTileSize * index_y;
-
-        if (!tile_solid && !tile_exploadable && !tile_deadly) {
-          continue;  // Not a collideable tile.
-        }
 
         // Determine if a collision has occurred between the two squares.
         float distance_x = entity.x - tile_x;
@@ -364,18 +382,24 @@ public class Map {
     float y_max = center_y + (half_canvas_height + kTileSize) / zoom;
     for (float x = x_min; x < x_max; x += kTileSize) {
       for (float y = y_min; y < y_max; y += kTileSize) {
-        // Determine tile id for this world position x, y.
-        int tile_id = tileAt(x, y);
-
-        // Spawn enemies if we happen to pass over an enemy tile.
-        // TODO(burkhart): Check for more general "triggers" within tiles
-        // instead of hard coding an special enemy tile id.
-        if (tile_id == 12) {
-          mGameState.createEnemy(x, y);
-          setTileAt(x, y, (char)0);  // Clear the tile.
-          continue;
+        int tile_index = indexAt(x, y);
+        if (tile_index < 0) {
+          continue;  // Tile out of bounds.
         }
 
+        // Check for spawning triggers associated with this tile.
+        String trigger = mTriggers[tile_index];
+        if (trigger != null) {
+          if (trigger.startsWith("enemy=")) {
+            Uri enemy_uri =
+                Uri.withAppendedPath(mBaseUri, trigger.substring(6));
+            mGameState.createEnemy(enemy_uri, x, y);
+            mTriggers[tile_index] = null;
+          }
+        }
+
+        // Draw the tile;
+        int tile_id = mTiles[tile_index];
         if (tile_id == 0) {
           continue;  // Not a visual tile.
         }
@@ -424,6 +448,7 @@ public class Map {
   private char[] mTiles;
   private Bitmap mTilesBitmap;
   private int mTilesImage = -1;
+  private String[] mTriggers;
 
   private static final float kBackgroundScale = 2.0f;
   private static final int kBackgroundSize = 512;

@@ -35,17 +35,16 @@ public class AlienBloodBathMain extends Activity {
 
     setContentView(R.layout.main);
 
-    game_state_ = new GameState((Context)this);
-    game_view_ = (GameView)findViewById(R.id.GAME_VIEW);
-    game_view_.setTitleView((TextView)findViewById(R.id.TEXT_VIEW));
-    game_view_.setGame(game_state_);
+    mGameState = new GameState((Context)this);
+    mGameView = (GameView)findViewById(R.id.GAME_VIEW);
+    mGameView.setTitleView((TextView)findViewById(R.id.TEXT_VIEW));
+    mGameView.setGame(mGameState);
 
     if (saved_instance_state != null) {
-      game_state_.loadStateBundle(
-          saved_instance_state.getBundle("game_state_"));
+      mGameState.loadStateBundle(saved_instance_state.getBundle("mGameState"));
     } else {
-      game_state_.map.setUri(Uri.parse(kStartupMap));
-      game_state_.reset();
+      mGameState.map.setUri(Uri.parse(kStartupMap));
+      mGameState.reset();
     }
   }
 
@@ -81,8 +80,8 @@ public class AlienBloodBathMain extends Activity {
     switch (request_code) {
       case kSelectMap:
         if (intent != null) {
-          game_state_.map.loadFromUri(intent.getData());
-          game_state_.reset();
+          mGameState.map.loadFromUri(intent.getData());
+          mGameState.reset();
         }
         break;
     }
@@ -90,19 +89,18 @@ public class AlienBloodBathMain extends Activity {
 
   @Override
   public void onSaveInstanceState(Bundle saved_instance_state) {
-    saved_instance_state.putBundle(
-        "game_state_", game_state_.saveStateBundle());
+    saved_instance_state.putBundle("mGameState", mGameState.saveStateBundle());
     super.onSaveInstanceState(saved_instance_state);
   }
 
   @Override
   public void onRestoreInstanceState(Bundle saved_instance_state) {
     super.onRestoreInstanceState(saved_instance_state);
-    game_state_.loadStateBundle(saved_instance_state.getBundle("game_state_"));
+    mGameState.loadStateBundle(saved_instance_state.getBundle("mGameState"));
   }
 
-  private GameState game_state_;
-  private GameView game_view_;
+  private GameState mGameState;
+  private GameView mGameView;
 
   private final int kAbout = 2;
   private final int kDownloadMap = 3;
