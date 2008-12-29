@@ -91,21 +91,15 @@ public class Avatar extends ArticulatedEntity {
         x_offset = kShotDistance * (float)Math.cos(shot_angle);
         y_offset = kShotDistance * (float)Math.sin(shot_angle);
       } else if (sprite_flipped_horizontal) {
-        shot_angle = kShotSpread * (float)(Math.sin(mShotPhase) + Math.PI);
+        shot_angle = kShotSpread * (float)Math.sin(mShotPhase) + (float)Math.PI;
         mShotPhase += 10.0f;
         x_offset = -kShotOffsetX;
         y_offset = kShotOffsetY;
-        if (Math.abs(dx) > kAnimationStopThreshold) {
-          y_offset += kShotDistance / 2.0f * (float)Math.sin(mShotPhase);
-        }
       } else {
         shot_angle = kShotSpread * (float)Math.sin(mShotPhase);
         mShotPhase += 10.0f;
         x_offset = kShotOffsetX;
         y_offset = kShotOffsetY;
-        if (Math.abs(dx) > kAnimationStopThreshold) {
-          y_offset += kShotDistance / 2.0f * (float)Math.sin(mShotPhase);
-        }
       }
 
       float dx_offset = shot_velocity * (float)Math.cos(shot_angle);

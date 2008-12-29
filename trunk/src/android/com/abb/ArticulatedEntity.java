@@ -59,7 +59,13 @@ public class ArticulatedEntity extends Entity {
     Assert.assertEquals("Articulated entity file improperly formatted.",
                         (tokens.length - 1) % kLineTokenCount, 0);
 
-    mImageUri = Uri.parse(tokens[0]);
+    // Path names are expected to be relative to the path specified for the
+    // entity file.
+    String uri_string = uri.toString();
+    Log.d("ArtifulatedEnt::loadFromUri", "Found uri= " + uri_string);
+    Log.d("ArticulatedEnt:Lload", "Index= " + uri_string.lastIndexOf("/"));
+    String base_uri_string = uri_string.substring(0, uri_string.lastIndexOf("/"));
+    mImageUri = Uri.parse(base_uri_string + "/" + tokens[0]);
 
     for (int index = 1; index < tokens.length; index += kLineTokenCount) {
       Part part = new Part();
@@ -112,11 +118,17 @@ public class ArticulatedEntity extends Entity {
       mImageUri = null;
     }
 
+    float horizontal_flip = 1.0f;
+    if (sprite_flipped_horizontal) {
+      horizontal_flip = -1.0f;
+    }
+
     Matrix root_transformation = new Matrix();
     root_transformation.preTranslate(
         graphics.getWidth() / 2 + (x - center_x) * zoom,
         graphics.getHeight() / 2 + (y - center_y) * zoom);
-    root_transformation.preScale(mDrawingScale * zoom, mDrawingScale * zoom);
+    root_transformation.preScale(
+        mDrawingScale * zoom * horizontal_flip, mDrawingScale * zoom);
     mRoot.draw(graphics, mImageHandle, root_transformation, mAnimation);
   }
 
@@ -152,18 +164,14 @@ public class ArticulatedEntity extends Entity {
       int joint_size = image_rect.width() / 4;
       float joint_angle = animation.getPartAngle(name);
 
-      if (sprite_flipped_horizontal) {
-        joint_angle = -joint_angle;
-      }
-
       // Draw self.
       if (image_handle != -1) {
         transformation.set(base_transformation);
         transformation.preRotate(joint_angle);
         transformation.preTranslate(-image_rect.width() / 2, 0.0f);
         transformation.preScale(image_rect.width(), image_rect.height());
-        graphics.drawImage(image_handle, image_rect, transformation,
-                           sprite_flipped_horizontal, false);
+        graphics.drawImage(
+            image_handle, image_rect, transformation, false, false);
       }
 
       // Draw children. The root node transformation is handled specially to
@@ -171,14 +179,9 @@ public class ArticulatedEntity extends Entity {
       // instead of the origin.
       transformation.set(base_transformation);
       if (name.equals("root")) {
-        float offset_x = animation.getOffsetX();
-        float offset_y = animation.getOffsetY();
-        if (sprite_flipped_horizontal) {
-          offset_x = -offset_x;
-        }
-        transformation.preTranslate(-offset_x, -offset_y);
         transformation.preRotate(joint_angle);
-        transformation.preTranslate(offset_x, offset_y);
+        transformation.preTranslate(
+            -animation.getCenterX(), -animation.getCenterY());
       } else {
         transformation.preRotate(joint_angle);
       }
@@ -233,12 +236,12 @@ public class ArticulatedEntity extends Entity {
       Assert.assertEquals("Animation improperly formatted: " + uri.toString(),
                           (tokens.length - 4) % kLineTokenCount, 0);
       Assert.assertEquals("Expected offset_x specification in animation file.",
-                          tokens[0], "offset_x");
+                          tokens[0], "center_x");
       Assert.assertEquals("Expected offset_y specification in animation file.",
-                          tokens[2], "offset_y");
+                          tokens[2], "center_y");
 
-      mOffsetX = Float.parseFloat(tokens[1]);
-      mOffsetY = Float.parseFloat(tokens[3]);
+      mCenterX = Float.parseFloat(tokens[1]);
+      mCenterY = Float.parseFloat(tokens[3]);
 
       mLength = 0.0f;
       for (int index = 4; index < tokens.length; index += kLineTokenCount) {
@@ -255,7 +258,6 @@ public class ArticulatedEntity extends Entity {
         }
         track.add(key_frame);
       }
-
       Assert.assertTrue("Animation must be more than 0s.", mLength > 0.0f);
     }
 
@@ -266,12 +268,12 @@ public class ArticulatedEntity extends Entity {
       }
     }
 
-    public float getOffsetX() {
-      return mOffsetX;
+    public float getCenterX() {
+      return mCenterX;
     }
 
-    public float getOffsetY() {
-      return mOffsetY;
+    public float getCenterY() {
+      return mCenterY;
     }
 
     public float getPartAngle(String part_name) {
@@ -318,9 +320,9 @@ public class ArticulatedEntity extends Entity {
       public float angle;
     }
 
+    private float mCenterX;
+    private float mCenterY;
     private float mLength;
-    private float mOffsetX;
-    private float mOffsetY;
     private float mTime;
     private TreeMap<String, ArrayList<KeyFrame>> mKeyFrames =
         new TreeMap<String, ArrayList<KeyFrame>>();

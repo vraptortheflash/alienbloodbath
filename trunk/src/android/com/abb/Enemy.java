@@ -25,12 +25,11 @@ public class Enemy extends ArticulatedEntity {
     super();
     mTarget = target;
     radius = kDefaultRadius;
-    sprite_rect =
-        new Rect(0, kSpriteBase, kSpriteWidth, kSpriteBase + kSpriteHeight);
   }
 
   public void step(float time_step) {
     super.step(time_step);
+    super.stepAnimation(time_step);
 
     ddy = mGravity;
 
@@ -44,23 +43,21 @@ public class Enemy extends ArticulatedEntity {
     // to reflect it.
     int sprite_offset;
     if (mTarget.x < x) {
-      sprite_offset = 0;
+      sprite_flipped_horizontal = true;
       ddx = -kAcceleration;
+
     } else {
-      sprite_offset = 2;
+      sprite_flipped_horizontal = false;
       ddx = kAcceleration;
     }
     if (has_ground_contact) {
-      ++sprite_offset;
       dy = -kJumpVelocity;
     }
-
-    sprite_rect.top = kSpriteBase + kSpriteHeight * sprite_offset;
-    sprite_rect.bottom = kSpriteBase + kSpriteHeight * (sprite_offset + 1);
   }
 
   public void loadFromUri(Uri uri) {
     TreeMap<String, Object> enemy_parameters = new TreeMap<String, Object>();
+    enemy_parameters.put(kParameterAnimation, "none");
     enemy_parameters.put(kParameterEntity, "none");
     enemy_parameters.put(kParameterGravity, new Float(kDefaultGravity));
     enemy_parameters.put(kParameterLife, new Float(kDefaultLife));
@@ -70,12 +67,16 @@ public class Enemy extends ArticulatedEntity {
     String[] tokens = Content.readFileTokens(file_path);
     Content.mergeKeyValueTokensWithMap(tokens, enemy_parameters);
 
+    String animation = (String)enemy_parameters.get(kParameterAnimation);
+    String entity = (String)enemy_parameters.get(kParameterEntity);
     mGravity = ((Float)enemy_parameters.get(kParameterGravity)).floatValue();
     mLife = ((Float)enemy_parameters.get(kParameterLife)).floatValue();
     radius = ((Float)enemy_parameters.get(kParameterRadius)).floatValue();
 
-    String entity = (String)enemy_parameters.get(kParameterEntity);
-    loadFromUri(Uri.parse(entity));
+    String uri_string = uri.toString();
+    String base_uri_string = uri_string.substring(0, uri_string.lastIndexOf("/"));
+    super.loadFromUri(Uri.parse(base_uri_string + "/" + entity));
+    super.loadAnimationFromUri(Uri.parse(base_uri_string + "/" + animation));
   }
 
   private float mGravity;
@@ -85,13 +86,11 @@ public class Enemy extends ArticulatedEntity {
   private static final float kAcceleration = 40.0f;
   private static final float kDefaultGravity = 100.0f;
   private static final float kDefaultLife = 1.0f;
-  private static final float kDefaultRadius = 20.0f;
+  private static final float kDefaultRadius = 32.0f;
   private static final float kJumpVelocity = 100.0f;
+  private static final String kParameterAnimation = "animation";
   private static final String kParameterEntity = "entity";
   private static final String kParameterGravity = "gravity";
   private static final String kParameterLife = "life";
   private static final String kParameterRadius = "radius";
-  private static final int kSpriteBase = 0;
-  private static final int kSpriteWidth = 64;
-  private static final int kSpriteHeight = 64;
 }
