@@ -28,10 +28,11 @@ public class Avatar extends ArticulatedEntity {
 
   @Override
   public void step(float time_step) {
+    ddy = kGravity;
     super.step(time_step);
+
     mWeapon.x = x;
     mWeapon.y = y;
-    ddy = kGravity;
 
     // Update the horizontal acceleration acceleration according to the current
     // controls and the contact with the ground.
@@ -69,8 +70,8 @@ public class Avatar extends ArticulatedEntity {
 
     // Update the shooting mechanism. The choices for shot direction are
     // specialized for each animation case: in the air, facing left, right, and
-    // considering the avatar's speed. TODO(barnes): Replace all of this with
-    // the equivalent in Weapon.java.
+    // considering the avatar's speed. TODO(barnes): Replace all of this with an
+    // equivalent in Weapon.java.
     mShotDelay -= time_step;
     if (mShooting && mShotDelay < time_step) {
       mShotDelay = kShotDelay;
