@@ -19,8 +19,8 @@ import java.lang.Math;
 import java.util.Random;
 
 
-/** The Entity class is intended to be lowest level, drawable, physical
- * in-game object. */
+/** The Entity class is intended to be lowest level, drawable, physical in-game
+ * object. */
 public class Entity {
   public boolean alive = true;  // Should not be deleted from the game.
   public boolean has_ground_contact;
@@ -46,13 +46,6 @@ public class Entity {
     y += 0.5f * ddy * time_step * time_step + dy * time_step;
     dx += ddx * time_step;
     dy += ddy * time_step;
-
-    // The following is a poor hack to simulate "friction" against the ground
-    // surface. The problem with this implementation is that it does not account
-    // for the time_step. TODO(burkhart): Fix this friction implementation.
-    if (has_ground_contact) {
-      dx *= (1.0f - kGroundKineticFriction);
-    }
 
     dx = Math.max(dx, -kMaxVelocity);
     dx = Math.min(dx,  kMaxVelocity);
@@ -85,6 +78,5 @@ public class Entity {
 
   protected static Random mRandom = new Random();
 
-  private static final float kGroundKineticFriction = 0.2f;
   private static final float kMaxVelocity = 200.0f;
 }

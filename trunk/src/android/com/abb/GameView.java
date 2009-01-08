@@ -65,13 +65,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       // framerate to something "reasonable" and 2) pause the updates as much as
       // possible. Here we define the maximum framerate which needs to make the
       // trade off between graphics fluidity and power savings.
-      final float kMaxFrameRate = 15.0f;  // Frames / second.
+      final float kMaxFrameRate = 30.0f;  // Frames / second.
       final float kMinFrameRate = 5.0f;   // Frames / second.
       final float kMinTimeStep = 1.0f / kMaxFrameRate;  // Seconds.
       final float kMaxTimeStep = 1.0f / kMinFrameRate;  // Seconds.
 
-      // The timers available through the Java APIs appear sketchy in general. I
-      // was able to find the following resource useful:
+      // The timers available through the Java APIs appear sketchy in general.
+      // The following resource was useful:
       // http://blogs.sun.com/dholmes/entry/inside_the_hotspot_vm_clocks
       long time = System.nanoTime();
 
