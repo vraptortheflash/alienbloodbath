@@ -93,9 +93,9 @@ public class GameState implements Game {
     mTargetViewX = avatar.x + kViewLead * avatar.dx;
     mTargetViewY = avatar.y + kViewLead * avatar.dy;
 
-    mZoom += (mTargetZoom - mZoom) * kZoomSpeed;
-    mViewX += (mTargetViewX - mViewX) * kViewSpeed;
-    mViewY += (mTargetViewY - mViewY) * kViewSpeed;
+    mZoom += (mTargetZoom - mZoom) * kZoomSpeed * time_step;
+    mViewX += (mTargetViewX - mViewX) * kViewSpeed * time_step;
+    mViewY += (mTargetViewY - mViewY) * kViewSpeed * time_step;
 
     // Step the avatar.
     if (avatar.alive) {
@@ -290,6 +290,6 @@ public class GameState implements Game {
   private static final float kGroundZoom = 0.8f;
   private static final long kVibrateLength = 30;  // Milliseconds.
   private static final float kViewLead = 1.0f;
-  private static final float kViewSpeed = 0.1f;
-  private static final float kZoomSpeed = 0.05f;
+  private static final float kViewSpeed = 2.0f;
+  private static final float kZoomSpeed = 1.0f;
 }

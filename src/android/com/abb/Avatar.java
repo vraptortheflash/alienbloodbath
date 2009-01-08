@@ -46,6 +46,13 @@ public class Avatar extends ArticulatedEntity {
       ddx = -kAirAcceleration;
     }
 
+    // The following is a poor hack to simulate "friction" against the ground
+    // surface. The problem with this implementation is that it does not account
+    // for the time_step. TODO(burkhart): Fix this friction implementation.
+    if (has_ground_contact && ddx == 0.0f) {
+      dx *= (1.0f - kGroundKineticFriction);
+    }
+
     // Update the avatar animation frame according the current entity motion.
     if (dx < 0) {
       sprite_flipped_horizontal = true;
@@ -131,9 +138,10 @@ public class Avatar extends ArticulatedEntity {
   private static final float kAirAcceleration = 40.0f;
   private static final float kAnimationStopThreshold = 40.0f;
   private static final float kDrawingScale = 0.4f;
-  private static final float kGravity = 200.0f;
+  private static final float kGravity = 300.0f;
   private static final float kGroundAcceleration = 700.0f;
-  private static final float kGroundAnimationSpeed = 1.0f / 500.0f;
+  private static final float kGroundAnimationSpeed = 1.0f / 1500.0f;
+  private static final float kGroundKineticFriction = 0.3f;
   private static final float kJumpVelocity = 250.0f;
   private static final int kKeyLeft = KeyEvent.KEYCODE_A;
   private static final int kKeyRight = KeyEvent.KEYCODE_S;
