@@ -99,7 +99,12 @@ public class Enemy extends ArticulatedEntity {
     String animation = (String)enemy_parameters.get(kParameterAnimation);
     Assert.assertTrue("Enemy animation must be specified.",
                       !animation.equals("none"));
-    super.loadAnimationFromUri(Uri.parse(base_uri_string + "/" + animation));
+    super.loadAnimationFromUri(base_uri_string + "/" + animation);
+  }
+
+  @Override
+  public Object clone() {
+    return super.clone();
   }
 
   private float mAcceleration;

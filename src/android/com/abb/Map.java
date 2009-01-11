@@ -360,20 +360,24 @@ public class Map {
     int canvas_height = graphics.getHeight();
     if (graphics.hasHardwareAcceleration() && mBackgroundImage != -1) {
       float scaled_background_size = kBackgroundScale * kBackgroundSize;
-      Rect background_src = new Rect(0, 0, kBackgroundSize, kBackgroundSize);
-      RectF background_dst = new RectF(
-          0.0f, 0.0f, scaled_background_size, scaled_background_size);
-      background_dst.offset(-center_x / (kTileSize * kMapWidth) *
-                            (scaled_background_size - canvas_width),
-                            -center_y / (kTileSize * kMapHeight) *
-                            (scaled_background_size - canvas_height));
+      mRectSource.left = mRectSource.top = 0;
+      mRectSource.right = mRectSource.bottom = kBackgroundSize;
+
+      mRectDest.left = -center_x / (kTileSize * kMapWidth) *
+          (scaled_background_size - canvas_width);
+      mRectDest.top = -center_y / (kTileSize * kMapHeight) *
+          (scaled_background_size - canvas_height);
+      mRectDest.right = mRectDest.left + scaled_background_size;
+      mRectDest.bottom = mRectDest.top + scaled_background_size;
+
       graphics.drawImage(
-          mBackgroundImage, background_src, background_dst, false, false);
+          mBackgroundImage, mRectSource, mRectDest, false, false);
     }
 
     // Draw tiles.
-    Rect source_rect = new Rect(0, 0, kTileSize, kTileSize);
-    RectF destination_rect = new RectF();
+    mRectSource.top = mRectSource.left = 0;
+    mRectSource.right = mRectSource.bottom = kTileSize;
+
     int half_canvas_width = canvas_width / 2;
     int half_canvas_height = canvas_height / 2;
     float x_min = center_x - half_canvas_width / zoom;
@@ -393,7 +397,7 @@ public class Map {
           if (trigger.startsWith("enemy=")) {
             Uri enemy_uri =
                 Uri.withAppendedPath(mBaseUri, trigger.substring(6));
-            mGameState.createEnemy(enemy_uri, x, y);
+            mGameState.createEnemyFromUri(enemy_uri, x, y);
             mTriggers[tile_index] = null;
           }
         }
@@ -406,17 +410,16 @@ public class Map {
 
         int index_x = (int)(x / kTileSize + 0.5f);
         int index_y = (int)(y / kTileSize + 0.5f);
-        source_rect.top = kTileSize * tile_id;
-        source_rect.bottom = kTileSize * tile_id + kTileSize;
-        destination_rect.left = kTileSize * index_x * zoom;
-        destination_rect.top = kTileSize * index_y * zoom;
-        destination_rect.right =  (kTileSize * index_x + kTileSize) * zoom;
-        destination_rect.bottom = (kTileSize * index_y + kTileSize) * zoom;
-        destination_rect.offset(
+        mRectSource.top = kTileSize * tile_id;
+        mRectSource.bottom = kTileSize * tile_id + kTileSize;
+        mRectDest.left = kTileSize * index_x * zoom;
+        mRectDest.top = kTileSize * index_y * zoom;
+        mRectDest.right =  (kTileSize * index_x + kTileSize) * zoom;
+        mRectDest.bottom = (kTileSize * index_y + kTileSize) * zoom;
+        mRectDest.offset(
             -center_x * zoom + half_canvas_width - kTileSize / 2 * zoom,
             -center_y * zoom + half_canvas_height - kTileSize / 2 * zoom);
-        graphics.drawImage(
-            mTilesImage, source_rect, destination_rect, false, false);
+        graphics.drawImage(mTilesImage, mRectSource, mRectDest, false, false);
       }
     }
   }
@@ -441,8 +444,10 @@ public class Map {
   private boolean[] mEffectsExplode;
   private boolean[] mEffectsSolid;
   private GameState mGameState;
-  private int mLevelOffset = 0;  // Level within the mBaseUri package.
+  private int mLevelOffset = 0;  // Level within the mBaseUri map package.
   private Random mRandom = new Random();
+  private Rect mRectSource = new Rect();
+  private RectF mRectDest = new RectF();
   private float mStartingX;
   private float mStartingY;
   private char[] mTiles;

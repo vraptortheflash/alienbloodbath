@@ -15,13 +15,14 @@ import android.graphics.Canvas;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import java.lang.CloneNotSupportedException;
 import java.lang.Math;
 import java.util.Random;
 
 
 /** The Entity class is intended to be lowest level, drawable, physical in-game
  * object. */
-public class Entity {
+public class Entity implements Cloneable {
   public boolean alive = true;  // Should not be deleted from the game.
   public boolean has_ground_contact;
   public float radius;
@@ -61,22 +62,32 @@ public class Entity {
       int canvas_width = graphics.getWidth();
       int canvas_height = graphics.getHeight();
 
-      RectF sprite_destination = new RectF(
-          0, 0,
-          sprite_rect.width() * zoom,
-          sprite_rect.height() * zoom);
-      sprite_destination.offset(
-          (x - center_x) * zoom +
-          (canvas_width - sprite_rect.width() * zoom) / 2.0f,
-          (y - center_y) * zoom +
-          (canvas_height - sprite_rect.height() * zoom) / 2.0f);
+      mRectF.left = (x - center_x) * zoom +
+          (canvas_width - sprite_rect.width() * zoom) / 2.0f;
+      mRectF.top = (y - center_y) * zoom +
+          (canvas_height - sprite_rect.height() * zoom) / 2.0f;
+      mRectF.right = mRectF.left + sprite_rect.width() * zoom;
+      mRectF.bottom = mRectF.top + sprite_rect.height() * zoom;
+
       graphics.drawImage(
-          sprite_image, sprite_rect, sprite_destination,
+          sprite_image, sprite_rect, mRectF,
           sprite_flipped_horizontal, sprite_flipped_vertical);
     }
   }
 
+  @Override
+  public Object clone() {
+    try {
+      return super.clone();
+    } catch (CloneNotSupportedException ex) {
+      throw new InternalError(ex.toString());
+    }
+  }
+
+  // The following allocations are made here to avoid allocating anything during
+  // the game. They are intended to be used by this an any child classe.
   protected static Random mRandom = new Random();
+  protected static RectF mRectF = new RectF();
 
   private static final float kMaxVelocity = 200.0f;
 }
