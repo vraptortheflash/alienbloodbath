@@ -24,11 +24,12 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.TreeMap;
 
 
 public class GameState implements Game {
   public Avatar avatar = new Avatar(this);
-  public ArrayList<Entity> enemies = new ArrayList<Entity>();
+  public ArrayList<Enemy> enemies = new ArrayList<Enemy>();
   public Map map = new Map(this);
   public int misc_sprites;
   public ArrayList<Entity> particles = new ArrayList<Entity>();
@@ -125,8 +126,8 @@ public class GameState implements Game {
     }
 
     // Step the enemies.
-    for (Iterator it = enemies.iterator(); it.hasNext();) {
-      Enemy enemy = (Enemy)it.next();
+    for (int index = 0; index < enemies.size(); ++index) {
+      Enemy enemy = enemies.get(index);
       enemy.step(time_step);
       map.collideEntity(enemy);
       if (!enemy.alive) {
@@ -137,28 +138,28 @@ public class GameState implements Game {
               kBloodBathVelocity * (0.5f - mRandom.nextFloat()) + enemy.dx,
               kBloodBathVelocity * (0.5f - mRandom.nextFloat()) + enemy.dy);
         }
-        it.remove();
+        enemies.remove(index);
       }
     }
 
     // Step the projectiles and collide them against the enemies.
-    for (Iterator it = projectiles.iterator(); it.hasNext();) {
-      Fire projectile = (Fire)it.next();
+    for (int index = 0; index < projectiles.size(); ++index) {
+      Fire projectile = (Fire)projectiles.get(index);
       projectile.step(time_step);
-      for (Iterator enemy_it = enemies.iterator(); enemy_it.hasNext();) {
-        projectile.collideEntity((Entity)enemy_it.next());
+      for (int enemy_index = 0; enemy_index < enemies.size(); ++enemy_index) {
+        projectile.collideEntity(enemies.get(enemy_index));
       }
       if (!projectile.alive) {
-        it.remove();
+        projectiles.remove(index);
       }
     }
 
     // Step the particles.
-    for (Iterator it = particles.iterator(); it.hasNext();) {
-      Entity particle = (Entity)it.next();
+    for (int index = 0; index < particles.size(); ++index) {
+      Entity particle = particles.get(index);
       particle.step(time_step);
       if (!particle.alive) {
-        it.remove();
+        particles.remove(index);
       }
     }
   }
@@ -170,8 +171,8 @@ public class GameState implements Game {
     map.draw(graphics, mViewX, mViewY, mZoom);
 
     // Draw the enemies.
-    for (Iterator it = enemies.iterator(); it.hasNext();) {
-      ((Entity)it.next()).draw(graphics, mViewX, mViewY, mZoom);
+    for (int index = 0; index < enemies.size(); ++index) {
+      enemies.get(index).draw(graphics, mViewX, mViewY, mZoom);
     }
 
     // Draw the avatar and weapon.
@@ -182,19 +183,25 @@ public class GameState implements Game {
     }
 
     // Draw the projectiles.
-    for (Iterator it = projectiles.iterator(); it.hasNext();) {
-      ((Entity)it.next()).draw(graphics, mViewX, mViewY, mZoom);
+    for (int index = 0; index < projectiles.size(); ++index) {
+      projectiles.get(index).draw(graphics, mViewX, mViewY, mZoom);
     }
 
     // Draw the particles.
-    for (Iterator it = particles.iterator(); it.hasNext();) {
-      ((Entity)it.next()).draw(graphics, mViewX, mViewY, mZoom);
+    for (int index = 0; index < particles.size(); ++index) {
+      particles.get(index).draw(graphics, mViewX, mViewY, mZoom);
     }
   }
 
-  public Entity createEnemy(Uri enemy_uri, float x, float y) {
-    Enemy enemy = new Enemy(avatar);
-    enemy.loadFromUri(enemy_uri);
+  public Entity createEnemyFromUri(Uri uri, float x, float y) {
+    Enemy enemy = mEnemyCache.get(uri);
+    if (enemy == null) {
+      enemy = new Enemy(avatar);
+      enemy.loadFromUri(uri);
+      mEnemyCache.put(uri, enemy);
+    }
+
+    enemy = (Enemy)enemy.clone();
     enemy.x = x;
     enemy.y = y;
     enemies.add(enemy);
@@ -272,6 +279,7 @@ public class GameState implements Game {
 
   private Context mContext;
   private float mDeathTimer = kDeathTimer;
+  private TreeMap<Uri, Enemy> mEnemyCache = new TreeMap<Uri, Enemy>();
   private Random mRandom = new Random();
   private float mTargetViewX = 0.0f;
   private float mTargetViewY = 0.0f;

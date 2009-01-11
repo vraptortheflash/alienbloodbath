@@ -66,7 +66,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       // possible. Here we define the maximum framerate which needs to make the
       // trade off between graphics fluidity and power savings.
       final float kMaxFrameRate = 30.0f;  // Frames / second.
-      final float kMinFrameRate = 5.0f;   // Frames / second.
+      final float kMinFrameRate = 6.0f;   // Frames / second.
       final float kMinTimeStep = 1.0f / kMaxFrameRate;  // Seconds.
       final float kMaxTimeStep = 1.0f / kMinFrameRate;  // Seconds.
 

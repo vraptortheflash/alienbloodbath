@@ -83,14 +83,14 @@ public class ArticulatedEntity extends Entity {
     }
   }
 
-  public void loadAnimationFromUri(Uri uri) {
-    Animation animation = mAnimationCache.get(uri);
+  public void loadAnimationFromUri(String uri_string) {
+    Animation animation = mAnimationCache.get(uri_string);
     if (animation != null) {
       mAnimation = animation;
     } else {
       mAnimation = new Animation();
-      mAnimation.loadFromUri(uri);
-      mAnimationCache.put(uri, mAnimation);
+      mAnimation.loadFromUri(uri_string);
+      mAnimationCache.put(uri_string, mAnimation);
     }
   }
 
@@ -123,13 +123,13 @@ public class ArticulatedEntity extends Entity {
       horizontal_flip = -1.0f;
     }
 
-    Matrix root_transformation = new Matrix();
-    root_transformation.preTranslate(
+    mRootTransformation.reset();
+    mRootTransformation.preTranslate(
         graphics.getWidth() / 2 + (x - center_x) * zoom,
         graphics.getHeight() / 2 + (y - center_y) * zoom);
-    root_transformation.preScale(
+    mRootTransformation.preScale(
         mDrawingScale * zoom * horizontal_flip, mDrawingScale * zoom);
-    mRoot.draw(graphics, mImageHandle, root_transformation, mAnimation);
+    mRoot.draw(graphics, mImageHandle, mRootTransformation, mAnimation);
   }
 
   /** Return the 3x3 transformation matrix used to draw child parts. In other
@@ -149,6 +149,11 @@ public class ArticulatedEntity extends Entity {
     } else {
       return mRoot.findPartByName(part_name);
     }
+  }
+
+  @Override
+  public Object clone() {
+    return super.clone();
   }
 
   /** The Part class structure represents a single element of the articulated
@@ -211,7 +216,9 @@ public class ArticulatedEntity extends Entity {
   /** The Animation class stores and provides access to a independent, time
    * varying set of values called tracks. */
   private class Animation {
-    public void loadFromUri(Uri uri) {
+    public void loadFromUri(String uri_string) {
+      Uri uri = Uri.parse(uri_string);
+
       // The file format is expected to be an ASCII text file laid out with a
       // single key-frame per line. The first two lines must contain "offset_x
       // #" and "offset_y #". Each consecutive line / key frame must have the
@@ -329,10 +336,11 @@ public class ArticulatedEntity extends Entity {
   }
 
   private Animation mAnimation = new Animation();
-  private TreeMap<Uri, Animation> mAnimationCache =
-      new TreeMap<Uri, Animation>();
+  private TreeMap<String, Animation> mAnimationCache =
+      new TreeMap<String, Animation>();
   private float mDrawingScale = 1.0f;
   private int mImageHandle = -1;
   private Uri mImageUri;
   private Part mRoot = new Part();
+  private Matrix mRootTransformation = new Matrix();
 }

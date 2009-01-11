@@ -62,14 +62,14 @@ public class Avatar extends ArticulatedEntity {
 
     if (has_ground_contact) {
       if (Math.abs(dx) > kAnimationStopThreshold) {
-        loadAnimationFromUri(Uri.parse("content:///run.humanoid.animation"));
+        loadAnimationFromUri("content:///run.humanoid.animation");
         stepAnimation(kGroundAnimationSpeed * Math.abs(dx));
       } else {
-        loadAnimationFromUri(Uri.parse("content:///stand.humanoid.animation"));
+        loadAnimationFromUri("content:///stand.humanoid.animation");
         stepAnimation(time_step);
       }
     } else {
-      loadAnimationFromUri(Uri.parse("content:///jump.humanoid.animation"));
+      loadAnimationFromUri("content:///jump.humanoid.animation");
       stepAnimation(time_step);
     }
 

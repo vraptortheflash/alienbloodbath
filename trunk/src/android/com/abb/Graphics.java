@@ -148,32 +148,109 @@ public class Graphics {
                         boolean flipped_horizontal, boolean flipped_vertical) {
     Assert.assertTrue("Invalid image handle in drawImage", image_handle >= 0);
 
-    switch (mBackendType) {
-      case ANDROID2D:
-        drawImageAndroid2D(image_handle, source_rect, dest_rect,
-                           flipped_horizontal, flipped_vertical);
-        break;
-      case OPENGL:
-        drawImageOpenGL(image_handle, source_rect, dest_rect,
-                        flipped_horizontal, flipped_vertical);
-        break;
+    // The drawImageOpenGL implementation has been inlined here for performance
+    // reasons. TODO: Inline the 2D API implementation here.
+    Assert.assertEquals(mBackendType, BackendType.OPENGL);
+
+    if (image_handle != mCurrentTexture) {
+      mCurrentTexture = image_handle;
+      mGl.glBindTexture(GL10.GL_TEXTURE_2D, image_handle);
     }
+
+    // The vertex and texture coordinate arrays have already been initialized.
+    // All that is left is to set up the texture and model view transformation
+    // matrices and render. Note that the OpenGL API expects matrices with a
+    // column-major layout.
+    float texture_width = mTextureWidths.get(image_handle);
+    float texture_height = mTextureHeights.get(image_handle);
+
+    mMatrix4x4[1] = mMatrix4x4[2] = mMatrix4x4[4] =
+        mMatrix4x4[6] = mMatrix4x4[8] = mMatrix4x4[9] = 0.0f;
+    if (flipped_vertical) {
+      mMatrix4x4[5] = (source_rect.top - source_rect.bottom) / texture_height;
+      mMatrix4x4[13] = source_rect.bottom / texture_height;
+    } else {
+      mMatrix4x4[5] = (source_rect.bottom - source_rect.top) / texture_height;
+      mMatrix4x4[13] = source_rect.top / texture_height;
+    }
+    if (flipped_horizontal) {
+      mMatrix4x4[0] = (source_rect.left - source_rect.right) / texture_width;
+      mMatrix4x4[12] = source_rect.right / texture_width;
+    } else {
+      mMatrix4x4[0] = (source_rect.right - source_rect.left) / texture_width;
+      mMatrix4x4[12] = source_rect.left / texture_width;
+    }
+
+    mGl.glMatrixMode(GL10.GL_TEXTURE);
+    mGl.glLoadMatrixf(mMatrix4x4, 0);
+
+    mMatrix4x4[0] = dest_rect.right - dest_rect.left;
+    mMatrix4x4[5] = dest_rect.top - dest_rect.bottom;
+    mMatrix4x4[12] = dest_rect.left;
+    mMatrix4x4[13] = mSurfaceHeight - dest_rect.top;
+    mGl.glMatrixMode(GL10.GL_MODELVIEW);
+    mGl.glLoadMatrixf(mMatrix4x4, 0);
+
+    mGl.glDrawArrays(GL10.GL_TRIANGLE_FAN, 0, 4);
   }
 
   public void drawImage(int image_handle, Rect source_rect, Matrix dest_matrix,
                         boolean flipped_horizontal, boolean flipped_vertical) {
     Assert.assertTrue("Invalid image handle in drawImage", image_handle >= 0);
 
-    switch (mBackendType) {
-      case ANDROID2D:
-        drawImageAndroid2D(image_handle, source_rect, dest_matrix,
-                           flipped_horizontal, flipped_vertical);
-        break;
-      case OPENGL:
-        drawImageOpenGL(image_handle, source_rect, dest_matrix,
-                        flipped_horizontal, flipped_vertical);
-        break;
+    // The drawImageOpenGL implementation has been inlined here for performance
+    // reasons. TODO: Inline the 2D API implementation here.
+    Assert.assertEquals(mBackendType, BackendType.OPENGL);
+
+    if (image_handle != mCurrentTexture) {
+      mCurrentTexture = image_handle;
+      mGl.glBindTexture(GL10.GL_TEXTURE_2D, image_handle);
     }
+
+    // The vertex and texture coordinate arrays have already been initialized.
+    // All that is left is to set up the texture and model view transformation
+    // matrices and render. Note that the OpenGL API expects matrices with a
+    // column-major layout.
+    float texture_width = mTextureWidths.get(image_handle);
+    float texture_height = mTextureHeights.get(image_handle);
+
+    mMatrix4x4[1] = mMatrix4x4[2] = mMatrix4x4[4] =
+        mMatrix4x4[6] = mMatrix4x4[8] = mMatrix4x4[9] = 0.0f;
+    if (flipped_vertical) {
+      mMatrix4x4[5] = (source_rect.top - source_rect.bottom) / texture_height;
+      mMatrix4x4[13] = source_rect.bottom / texture_height;
+    } else {
+      mMatrix4x4[5] = (source_rect.bottom - source_rect.top) / texture_height;
+      mMatrix4x4[13] = source_rect.top / texture_height;
+    }
+    if (flipped_horizontal) {
+      mMatrix4x4[0] = (source_rect.left - source_rect.right) / texture_width;
+      mMatrix4x4[12] = source_rect.right / texture_width;
+    } else {
+      mMatrix4x4[0] = (source_rect.right - source_rect.left) / texture_width;
+      mMatrix4x4[12] = source_rect.left / texture_width;
+    }
+
+    mGl.glMatrixMode(GL10.GL_TEXTURE);
+    mGl.glLoadMatrixf(mMatrix4x4, 0);
+
+    mScreenMatrix.reset();
+    mScreenMatrix.preTranslate(0.0f, mSurfaceHeight);
+    mScreenMatrix.preScale(1.0f, -1.0f);
+    mScreenMatrix.preConcat(dest_matrix);
+    mScreenMatrix.getValues(mMatrix3x3);
+    mMatrix4x4[0] = mMatrix3x3[0];
+    mMatrix4x4[1] = mMatrix3x3[3];
+    mMatrix4x4[2] = mMatrix3x3[6];
+    mMatrix4x4[4] = mMatrix3x3[1];
+    mMatrix4x4[5] = mMatrix3x3[4];
+    mMatrix4x4[6] = mMatrix3x3[6];
+    mMatrix4x4[12] = mMatrix3x3[2];
+    mMatrix4x4[13] = mMatrix3x3[5];
+    mGl.glMatrixMode(GL10.GL_MODELVIEW);
+    mGl.glLoadMatrixf(mMatrix4x4, 0);
+
+    mGl.glDrawArrays(GL10.GL_TRIANGLE_FAN, 0, 4);
   }
 
   public void beginFrame() {
@@ -507,107 +584,6 @@ public class Graphics {
 
   private int getHeightOpenGL() {
     return mSurfaceHeight;
-  }
-
-  private void drawImageOpenGL(int image_handle,
-                               Rect source_rect, RectF dest_rect,
-                               boolean flipped_horizontal,
-                               boolean flipped_vertical) {
-    if (image_handle != mCurrentTexture) {
-      mCurrentTexture = image_handle;
-      mGl.glBindTexture(GL10.GL_TEXTURE_2D, image_handle);
-    }
-
-    // The vertex and texture coordinate arrays have already been initialized.
-    // All that is left is to set up the texture and model view transformation
-    // matrices and render. Note that the OpenGL API expects matrices with a
-    // column-major layout.
-    float texture_width = mTextureWidths.get(image_handle);
-    float texture_height = mTextureHeights.get(image_handle);
-
-    mMatrix4x4[1] = mMatrix4x4[2] = mMatrix4x4[4] =
-        mMatrix4x4[6] = mMatrix4x4[8] = mMatrix4x4[9] = 0.0f;
-    if (flipped_vertical) {
-      mMatrix4x4[5] = (source_rect.top - source_rect.bottom) / texture_height;
-      mMatrix4x4[13] = source_rect.bottom / texture_height;
-    } else {
-      mMatrix4x4[5] = (source_rect.bottom - source_rect.top) / texture_height;
-      mMatrix4x4[13] = source_rect.top / texture_height;
-    }
-    if (flipped_horizontal) {
-      mMatrix4x4[0] = (source_rect.left - source_rect.right) / texture_width;
-      mMatrix4x4[12] = source_rect.right / texture_width;
-    } else {
-      mMatrix4x4[0] = (source_rect.right - source_rect.left) / texture_width;
-      mMatrix4x4[12] = source_rect.left / texture_width;
-    }
-
-    mGl.glMatrixMode(GL10.GL_TEXTURE);
-    mGl.glLoadMatrixf(mMatrix4x4, 0);
-
-    mMatrix4x4[0] = dest_rect.right - dest_rect.left;
-    mMatrix4x4[5] = dest_rect.top - dest_rect.bottom;
-    mMatrix4x4[12] = dest_rect.left;
-    mMatrix4x4[13] = mSurfaceHeight - dest_rect.top;
-    mGl.glMatrixMode(GL10.GL_MODELVIEW);
-    mGl.glLoadMatrixf(mMatrix4x4, 0);
-
-    mGl.glDrawArrays(GL10.GL_TRIANGLE_FAN, 0, 4);
-  }
-
-  private void drawImageOpenGL(int image_handle,
-                               Rect source_rect, Matrix dest_matrix,
-                               boolean flipped_horizontal,
-                               boolean flipped_vertical) {
-    if (image_handle != mCurrentTexture) {
-      mCurrentTexture = image_handle;
-      mGl.glBindTexture(GL10.GL_TEXTURE_2D, image_handle);
-    }
-
-    // The vertex and texture coordinate arrays have already been initialized.
-    // All that is left is to set up the texture and model view transformation
-    // matrices and render. Note that the OpenGL API expects matrices with a
-    // column-major layout.
-    float texture_width = mTextureWidths.get(image_handle);
-    float texture_height = mTextureHeights.get(image_handle);
-
-    mMatrix4x4[1] = mMatrix4x4[2] = mMatrix4x4[4] =
-        mMatrix4x4[6] = mMatrix4x4[8] = mMatrix4x4[9] = 0.0f;
-    if (flipped_vertical) {
-      mMatrix4x4[5] = (source_rect.top - source_rect.bottom) / texture_height;
-      mMatrix4x4[13] = source_rect.bottom / texture_height;
-    } else {
-      mMatrix4x4[5] = (source_rect.bottom - source_rect.top) / texture_height;
-      mMatrix4x4[13] = source_rect.top / texture_height;
-    }
-    if (flipped_horizontal) {
-      mMatrix4x4[0] = (source_rect.left - source_rect.right) / texture_width;
-      mMatrix4x4[12] = source_rect.right / texture_width;
-    } else {
-      mMatrix4x4[0] = (source_rect.right - source_rect.left) / texture_width;
-      mMatrix4x4[12] = source_rect.left / texture_width;
-    }
-
-    mGl.glMatrixMode(GL10.GL_TEXTURE);
-    mGl.glLoadMatrixf(mMatrix4x4, 0);
-
-    mScreenMatrix.reset();
-    mScreenMatrix.preTranslate(0.0f, mSurfaceHeight);
-    mScreenMatrix.preScale(1.0f, -1.0f);
-    mScreenMatrix.preConcat(dest_matrix);
-    mScreenMatrix.getValues(mMatrix3x3);
-    mMatrix4x4[0] = mMatrix3x3[0];
-    mMatrix4x4[1] = mMatrix3x3[3];
-    mMatrix4x4[2] = mMatrix3x3[6];
-    mMatrix4x4[4] = mMatrix3x3[1];
-    mMatrix4x4[5] = mMatrix3x3[4];
-    mMatrix4x4[6] = mMatrix3x3[6];
-    mMatrix4x4[12] = mMatrix3x3[2];
-    mMatrix4x4[13] = mMatrix3x3[5];
-    mGl.glMatrixMode(GL10.GL_MODELVIEW);
-    mGl.glLoadMatrixf(mMatrix4x4, 0);
-
-    mGl.glDrawArrays(GL10.GL_TRIANGLE_FAN, 0, 4);
   }
 
   private void beginFrameOpenGL() {
