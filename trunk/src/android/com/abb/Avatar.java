@@ -14,6 +14,7 @@ package android.com.abb;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 
 
 public class Avatar extends ArticulatedEntity {
@@ -34,8 +35,8 @@ public class Avatar extends ArticulatedEntity {
     mWeapon.x = x;
     mWeapon.y = y;
 
-    // Update the horizontal acceleration acceleration according to the current
-    // controls and the contact with the ground.
+    // Update the horizontal acceleration according to the current controls and
+    // the contact with the ground.
     if (ddx > 0 && has_ground_contact) {
       ddx = +kGroundAcceleration;
     } else if (ddx > 0 && !has_ground_contact) {
@@ -77,7 +78,7 @@ public class Avatar extends ArticulatedEntity {
 
     // Update the shooting mechanism. The choices for shot direction are
     // specialized for each animation case: in the air, facing left, right, and
-    // considering the avatar's speed. TODO(barnes): Replace all of this with an
+    // considering the avatar's speed. TODO: Replace all of this with an
     // equivalent in Weapon.java.
     mShotDelay -= time_step;
     if (mShooting && mShotDelay < time_step) {
@@ -117,6 +118,17 @@ public class Avatar extends ArticulatedEntity {
     }
   }
 
+  @Override
+  public void draw(Graphics graphics, float center_x, float center_y,
+                   float zoom) {
+    // We intercept the draw method only to get the canvas dimensions. The
+    // drawing buffer dimensions are used to interpret the touch events.
+    mCanvasWidth = graphics.getWidth();
+    mCanvasHeight = graphics.getHeight();
+
+    super.draw(graphics, center_x, center_y, zoom);
+  }
+
   public void setKeyState(int key_code, int state) {
     if (key_code == kKeyLeft) {
       ddx = -kGroundAcceleration * state;
@@ -124,11 +136,60 @@ public class Avatar extends ArticulatedEntity {
       ddx = +kGroundAcceleration * state;
     } else if (key_code == kKeyJump && state == 1 && has_ground_contact) {
       dy -= kJumpVelocity;
+      has_ground_contact = false;
     } else if (key_code == kKeyShoot) {
       mShooting = (state == 1);
     }
   }
 
+  public void onMotionEvent(MotionEvent motion_event) {
+    // We translate motion events into key events and then pass it onto the key
+    // event handler. Note: Pressure and size measurements are also available
+    // from the API, but aren't yet used here.
+    int action = motion_event.getAction();
+    if (action == MotionEvent.ACTION_DOWN ||
+        action == MotionEvent.ACTION_MOVE) {
+      // Handled below.
+    } else if (action == MotionEvent.ACTION_UP) {
+      setKeyState(kKeyLeft, 0);
+      setKeyState(kKeyRight, 0);
+      setKeyState(kKeyJump, 0);
+      setKeyState(kKeyShoot, 0);
+      return;
+    } else {
+      return;
+    }
+    int x = (int)motion_event.getX();
+
+    // The touch event was in the movement section of the display surface.
+    if (motion_event.getY() > mCanvasHeight - kTouchMovementHeight) {
+      setKeyState(kKeyJump, 0);
+      setKeyState(kKeyShoot, 0);
+      if (motion_event.getX() < mCanvasWidth / 2) {
+        setKeyState(kKeyRight, 0);
+        setKeyState(kKeyLeft, 1);
+      } else {
+        setKeyState(kKeyLeft, 0);
+        setKeyState(kKeyRight, 1);
+      }
+    }
+    // the touch event was in the action section. (Any area above the movement
+    // section of the display surface.)
+    else {
+      setKeyState(kKeyLeft, 0);
+      setKeyState(kKeyRight, 0);
+      if (motion_event.getX() < mCanvasWidth / 2) {
+        setKeyState(kKeyShoot, 0);
+        setKeyState(kKeyJump, 1);
+      } else {
+        setKeyState(kKeyJump, 0);
+        setKeyState(kKeyShoot, 1);
+      }
+    }
+  }
+
+  private int mCanvasWidth;
+  private int mCanvasHeight;
   private GameState mGameState;
   private float mShotDelay;
   private boolean mShooting;
@@ -155,4 +216,5 @@ public class Avatar extends ArticulatedEntity {
   private static final float kShotSpread = 15.0f * (float)Math.PI / 180.0f;
   private static final float kShotVelocity = 60.0f;
   private static final int kSpriteSize = 64;
+  private static final int kTouchMovementHeight = 30;
 }

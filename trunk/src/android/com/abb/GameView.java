@@ -26,6 +26,7 @@ import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -62,9 +63,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
       // Since our target platform is a mobile device, we should do what we can
       // to save power. In the case of a game like this, we should 1) limit the
-      // framerate to something "reasonable" and 2) pause the updates as much as
-      // possible. Here we define the maximum framerate which needs to make the
-      // trade off between graphics fluidity and power savings.
+      // frame rate to something "reasonable" and 2) pause the updates as much
+      // as possible. Here we define the maximum frame rate which needs to make
+      // the trade off between graphics fluidity and power savings.
       final float kMaxFrameRate = 30.0f;  // Frames / second.
       final float kMinFrameRate = 6.0f;   // Frames / second.
       final float kMinTimeStep = 1.0f / kMaxFrameRate;  // Seconds.
@@ -87,7 +88,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         }
 
         // Calculate the interval between this and the previous frame. See note
-        // above regarding system timers. If we have exceeded our framerate
+        // above regarding system timers. If we have exceeded our frame rate
         // budget, sleep.
         long current_time = System.nanoTime();
         float time_step = (float)(current_time - time) * 1.0e-9f;
@@ -215,6 +216,19 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     if (mGameThread != null) {
       mGameThread.pause(!window_has_focus);
     }
+  }
+
+  @Override
+  public boolean onTouchEvent(MotionEvent event) {
+    if (!mTitleViewHidden) {
+      mTitleView.setText("");
+      mTitleViewHidden = true;
+    }
+
+    synchronized (mGame) {
+      mGame.onMotionEvent(event);
+    }
+    return true;
   }
 
   /** Callback invoked when the Surface has been created and is ready to be

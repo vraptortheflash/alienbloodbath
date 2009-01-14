@@ -127,5 +127,5 @@ public class Enemy extends ArticulatedEntity {
   private static final String kParameterGravity = "gravity";
   private static final String kParameterLife = "life";
   private static final String kParameterRadius = "radius";
-  private static final float kRange = 500.0f;
+  private static final float kRange = 1000.0f;
 }

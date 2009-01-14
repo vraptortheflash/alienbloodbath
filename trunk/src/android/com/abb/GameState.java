@@ -21,6 +21,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Log;
+import android.view.MotionEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
@@ -73,6 +74,10 @@ public class GameState implements Game {
   public boolean onKeyUp(int key_code) {
     avatar.setKeyState(key_code, 0);
     return false;  // False to indicate not handled.
+  }
+
+  public void onMotionEvent(MotionEvent motion_event) {
+    avatar.onMotionEvent(motion_event);
   }
 
   public boolean onFrame(Graphics graphics, float time_step) {
