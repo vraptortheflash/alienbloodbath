@@ -21,19 +21,15 @@ public class Avatar extends ArticulatedEntity {
   public Avatar(GameState game_state) {
     super();
     mGameState = game_state;
-    mWeapon = new Weapon(mGameState);
 
     setDrawingScale(kDrawingScale);
-    radius = kRadius;
+    radius = kRadius;  // Collision radius.
   }
 
   @Override
   public void step(float time_step) {
     ddy = kGravity;
     super.step(time_step);
-
-    mWeapon.x = x;
-    mWeapon.y = y;
 
     // Update the horizontal acceleration according to the current controls and
     // the contact with the ground.
@@ -49,18 +45,17 @@ public class Avatar extends ArticulatedEntity {
 
     // The following is a poor hack to simulate "friction" against the ground
     // surface. The problem with this implementation is that it does not account
-    // for the time_step. TODO(burkhart): Fix this friction implementation.
+    // for the time_step. TODO: Fix this friction implementation.
     if (has_ground_contact && ddx == 0.0f) {
       dx *= (1.0f - kGroundKineticFriction);
     }
 
-    // Update the avatar animation frame according the current entity motion.
+    // Update the avatar animation.
     if (dx < 0) {
       sprite_flipped_horizontal = true;
     } else if (dx > 0) {
       sprite_flipped_horizontal = false;
     }
-
     if (has_ground_contact) {
       if (Math.abs(dx) > kAnimationStopThreshold) {
         loadAnimationFromUri("content:///run.humanoid.animation");
@@ -74,47 +69,13 @@ public class Avatar extends ArticulatedEntity {
       stepAnimation(time_step);
     }
 
-    mWeapon.setSprite(sprite_flipped_horizontal);
-
-    // Update the shooting mechanism. The choices for shot direction are
-    // specialized for each animation case: in the air, facing left, right, and
-    // considering the avatar's speed. TODO: Replace all of this with an
-    // equivalent in Weapon.java.
-    mShotDelay -= time_step;
-    if (mShooting && mShotDelay < time_step) {
-      mShotDelay = kShotDelay;
-      float shot_angle;
-      float shot_distance = kShotDistance;
-      float shot_velocity = kShotVelocity;
-      float x_offset;
-      float y_offset;
-
-      if (!has_ground_contact) {
-        shot_angle = mShotPhase;
-        if (sprite_flipped_horizontal) {
-          shot_angle = -mShotPhase;
-        }
-        mShotDelay -= 2.0f * time_step;
-        mShotPhase += 45.0f * (float)Math.PI / 180.0f;
-        shot_velocity *= 0.6f;
-        x_offset = kShotDistance * (float)Math.cos(shot_angle);
-        y_offset = kShotDistance * (float)Math.sin(shot_angle);
-      } else if (sprite_flipped_horizontal) {
-        shot_angle = kShotSpread * (float)Math.sin(mShotPhase) + (float)Math.PI;
-        mShotPhase += 10.0f;
-        x_offset = -kShotOffsetX;
-        y_offset = kShotOffsetY;
-      } else {
-        shot_angle = kShotSpread * (float)Math.sin(mShotPhase);
-        mShotPhase += 10.0f;
-        x_offset = kShotOffsetX;
-        y_offset = kShotOffsetY;
-      }
-
-      float dx_offset = shot_velocity * (float)Math.cos(shot_angle);
-      float dy_offset = shot_velocity * (float)Math.sin(shot_angle);
-      mGameState.createFireProjectile(
-          x + x_offset, y + y_offset, dx + dx_offset, dy + dy_offset);
+    // Update the equiped weapon instance.
+    if (mWeapon != null) {
+      mWeapon.x = x;
+      mWeapon.y = y;
+      mWeapon.has_ground_contact = has_ground_contact;
+      mWeapon.sprite_flipped_horizontal = sprite_flipped_horizontal;
+      mWeapon.step(time_step);
     }
   }
 
@@ -127,6 +88,9 @@ public class Avatar extends ArticulatedEntity {
     mCanvasHeight = graphics.getHeight();
 
     super.draw(graphics, center_x, center_y, zoom);
+    if (mWeapon != null) {
+      mWeapon.draw(graphics, center_x, center_y, zoom);
+    }
   }
 
   public void setKeyState(int key_code, int state) {
@@ -138,7 +102,9 @@ public class Avatar extends ArticulatedEntity {
       dy -= kJumpVelocity;
       has_ground_contact = false;
     } else if (key_code == kKeyShoot) {
-      mShooting = (state == 1);
+      if (mWeapon != null) {
+        mWeapon.enableShooting(state == 1);
+      }
     }
   }
 
@@ -155,11 +121,12 @@ public class Avatar extends ArticulatedEntity {
       setKeyState(kKeyRight, 0);
       setKeyState(kKeyJump, 0);
       setKeyState(kKeyShoot, 0);
+      motion_event.recycle();
       return;
     } else {
+      motion_event.recycle();
       return;
     }
-    int x = (int)motion_event.getX();
 
     // The touch event was in the movement section of the display surface.
     if (motion_event.getY() > mCanvasHeight - kTouchMovementHeight) {
@@ -186,14 +153,12 @@ public class Avatar extends ArticulatedEntity {
         setKeyState(kKeyShoot, 1);
       }
     }
+    motion_event.recycle();
   }
 
   private int mCanvasWidth;
   private int mCanvasHeight;
   private GameState mGameState;
-  private float mShotDelay;
-  private boolean mShooting;
-  private float mShotPhase;
   public Weapon mWeapon;
 
   private static final float kAirAcceleration = 40.0f;
@@ -209,12 +174,6 @@ public class Avatar extends ArticulatedEntity {
   private static final int kKeyJump = KeyEvent.KEYCODE_K;
   private static final int kKeyShoot = KeyEvent.KEYCODE_J;
   private static final float kRadius = 25.0f;
-  private static final float kShotDelay = 0.2f;  // Seconds between shots.
-  private static final float kShotDistance = 25.0f;
-  private static final float kShotOffsetX = 23.0f;
-  private static final float kShotOffsetY = -8.0f;
-  private static final float kShotSpread = 15.0f * (float)Math.PI / 180.0f;
-  private static final float kShotVelocity = 60.0f;
   private static final int kSpriteSize = 64;
   private static final int kTouchMovementHeight = 30;
 }

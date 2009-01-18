@@ -85,7 +85,7 @@ public class Entity implements Cloneable {
   }
 
   // The following allocations are made here to avoid allocating anything during
-  // the game. They are intended to be used by this an any child classe.
+  // the game. They are intended to be used by this an any child class.
   protected static Random mRandom = new Random();
   protected static RectF mRectF = new RectF();
 

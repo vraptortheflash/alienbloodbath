@@ -106,7 +106,6 @@ public class GameState implements Game {
     // Step the avatar.
     if (avatar.alive) {
       avatar.step(time_step);
-      avatar.mWeapon.step(time_step);
       map.collideEntity(avatar);
       if (Map.tileIsGoal(map.tileAt(avatar.x, avatar.y))) {
         map.advanceLevel();
@@ -136,7 +135,7 @@ public class GameState implements Game {
       enemy.step(time_step);
       map.collideEntity(enemy);
       if (!enemy.alive) {
-        vibrate();
+        vibrate(kEnemyDeathVibrateLength);
         for (int n = 0; n < kBloodBathSize; n++) {
           createBloodParticle(
               enemy.x, enemy.y,
@@ -180,11 +179,9 @@ public class GameState implements Game {
       enemies.get(index).draw(graphics, mViewX, mViewY, mZoom);
     }
 
-    // Draw the avatar and weapon.
+    // Draw the avatar.
     if (avatar.alive) {
       avatar.draw(graphics, mViewX, mViewY, mZoom);
-      avatar.mWeapon.setImage(graphics);
-      //avatar.mWeapon.draw(graphics, mViewX, mViewY, mZoom);
     }
 
     // Draw the projectiles.
@@ -237,8 +234,8 @@ public class GameState implements Game {
     return fire;
   }
 
-  public void vibrate() {
-    mVibrator.vibrate(kVibrateLength);
+  public void vibrate(long vibrate_milliseconds) {
+    mVibrator.vibrate(vibrate_milliseconds);
   }
 
   public void loadStateBundle(Bundle saved_instance_state) {
@@ -301,7 +298,7 @@ public class GameState implements Game {
   private static final float kDeathZoom = 1.5f;
   private static final float kGravity = 200.0f;
   private static final float kGroundZoom = 0.8f;
-  private static final long kVibrateLength = 30;  // Milliseconds.
+  private static final long kEnemyDeathVibrateLength = 30;  // Milliseconds.
   private static final float kViewLead = 1.0f;
   private static final float kViewSpeed = 2.0f;
   private static final float kZoomSpeed = 1.0f;

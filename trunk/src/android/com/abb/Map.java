@@ -279,7 +279,7 @@ public class Map {
         if (tile_exploadable) {
           entity.dy = Math.min(entity.dy, -kExplosionStrength);
           setTileAt(x, y, (char)0);  // Clear the exploding tile.
-          mGameState.vibrate();
+          mGameState.vibrate(kExplodeVibrateLength);
           for (int n = 0; n < kExplosionSize; n++) {
             float random_angle = mRandom.nextFloat() * 2.0f * (float)Math.PI;
             float random_magnitude =
@@ -459,6 +459,7 @@ public class Map {
   private static final int kBackgroundSize = 512;
   private static final char kBaseValue = 'a';
   private static final int kEndingTile = 11;
+  private static final int kExplodeVibrateLength = 40;
   private static final int kExplosionSize = 15;  // Number of particles.
   private static final float kExplosionStrength = 200.0f;
   private static final int kMapHeight = 100;
