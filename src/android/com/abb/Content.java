@@ -216,6 +216,18 @@ public class Content {
     return map;
   }
 
+  static void assertStringNotNone(TreeMap<String, Object> parameters,
+                                  String parameter) {
+    Assert.assertTrue("Parameter " + parameter + " must be specified.",
+                      !((String)parameters.get(parameter)).equals("none"));
+  }
+
+  static void assertIntegerNotNone(TreeMap<String, Object> parameters,
+                                   String parameter) {
+    Assert.assertTrue("Parameter " + parameter + " must be specified.",
+                      ((Integer)parameters.get(parameter)).intValue() != -1);
+  }
+
   static private char[] toPrimative(ArrayList<Character> array_list) {
     char[] result = new char[array_list.size()];
     for (int index = 0; index < array_list.size(); ++index) {

@@ -20,6 +20,8 @@ import java.util.TreeMap;
 import junit.framework.Assert;
 
 
+/** The Enemy class encapsulates a simple NPC instance, essentially an avatar
+ * which is controlled by the computer. */
 public class Enemy extends ArticulatedEntity {
   public Enemy(Entity target) {
     super();
@@ -61,44 +63,40 @@ public class Enemy extends ArticulatedEntity {
 
   public void loadFromUri(Uri uri) {
     // The following map defines all of the accepted enemy parameters. The
-    // enemy_parameters map is expected to populated with default values letting
-    // the user override only a subset if desired within the text resource at
-    // the specified uri.
-    TreeMap<String, Object> enemy_parameters = new TreeMap<String, Object>();
-    enemy_parameters.put(kParameterAcceleration, new Float(kDefaultAcceleration));
-    enemy_parameters.put(kParameterDrawingScale, new Float(kDefaultDrawingScale));
-    enemy_parameters.put(kParameterAnimation, "none");
-    enemy_parameters.put(kParameterEntity, "none");
-    enemy_parameters.put(kParameterJumpVelocity, new Float(kDefaultJumpVelocity));
-    enemy_parameters.put(kParameterGravity, new Float(kDefaultGravity));
-    enemy_parameters.put(kParameterLife, new Float(kDefaultLife));
-    enemy_parameters.put(kParameterRadius, new Float(kDefaultRadius));
+    // parameters map is expected to populated with default values letting the
+    // user override only a subset if desired within the text resource at the
+    // specified uri.
+    TreeMap<String, Object> parameters = new TreeMap<String, Object>();
+    parameters.put(kParameterAcceleration, new Float(kDefaultAcceleration));
+    parameters.put(kParameterDrawingScale, new Float(kDefaultDrawingScale));
+    parameters.put(kParameterAnimation, "none");
+    parameters.put(kParameterEntity, "none");
+    parameters.put(kParameterJumpVelocity, new Float(kDefaultJumpVelocity));
+    parameters.put(kParameterGravity, new Float(kDefaultGravity));
+    parameters.put(kParameterLife, new Float(kDefaultLife));
+    parameters.put(kParameterRadius, new Float(kDefaultRadius));
 
     // Given a fully-specified default enemy parameters map, we can parse and
     // merge in the user defined values. Note that the following method rejects
     // all keys provided by the user which were not defined above.
     String file_path = Content.getTemporaryFilePath(uri);
     String[] tokens = Content.readFileTokens(file_path);
-    Content.mergeKeyValueTokensWithMap(tokens, enemy_parameters);
+    Content.mergeKeyValueTokensWithMap(tokens, parameters);
+    Content.assertStringNotNone(parameters, kParameterEntity);
+    Content.assertStringNotNone(parameters, kParameterAnimation);
 
     // Now that the user defined enemy parameters have been parsed and merged,
-    // we can initialize the enemy state accordingly.
-    mAcceleration = ((Float)enemy_parameters.get(kParameterAcceleration)).floatValue();
-    setDrawingScale(((Float)enemy_parameters.get(kParameterDrawingScale)).floatValue());
-    mGravity = ((Float)enemy_parameters.get(kParameterGravity)).floatValue();
-    mLife = ((Float)enemy_parameters.get(kParameterLife)).floatValue();
-    radius = ((Float)enemy_parameters.get(kParameterRadius)).floatValue();
-
+    // we can initialize the enemy instance state accordingly.
+    mAcceleration = ((Float)parameters.get(kParameterAcceleration)).floatValue();
+    setDrawingScale(((Float)parameters.get(kParameterDrawingScale)).floatValue());
+    mGravity = ((Float)parameters.get(kParameterGravity)).floatValue();
+    mLife = ((Float)parameters.get(kParameterLife)).floatValue();
+    radius = ((Float)parameters.get(kParameterRadius)).floatValue();
     String uri_string = uri.toString();
     String base_uri_string = uri_string.substring(0, uri_string.lastIndexOf("/"));
-    String entity = (String)enemy_parameters.get(kParameterEntity);
-    Assert.assertTrue("Enemy entity must be specified.",
-                      !entity.equals("none"));
+    String entity = (String)parameters.get(kParameterEntity);
+    String animation = (String)parameters.get(kParameterAnimation);
     super.loadFromUri(Uri.parse(base_uri_string + "/" + entity));
-
-    String animation = (String)enemy_parameters.get(kParameterAnimation);
-    Assert.assertTrue("Enemy animation must be specified.",
-                      !animation.equals("none"));
     super.loadAnimationFromUri(base_uri_string + "/" + animation);
   }
 
