@@ -75,6 +75,11 @@ public class Entity implements Cloneable {
     }
   }
 
+  public boolean collidesWith(Entity entity) {
+    return (Math.abs(entity.x - x) < radius + entity.radius &&
+            Math.abs(entity.y - y) < radius + entity.radius);
+  }
+
   @Override
   public Object clone() {
     try {

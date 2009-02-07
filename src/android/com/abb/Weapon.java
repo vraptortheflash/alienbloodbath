@@ -13,6 +13,7 @@ package android.com.abb;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.util.Log;
@@ -42,13 +43,14 @@ public class Weapon extends Entity {
     parameters.put(kParameterProjectileRectLeft, new Integer(-1));
     parameters.put(kParameterProjectileRectRight, new Integer(-1));
     parameters.put(kParameterProjectileRectTop, new Integer(-1));
+    parameters.put(kParameterSpread, new Float(kDefaultSpread));
     parameters.put(kParameterSprite, "none");
     parameters.put(kParameterWeaponRectBottom, new Integer(-1));
     parameters.put(kParameterWeaponRectLeft, new Integer(-1));
     parameters.put(kParameterWeaponRectRight, new Integer(-1));
     parameters.put(kParameterWeaponRectTop, new Integer(-1));
     parameters.put(kParameterVelocity, new Float(kDefaultVelocity));
-    parameters.put(kParameterVibration, new Float(kDefaultVibration));
+    parameters.put(kParameterVibration, new Integer(kDefaultVibration));
 
     // Given a fully-specified default weapon parameters map, we can parse and
     // merge in the user defined values. Note that the following method rejects
@@ -66,12 +68,29 @@ public class Weapon extends Entity {
     Content.assertIntegerNotNone(parameters, kParameterWeaponRectRight);
     Content.assertIntegerNotNone(parameters, kParameterWeaponRectTop);
 
+    // Path names are expected to be relative to the path specified for the
+    // weapon definition file.
+    String uri_string = uri.toString();
+    String base_uri_string =
+        uri_string.substring(0, uri_string.lastIndexOf("/") + 1);
+
     // Now that the user defined weapon parameters have been parsed and merged,
     // we can initialize the weapon instance state accordingly.
     mDelay = ((Float)parameters.get(kParameterDelay)).floatValue();
     mSpread = ((Float)parameters.get(kParameterSpread)).floatValue();
     mVelocity = ((Float)parameters.get(kParameterVelocity)).floatValue();
     mVibration = ((Integer)parameters.get(kParameterVibration)).intValue();
+    mSpriteUri = Uri.parse(base_uri_string + (String)parameters.get(kParameterSprite));
+    sprite_rect = new Rect(
+        ((Integer)parameters.get(kParameterWeaponRectLeft)).intValue(),
+        ((Integer)parameters.get(kParameterWeaponRectTop)).intValue(),
+        ((Integer)parameters.get(kParameterWeaponRectRight)).intValue(),
+        ((Integer)parameters.get(kParameterWeaponRectBottom)).intValue());
+    mProjectileRect = new Rect(
+        ((Integer)parameters.get(kParameterProjectileRectLeft)).intValue(),
+        ((Integer)parameters.get(kParameterProjectileRectTop)).intValue(),
+        ((Integer)parameters.get(kParameterProjectileRectRight)).intValue(),
+        ((Integer)parameters.get(kParameterProjectileRectBottom)).intValue());
   }
 
   public void enableShooting(boolean shooting) {
@@ -85,49 +104,70 @@ public class Weapon extends Entity {
     // Update the shooting mechanism. The following is specialized for running
     // or standing on the ground versus jumping.
     mCurrentDelay -= time_step;
-    if (mShooting && mCurrentDelay < time_step) {
-      mDelay = mDelay;
+    if (mShooting && mCurrentDelay < time_step && sprite_image != -1) {
+      mCurrentDelay = mDelay;
+      mPhase += 10.0f;
+
       float shot_angle;
-      float shot_distance = 64;
+      float shot_distance = sprite_rect.width() / 2;
       float shot_velocity = mVelocity;
-      float x_offset;
-      float y_offset;
+      float x_offset = shot_distance;
+      float y_offset = 0.0f;
 
       if (!has_ground_contact) {
         shot_angle = mPhase;
-        if (sprite_flipped_horizontal) {
-          shot_angle = -mPhase;
-        }
-        mDelay -= 2.0f * time_step;
-        mPhase += 45.0f * (float)Math.PI / 180.0f;
-        shot_velocity *= 0.6f;
         x_offset = shot_distance * (float)Math.cos(shot_angle);
         y_offset = shot_distance * (float)Math.sin(shot_angle);
-      } else if (sprite_flipped_horizontal) {
-        shot_angle = mSpread * (float)Math.sin(mPhase) + (float)Math.PI;
-        mPhase += 10.0f;
-        x_offset = -0;
-        y_offset = 0;
       } else {
         shot_angle = mSpread * (float)Math.sin(mPhase);
-        mPhase += 10.0f;
-        x_offset = 0;
-        y_offset = 0;
       }
 
       float dx_offset = shot_velocity * (float)Math.cos(shot_angle);
       float dy_offset = shot_velocity * (float)Math.sin(shot_angle);
-      mGameState.createFireProjectile(
-          x + x_offset, y + y_offset, dx + dx_offset, dy + dy_offset);
+
+      if (sprite_flipped_horizontal) {
+        x_offset *= -1.0f;
+        dx_offset *= -1.0f;
+      }
+
+      mGameState.createProjectile(x + x_offset, y + y_offset,
+                                  dx + dx_offset, dy + dy_offset,
+                                  sprite_image, mProjectileRect,
+                                  sprite_flipped_horizontal);
+
       if (mVibration > 0) {
         mGameState.vibrate(mVibration);
       }
     }
   }
 
-  @Override
+  /** Draw the weapon position given the positions of the owners "hand"
+   * positions. The coordinates are expected to be *screen coordinates*, not
+   * world coordinates. */
   public void draw(Graphics graphics, float center_x, float center_y,
-                   float zoom) {
+                   float zoom, float hand_lx, float hand_ly, float hand_rx,
+                   float hand_ry) {
+    // Load part image if it hasn't yet been loaded. This is necessary since the
+    // graphics class must only be interacted with from the main thread. This is
+    // a product of the lack of thread safety in OpenGL.
+    if (mSpriteUri != null) {
+      String image_path = Content.getTemporaryFilePath(mSpriteUri);
+      Bitmap image_bitmap = BitmapFactory.decodeFile(image_path);
+      sprite_image = graphics.loadImageFromBitmap(image_bitmap);
+      mSpriteUri = null;
+    }
+
+    // Note that the avatar hand coordinates are specified in screen
+    // coordinates, not world coordinates. They are set via the
+    // setHandsPositions method.
+    if (sprite_image != -1) {
+      mDrawingMatrix.setTranslate(hand_lx, hand_ly);
+      mDrawingMatrix.preRotate(
+          57.2958f * (float)Math.atan2(hand_ry - hand_ly, hand_rx - hand_lx));
+      mDrawingMatrix.preScale(sprite_rect.width(), sprite_rect.height());
+      graphics.drawImage(sprite_image, sprite_rect, mDrawingMatrix,
+                         sprite_flipped_horizontal, sprite_flipped_vertical);
+    }
   }
 
   @Override
@@ -136,11 +176,14 @@ public class Weapon extends Entity {
   }
 
   private float mCurrentDelay;
-  private GameState mGameState;  // Needed for projectile instantiation.
-  private boolean mShooting;
   private float mDelay;
+  private static Matrix mDrawingMatrix = new Matrix();
+  private GameState mGameState;  // Needed for projectile instantiation.
   private float mPhase;
+  private Rect mProjectileRect;
+  private boolean mShooting;
   private float mSpread;
+  private Uri mSpriteUri;
   private float mVelocity;
   private int mVibration;
 

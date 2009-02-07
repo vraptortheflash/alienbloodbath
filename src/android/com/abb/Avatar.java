@@ -11,6 +11,7 @@
 
 package android.com.abb;
 
+import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.view.KeyEvent;
@@ -69,7 +70,7 @@ public class Avatar extends ArticulatedEntity {
       stepAnimation(time_step);
     }
 
-    // Update the equiped weapon instance.
+    // Update the equipped weapon instance.
     if (mWeapon != null) {
       mWeapon.x = x;
       mWeapon.y = y;
@@ -88,8 +89,20 @@ public class Avatar extends ArticulatedEntity {
     mCanvasHeight = graphics.getHeight();
 
     super.draw(graphics, center_x, center_y, zoom);
+
+    // The weapon must be drawn after the avatar's articulated entity. In
+    // addition to the fact that no z-buffer is used, the articulated entity's
+    // draw method calculates the model's hand positions which we use to draw
+    // the weapon on top of.
     if (mWeapon != null) {
-      mWeapon.draw(graphics, center_x, center_y, zoom);
+      super.getPartTransformation("farm_l").getValues(mArray9);
+      float hand_lx = mArray9[2];
+      float hand_ly = mArray9[5];
+      super.getPartTransformation("farm_r").getValues(mArray9);
+      float hand_rx = mArray9[2];
+      float hand_ry = mArray9[5];
+      mWeapon.draw(graphics, center_x, center_y, zoom,
+                   hand_lx, hand_ly, hand_rx, hand_ry);
     }
   }
 
@@ -156,10 +169,15 @@ public class Avatar extends ArticulatedEntity {
     motion_event.recycle();
   }
 
+  void setWeapon(Weapon weapon) {
+    mWeapon = weapon;
+  }
+
   private int mCanvasWidth;
   private int mCanvasHeight;
   private GameState mGameState;
   public Weapon mWeapon;
+  private float[] mArray9 = new float[9];  // To avoid allocations.
 
   private static final float kAirAcceleration = 40.0f;
   private static final float kAnimationStopThreshold = 40.0f;

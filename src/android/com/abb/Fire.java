@@ -39,13 +39,6 @@ public class Fire extends Entity {
     }
   }
 
-  public void collideEntity(Entity entity) {
-    if (Math.abs(entity.x - x) < radius + entity.radius &&
-        Math.abs(entity.y - y) < radius + entity.radius) {
-      entity.alive = false;  // Anything which collides with fire dies.
-    }
-  }
-
   private float mFrame = 0.0f;
 
   private static final int kFrames = 13;
