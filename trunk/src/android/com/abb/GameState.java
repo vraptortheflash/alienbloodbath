@@ -107,6 +107,7 @@ public class GameState implements Game {
     if (avatar.alive) {
       avatar.step(time_step);
       map.collideEntity(avatar);
+      map.processTriggers(avatar);
       if (Map.tileIsGoal(map.tileAt(avatar.x, avatar.y))) {
         map.advanceLevel();
         reset();
@@ -148,10 +149,14 @@ public class GameState implements Game {
 
     // Step the projectiles and collide them against the enemies.
     for (int index = 0; index < projectiles.size(); ++index) {
-      Fire projectile = (Fire)projectiles.get(index);
+      Entity projectile = projectiles.get(index);
       projectile.step(time_step);
       for (int enemy_index = 0; enemy_index < enemies.size(); ++enemy_index) {
-        projectile.collideEntity(enemies.get(enemy_index));
+        Enemy enemy = enemies.get(enemy_index);
+        if (projectile.collidesWith(enemy)) {
+          enemy.alive = false;
+          projectile.alive = false;
+        }
       }
       if (!projectile.alive) {
         projectiles.remove(index);
@@ -222,6 +227,31 @@ public class GameState implements Game {
     return blood;
   }
 
+  public Weapon createWeaponFromUri(Uri uri) {
+    Weapon weapon = mWeaponCache.get(uri);
+    if (weapon == null) {
+      weapon = new Weapon(this);
+      weapon.loadFromUri(uri);
+      mWeaponCache.put(uri, weapon);
+    }
+    return weapon;
+  }
+
+  public void createProjectile(float x, float y, float dx, float dy,
+                               int image_handle, Rect image_rect,
+                               boolean sprite_flipped_horizontal) {
+    Entity projectile = new Entity();
+    projectile.x = x;
+    projectile.y = y;
+    projectile.dx = dx;
+    projectile.dy = dy;
+    projectile.sprite_image = image_handle;
+    projectile.sprite_rect = image_rect;
+    projectile.sprite_flipped_horizontal = sprite_flipped_horizontal;
+    projectile.radius = Math.min(image_rect.width(), image_rect.height());
+    projectiles.add(projectile);
+  }
+
   public Entity createFireProjectile(float x, float y, float dx, float dy) {
     Entity fire = new Fire();
     fire.sprite_image = misc_sprites;
@@ -229,7 +259,7 @@ public class GameState implements Game {
     fire.y = y;
     fire.dx = dx;
     fire.dy = dy;
-    fire.ddy = -50.0f;  // Slight up draft.
+    fire.ddy = -50.0f;  // Slight "up draft".
     projectiles.add(fire);
     return fire;
   }
@@ -289,10 +319,11 @@ public class GameState implements Game {
   private Vibrator mVibrator;
   private float mViewX = 0.0f;
   private float mViewY = 0.0f;
+  private TreeMap<Uri, Weapon> mWeaponCache = new TreeMap<Uri, Weapon>();
   private float mZoom = kGroundZoom;
 
   private static final float kAirZoom = 0.6f;
-  private static final int kBloodBathSize = 10;  // Number of blood particles.
+  private static final int kBloodBathSize = 20;  // Number of blood particles.
   private static final float kBloodBathVelocity = 60.0f;
   private static final float kDeathTimer = 4.0f;
   private static final float kDeathZoom = 1.5f;

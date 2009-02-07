@@ -424,6 +424,26 @@ public class Map {
     }
   }
 
+  void processTriggers(Avatar avatar) {
+    int tile_index = indexAt(avatar.x, avatar.y);
+    if (tile_index < 0) {
+      return;  // Tile out of bounds.
+    }
+
+    String trigger = mTriggers[tile_index];
+    if (trigger == null) {
+      return;  // No trigger at the avatar's location.
+    }
+
+    if (trigger.startsWith("weapon=")) {
+      Uri weapon_uri = Uri.withAppendedPath(mBaseUri, trigger.substring(7));
+      Weapon weapon = mGameState.createWeaponFromUri(weapon_uri);
+      avatar.setWeapon(weapon);
+      mTriggers[tile_index] = null;
+      mTiles[tile_index] = 0;
+    }
+  }
+
   public void loadStateBundle(Bundle saved_instance_state) {
     mBaseUri = Uri.parse(saved_instance_state.getString("mBaseUri"));
     mLevelOffset = saved_instance_state.getInt("mLevelOffset");

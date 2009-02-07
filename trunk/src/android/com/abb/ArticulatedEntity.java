@@ -60,10 +60,9 @@ public class ArticulatedEntity extends Entity {
                         (tokens.length - 1) % kLineTokenCount, 0);
 
     // Path names are expected to be relative to the path specified for the
-    // entity file.
+    // entity definition file.
     String uri_string = uri.toString();
-    Log.d("ArtifulatedEnt::loadFromUri", "Found uri= " + uri_string);
-    Log.d("ArticulatedEnt:Lload", "Index= " + uri_string.lastIndexOf("/"));
+    Log.d("ArtifulatedEntity::loadFromUri", "Found uri= " + uri_string);
     String base_uri_string = uri_string.substring(0, uri_string.lastIndexOf("/"));
     mImageUri = Uri.parse(base_uri_string + "/" + tokens[0]);
 
@@ -133,7 +132,7 @@ public class ArticulatedEntity extends Entity {
   }
 
   /** Return the 3x3 transformation matrix used to draw child parts. In other
-   * words, the returned matrix transforms points into screen coordinates with
+   * words, the returned matrix transforms points into *screen coordinates* with
    * the origin at the tip / end of the part. For example, multiplying by the
    * vector (0, 0, 1)^T will yield (x, y, w) screen coordinates at the tip of
    * the part. */
