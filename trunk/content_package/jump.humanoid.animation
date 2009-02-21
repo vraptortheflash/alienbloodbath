@@ -15,8 +15,8 @@ torso		0.0	-110
 shoulder_r	0.0	-110
 shoulder_l	0.0	-110
 
-arm_r   	0.0	140
-arm_l   	0.0	135
+arm_r   	0.0	240
+arm_l   	0.0	120
 
 farm_r   	0.0	-95
 farm_l   	0.0	-90

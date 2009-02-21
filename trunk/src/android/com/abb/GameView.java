@@ -11,18 +11,9 @@
 
 package android.com.abb;
 
+import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.RectF;
-import android.graphics.drawable.Drawable;
-import android.os.Bundle;
 import android.os.Debug;
-import android.os.Handler;
-import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -30,7 +21,6 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.TextView;
 import java.lang.Math;
 import java.lang.System;
 import java.lang.Thread;
@@ -39,12 +29,16 @@ import junit.framework.Assert;
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   class GameThread extends Thread {
-    public GameThread(SurfaceHolder surface_holder) {
+    public GameThread(Context context, SurfaceHolder surface_holder) {
+      mContext = context;
+      mPaused = false;
+      mRunning = true;
       mSurfaceHolder = surface_holder;
     }
 
     @Override
     public void run() {
+      Log.d("GameThread::run", "Starting game thread...");
       synchronized (this) {
         while (mGame == null && mRunning) {
           try {
@@ -115,7 +109,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         time_step = Math.max(time_step, kMinTimeStep);
         time_step = Math.min(time_step, kMaxTimeStep);
 
-        Canvas canvas = null;
         try {
           synchronized (this) {
             mGraphics.beginFrame();
@@ -124,8 +117,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         } finally {
           mGraphics.endFrame();
         }
+        hideLoadingDialog();
       }
+      Log.d("GameThread::run", "Freeing graphics resources...");
       mGraphics.destroy();
+      Log.d("GameThread::run", "Finished game thread.");
     }
 
     synchronized public void setGame(Game game) {
@@ -150,15 +146,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       notifyAll();
     }
 
-    boolean mRunning = true;
-    boolean mPaused = false;
-    Game mGame;
-    Graphics mGraphics;
-    SurfaceHolder mSurfaceHolder;
+    private Context mContext;
+    private Game mGame;
+    private Graphics mGraphics;
+    private boolean mPaused;
+    private boolean mRunning;
+    private SurfaceHolder mSurfaceHolder;
   }
 
   public GameView(Context context, AttributeSet attrs) {
     super(context, attrs);
+    mContext = context;
     getHolder().addCallback(this);
     getHolder().setType(SurfaceHolder.SURFACE_TYPE_GPU);
   }
@@ -170,20 +168,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
   }
 
-  /** Set up the android widget for the title screen to be displayed until any
-   * key is pressed. */
-  public void setTitleView(TextView title_view) {
-    mTitleView = title_view;
-  }
-
   /** Standard override to get key-press events. */
   @Override
   public boolean onKeyDown(int key_code, KeyEvent msg) {
-    if (!mTitleViewHidden) {
-      mTitleView.setText("");
-      mTitleViewHidden = true;
-    }
-
     if (key_code == kProfileKey) {
       if (!mProfiling) {
         Debug.startMethodTracing(kProfilePath);
@@ -213,18 +200,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   @Override
   public void onWindowFocusChanged(boolean window_has_focus) {
     super.onWindowFocusChanged(window_has_focus);
-    if (mGameThread != null) {
-      mGameThread.pause(!window_has_focus);
-    }
   }
 
   @Override
   public boolean onTouchEvent(MotionEvent event) {
-    if (!mTitleViewHidden) {
-      mTitleView.setText("");
-      mTitleViewHidden = true;
-    }
-
     synchronized (mGame) {
       mGame.onMotionEvent(event);
     }
@@ -234,13 +213,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   /** Callback invoked when the Surface has been created and is ready to be
    * used. */
   public void surfaceCreated(SurfaceHolder holder) {
+    Log.d("GameView::surfaceCreated", "Creating new game thread...");
+    showLoadingDialog();
+
     // Make sure we get key events and register our interest in hearing about
     // surface changes.
     setFocusable(true);
     getHolder().addCallback(this);
     getHolder().setType(SurfaceHolder.SURFACE_TYPE_GPU);
 
-    mGameThread = new GameThread(holder);
+    Assert.assertTrue(mGameThread == null);
+    mGameThread = new GameThread(mContext, holder);
     mGameThread.setGame(mGame);
     mGameThread.start();
     mGameThreadStarted = true;
@@ -266,12 +249,27 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
   }
 
+  synchronized private void showLoadingDialog() {
+    if (mLoadingDialog == null) {
+      mLoadingDialog = ProgressDialog.show(
+          mContext, null, "Loading...", true, false);
+      mLoadingDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+    }
+  }
+
+  synchronized private void hideLoadingDialog() {
+    if (mLoadingDialog != null) {
+      mLoadingDialog.dismiss();
+      mLoadingDialog = null;
+    }
+  }
+
+  private Context mContext;
   private Game mGame;
   private GameThread mGameThread;
   private boolean mGameThreadStarted = false;
+  private ProgressDialog mLoadingDialog;
   private boolean mProfiling = false;
-  private TextView mTitleView;
-  private boolean mTitleViewHidden = false;
 
   private static final int kProfileKey = KeyEvent.KEYCODE_T;
   private static final String kProfilePath = "abb.trace";

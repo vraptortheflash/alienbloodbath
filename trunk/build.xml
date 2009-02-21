@@ -2,14 +2,14 @@
     <!-- SDK Locations -->
     <property name="sdk-folder" value="/usr/local/android-sdk" />
     <property name="android-tools" value="/usr/local/android-sdk/tools" />
-    
+
     <!-- Application Package Name -->
     <property name="application-package" value="android.com.abb" />
 
     <!-- The intermediates directory -->
     <!-- Eclipse uses "bin" for its own output, so we do the same. -->
     <property name="outdir" value="bin" />
-    
+
     <!-- ************************************************************************************* -->
     <!-- No user servicable parts below. -->
 

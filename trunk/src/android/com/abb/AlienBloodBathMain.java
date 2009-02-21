@@ -21,7 +21,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.TextView;
 
 
 public class AlienBloodBathMain extends Activity {
@@ -37,13 +36,12 @@ public class AlienBloodBathMain extends Activity {
 
     mGameState = new GameState((Context)this);
     mGameView = (GameView)findViewById(R.id.GAME_VIEW);
-    mGameView.setTitleView((TextView)findViewById(R.id.TEXT_VIEW));
     mGameView.setGame(mGameState);
 
     if (saved_instance_state != null) {
       mGameState.loadStateBundle(saved_instance_state.getBundle("mGameState"));
     } else {
-      mGameState.map.setUri(Uri.parse(kStartupMap));
+      mGameState.map.loadFromUri(Uri.parse(kStartupMap));
       mGameState.reset();
     }
   }

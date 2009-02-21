@@ -109,10 +109,10 @@ public class Weapon extends Entity {
       mPhase += 10.0f;
 
       float shot_angle;
-      float shot_distance = sprite_rect.width() / 2;
+      float shot_distance = 3 * sprite_rect.width() / 4;
       float shot_velocity = mVelocity;
       float x_offset = shot_distance;
-      float y_offset = 0.0f;
+      float y_offset = -10.0f;
 
       if (!has_ground_contact) {
         shot_angle = mPhase;
@@ -161,12 +161,15 @@ public class Weapon extends Entity {
     // coordinates, not world coordinates. They are set via the
     // setHandsPositions method.
     if (sprite_image != -1) {
-      mDrawingMatrix.setTranslate(hand_lx, hand_ly);
+      int x_offset = -sprite_rect.width() / 4;
+      int y_offset = -sprite_rect.height() / 2;
+      mDrawingMatrix.setTranslate(hand_rx, hand_ry);
       mDrawingMatrix.preRotate(
-          57.2958f * (float)Math.atan2(hand_ry - hand_ly, hand_rx - hand_lx));
+          57.2958f * (float)Math.atan2(hand_ly - hand_ry, hand_lx - hand_rx));
+      mDrawingMatrix.preTranslate(x_offset, y_offset);
       mDrawingMatrix.preScale(sprite_rect.width(), sprite_rect.height());
       graphics.drawImage(sprite_image, sprite_rect, mDrawingMatrix,
-                         sprite_flipped_horizontal, sprite_flipped_vertical);
+                         false, sprite_flipped_horizontal);
     }
   }
 

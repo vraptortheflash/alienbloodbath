@@ -53,7 +53,6 @@ public class GameState implements Game {
   /** Initialize the game state structure. Upon returning the game state should
    * be in a state representing a new game "life". */
   public void reset() {
-    map.reload();
     particles.clear();
     projectiles.clear();
     enemies.clear();
@@ -126,6 +125,7 @@ public class GameState implements Game {
       }
       mDeathTimer -= time_step;
       if (mDeathTimer < 0) {
+        map.reload();
         reset();
       }
     }
