@@ -37,19 +37,12 @@ public class Map {
     mGameState = game_state;
   }
 
-  public void setUri(Uri base_uri) {
-    mBaseUri = base_uri;
-    mLevelOffset = 0;
+  public void advanceLevel() {
+    mLevelOffset += 1;
   }
 
   public void reload() {
-    if (mBaseUri != null) {
-      loadFromUri(mBaseUri, mLevelOffset);
-    }
-  }
-
-  public void advanceLevel() {
-    mLevelOffset += 1;
+    loadFromUri(mBaseUri, mLevelOffset);
   }
 
   public void loadFromUri(Uri base_uri) {
@@ -81,16 +74,6 @@ public class Map {
       tiles_uri = Uri.withAppendedPath(mBaseUri, "tiles_default.png");
     String tiles_path = Content.getTemporaryFilePath(tiles_uri);
     loadTilesFromFile(tiles_path);
-
-    // Load background image.
-    Uri background_uri =
-        Uri.withAppendedPath(mBaseUri, "background_" + mLevelOffset + ".jpg");
-    if (!Content.exists(background_uri))
-      background_uri = Uri.withAppendedPath(mBaseUri, "background_default.jpg");
-    if (Content.exists(background_uri)) {
-      String background_path = Content.getTemporaryFilePath(background_uri);
-      mBackgroundBitmap = BitmapFactory.decodeFile(background_path);
-    }
 
     // Load tile effects.
     Uri effects_uri =
@@ -349,35 +332,13 @@ public class Map {
       mTilesImage = graphics.loadImageFromBitmap(mTilesBitmap);
       mTilesBitmap = null;
     }
-    if (graphics.hasHardwareAcceleration() && mBackgroundBitmap != null) {
-      graphics.freeImage(mBackgroundImage);
-      mBackgroundImage = graphics.loadImageFromBitmap(mBackgroundBitmap);
-      mBackgroundBitmap = null;
-    }
-
-    // Draw background.
-    int canvas_width = graphics.getWidth();
-    int canvas_height = graphics.getHeight();
-    if (graphics.hasHardwareAcceleration() && mBackgroundImage != -1) {
-      float scaled_background_size = kBackgroundScale * kBackgroundSize;
-      mRectSource.left = mRectSource.top = 0;
-      mRectSource.right = mRectSource.bottom = kBackgroundSize;
-
-      mRectDest.left = -center_x / (kTileSize * kMapWidth) *
-          (scaled_background_size - canvas_width);
-      mRectDest.top = -center_y / (kTileSize * kMapHeight) *
-          (scaled_background_size - canvas_height);
-      mRectDest.right = mRectDest.left + scaled_background_size;
-      mRectDest.bottom = mRectDest.top + scaled_background_size;
-
-      graphics.drawImage(
-          mBackgroundImage, mRectSource, mRectDest, false, false);
-    }
 
     // Draw tiles.
     mRectSource.top = mRectSource.left = 0;
     mRectSource.right = mRectSource.bottom = kTileSize;
 
+    int canvas_width = graphics.getWidth();
+    int canvas_height = graphics.getHeight();
     int half_canvas_width = canvas_width / 2;
     int half_canvas_height = canvas_height / 2;
     float x_min = center_x - half_canvas_width / zoom;
@@ -457,8 +418,6 @@ public class Map {
     return saved_instance_state;
   }
 
-  private Bitmap mBackgroundBitmap;
-  private int mBackgroundImage = -1;
   private Uri mBaseUri;
   private boolean[] mEffectsDeath;
   private boolean[] mEffectsExplode;
@@ -475,8 +434,6 @@ public class Map {
   private int mTilesImage = -1;
   private String[] mTriggers;
 
-  private static final float kBackgroundScale = 2.0f;
-  private static final int kBackgroundSize = 512;
   private static final char kBaseValue = 'a';
   private static final int kEndingTile = 11;
   private static final int kExplodeVibrateLength = 40;
