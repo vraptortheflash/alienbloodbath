@@ -16,7 +16,7 @@ import android.view.KeyEvent;
 import java.lang.Math;
 
 
-public class Fire extends Entity {
+public class Fire extends Projectile {
   public Fire() {
     super();
     radius = kRadius;
@@ -35,7 +35,7 @@ public class Fire extends Entity {
       sprite_rect.top = kSpriteBase + kSpriteHeight * rounded_frame;
       sprite_rect.bottom = kSpriteBase + kSpriteHeight * (rounded_frame + 1);
     } else {
-      alive = false;  // Signal for deletion.
+      life = 0.0f;  // Signal for deletion.
     }
   }
 

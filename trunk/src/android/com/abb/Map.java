@@ -88,7 +88,7 @@ public class Map {
     Assert.assertNotNull(
         "Map::loadLevelFromFile: Invalid null argument.", file_path);
 
-    String[] level_tokens = Content.readFileTokens(file_path);
+    String[] level_tokens = Content.readFileLines(file_path);
     Assert.assertTrue("Level file empty.", level_tokens.length > 0);
     char[] raw_tiles = level_tokens[0].toCharArray();
     Assert.assertEquals("Invalid level tile count.",
@@ -206,7 +206,7 @@ public class Map {
   }
 
   public void collideEntity(Entity entity) {
-    if (entity.radius <= 0) {
+    if (entity.radius <= 0.0f) {
       return;  // Collision disabled for this entity.
     }
 
@@ -215,7 +215,7 @@ public class Map {
     // Iterate through map tiles potentially intersecting the entity. The
     // collision model used for entities and tiles are squares.
     float half_tile_size = kTileSize / 2.0f;
-    float radius = Math.max(entity.radius, half_tile_size);
+    float radius = entity.radius + kTileSize;
     for (float x = entity.x - radius; x <= entity.x + radius; x += kTileSize) {
       for (float y = entity.y - radius; y <= entity.y + radius; y += kTileSize) {
         int tile_index = indexAt(x, y);
@@ -238,7 +238,7 @@ public class Map {
         // Determine if a collision has occurred between the two squares.
         float distance_x = entity.x - tile_x;
         float distance_y = entity.y - tile_y;
-        if (Math.abs(distance_x) > half_tile_size + entity.radius ||
+        if (Math.abs(distance_x) > half_tile_size + entity.radius &&
             Math.abs(distance_y) > half_tile_size + entity.radius) {
           continue;  // No collision with this tile
         }
@@ -257,7 +257,7 @@ public class Map {
         }
 
         if (tile_deadly) {
-          entity.alive = false;
+          entity.life = 0.0f;
         }
         if (tile_exploadable) {
           entity.dy = Math.min(entity.dy, -kExplosionStrength);
@@ -281,21 +281,21 @@ public class Map {
           // Determine which edges have the least amount of overlap, these will
           // be the edges which are considered "in-collision".
           if (Math.abs(distance_x) > Math.abs(distance_y)) {  // Along x-axis.
-            if (distance_x > 0) {  // Entity's left edge.
+            if (distance_x > 0.0f) {  // Entity's left edge.
               impact_normal_x = 1.0f;
               impact_normal_y = 0.0f;
               impact_distance = half_tile_size + entity.radius - distance_x;
-            } else {               // Entity's right edge.
+            } else {                  // Entity's right edge.
               impact_normal_x = -1.0f;
               impact_normal_y =  0.0f;
               impact_distance = half_tile_size + entity.radius + distance_x;
             }
           } else {                                            // Along y-axis.
-            if (distance_y > 0) {  // Entity's top edge.
+            if (distance_y > 0.0f) {  // Entity's top edge.
               impact_normal_x = 0.0f;
               impact_normal_y = 1.0f;
               impact_distance = half_tile_size + entity.radius - distance_y;
-            } else {               // Entity's bottom edge.
+            } else {                  // Entity's bottom edge.
               impact_normal_x =  0.0f;
               impact_normal_y = -1.0f;
               impact_distance = half_tile_size + entity.radius + distance_y;
@@ -308,7 +308,7 @@ public class Map {
           // since we don't have any sense of entity mass.
           float impact_magnitude =
               -(impact_normal_x * entity.dx + impact_normal_y * entity.dy);
-          if (impact_magnitude > 0) {
+          if (impact_magnitude >= 0.0f) {
             entity.dx += impact_normal_x * impact_magnitude;
             entity.dy += impact_normal_y * impact_magnitude;
             entity.x += impact_normal_x * impact_distance;
@@ -400,6 +400,10 @@ public class Map {
       Uri weapon_uri = Uri.withAppendedPath(mBaseUri, trigger.substring(7));
       Weapon weapon = mGameState.createWeaponFromUri(weapon_uri);
       avatar.setWeapon(weapon);
+      mTriggers[tile_index] = null;
+      mTiles[tile_index] = 0;
+    } else if (trigger.startsWith("alert=")) {
+      mGameState.addNotification(trigger.substring(6));
       mTriggers[tile_index] = null;
       mTiles[tile_index] = 0;
     }

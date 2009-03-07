@@ -162,7 +162,7 @@ class EditorWindow:
   def LoadBrushesMenu(self, widget):
     file_path = self.ChooseOpenFile()
     if file_path:
-      self.LoadBrusheFromFile(file_path)
+      self.LoadBrushesFromFile(file_path)
 
   def SaveLevelMenu(self, widget):
     file_path = self.ChooseSaveFile()
