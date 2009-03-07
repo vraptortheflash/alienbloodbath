@@ -23,11 +23,11 @@ import java.util.Random;
 /** The Entity class is intended to be lowest level, drawable, physical in-game
  * object. */
 public class Entity implements Cloneable {
-  public boolean alive = true;  // Should not be deleted from the game.
   public boolean has_ground_contact;
-  public float radius;
-  public int sprite_image;
-  public Rect sprite_rect;
+  public float   life = 1.0f;
+  public float   radius;
+  public int     sprite_image;
+  public Rect    sprite_rect;
   public boolean sprite_flipped_horizontal;
   public boolean sprite_flipped_vertical;
 

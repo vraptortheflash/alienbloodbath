@@ -495,7 +495,7 @@ public class Graphics {
     mGl.glDisable(GL10.GL_CULL_FACE);
     mGl.glDisable(GL10.GL_DEPTH_TEST);
     mGl.glEnable(GL10.GL_BLEND);
-    mGl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    mGl.glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     mGl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
     mGl.glDisable(GL10.GL_ALPHA_TEST);
   }

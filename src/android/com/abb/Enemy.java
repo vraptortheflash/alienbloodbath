@@ -36,14 +36,15 @@ public class Enemy extends ArticulatedEntity {
 
     // If we have moved close enough to our target, mark it dead.
     if (Math.abs(mTarget.x - x) < radius && Math.abs(mTarget.y - y) < radius) {
-      mTarget.alive = false;
+      mTarget.life -= mDamage;
+      life -= mDamage;
     }
 
     // If the target has moved far enough away from this entity, destroy it.
     // This may happen if the client leaves an enemy behind on the map. We want
     // to release resources allocated to it.
     if (Math.abs(mTarget.x - x) > kRange || Math.abs(mTarget.y - y) > kRange) {
-      alive = false;
+      life = 0.0f;
     }
 
     // Always move the enemy towards the target. Set the acceleration and sprite
@@ -68,6 +69,7 @@ public class Enemy extends ArticulatedEntity {
     // specified uri.
     TreeMap<String, Object> parameters = new TreeMap<String, Object>();
     parameters.put(kParameterAcceleration, new Float(kDefaultAcceleration));
+    parameters.put(kParameterDamage, new Float(kDefaultDamage));
     parameters.put(kParameterDrawingScale, new Float(kDefaultDrawingScale));
     parameters.put(kParameterAnimation, "none");
     parameters.put(kParameterEntity, "none");
@@ -88,9 +90,10 @@ public class Enemy extends ArticulatedEntity {
     // Now that the user defined enemy parameters have been parsed and merged,
     // we can initialize the enemy instance state accordingly.
     mAcceleration = ((Float)parameters.get(kParameterAcceleration)).floatValue();
+    mDamage = ((Float)parameters.get(kParameterDamage)).floatValue();
     setDrawingScale(((Float)parameters.get(kParameterDrawingScale)).floatValue());
     mGravity = ((Float)parameters.get(kParameterGravity)).floatValue();
-    mLife = ((Float)parameters.get(kParameterLife)).floatValue();
+    life = ((Float)parameters.get(kParameterLife)).floatValue();
     radius = ((Float)parameters.get(kParameterRadius)).floatValue();
     String uri_string = uri.toString();
     String base_uri_string = uri_string.substring(0, uri_string.lastIndexOf("/"));
@@ -106,24 +109,27 @@ public class Enemy extends ArticulatedEntity {
   }
 
   private float mAcceleration;
+  private float mDamage;
   private float mGravity;
   private float mJumpVelocity;
-  private float mLife;
   private Entity mTarget;
 
   private static final float kDefaultAcceleration = 40.0f;
+  private static final float kDefaultDamage = 0.34f;
   private static final float kDefaultDrawingScale = 1.0f;
   private static final float kDefaultJumpVelocity = 100.0f;
   private static final float kDefaultGravity = 100.0f;
   private static final float kDefaultLife = 1.0f;
   private static final float kDefaultRadius = 32.0f;
+  private static final float kRange = 1000.0f;
+
   private static final String kParameterAcceleration = "acceleration";
   private static final String kParameterAnimation = "animation";
+  private static final String kParameterDamage = "damage";
   private static final String kParameterDrawingScale = "drawing_scale";
   private static final String kParameterEntity = "entity";
   private static final String kParameterJumpVelocity = "jump_velocity";
   private static final String kParameterGravity = "gravity";
   private static final String kParameterLife = "life";
   private static final String kParameterRadius = "radius";
-  private static final float kRange = 1000.0f;
 }

@@ -23,6 +23,10 @@ public interface Game {
   void initializeGraphics(Graphics graphics);
   void reset();
 
+  /** Method to retrieve text notifications from the game to display to the
+   * user. If no notifications are pending, null is returned. */
+  String getPendingNotification();
+
   boolean onFrame(Graphics graphics, float time_step);
   boolean onKeyDown(int key_code);
   boolean onKeyUp(int key_code);

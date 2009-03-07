@@ -1,5 +1,6 @@
-entity hopper.entity
-animation hopper.animation
-gravity 100
-life 1
-radius 20
+animation	hopper.animation
+damage		0.4
+entity		hopper.entity
+gravity		100
+life		0.4
+radius		28

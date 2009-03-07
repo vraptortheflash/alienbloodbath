@@ -11,9 +11,14 @@
 
 package android.com.abb;
 
+import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.Debug;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -29,8 +34,11 @@ import junit.framework.Assert;
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   class GameThread extends Thread {
-    public GameThread(Context context, SurfaceHolder surface_holder) {
+    public GameThread(Context context,
+                      Handler handler,
+                      SurfaceHolder surface_holder) {
       mContext = context;
+      mHandler = handler;
       mPaused = false;
       mRunning = true;
       mSurfaceHolder = surface_holder;
@@ -118,6 +126,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
           mGraphics.endFrame();
         }
         hideLoadingDialog();
+
+        // Display and block on any notifications from the game thread. While
+        // the notification dialog is visible, the game continues to run.
+        String notification = mGame.getPendingNotification();
+        if (notification != null) {
+          mHandler.sendMessage(
+              mHandler.obtainMessage(kNotificationMessage, notification));
+        }
       }
       Log.d("GameThread::run", "Freeing graphics resources...");
       mGraphics.destroy();
@@ -149,9 +165,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private Context mContext;
     private Game mGame;
     private Graphics mGraphics;
+    private Handler mHandler;
     private boolean mPaused;
     private boolean mRunning;
     private SurfaceHolder mSurfaceHolder;
+  }  // class GameThread
+
+  class GameViewHandler extends Handler {
+
   }
 
   public GameView(Context context, AttributeSet attrs) {
@@ -159,6 +180,21 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     mContext = context;
     getHolder().addCallback(this);
     getHolder().setType(SurfaceHolder.SURFACE_TYPE_GPU);
+
+    /** Handle custom events and notifications generated from the game
+     * thread. */
+    mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+          Log.d("GameView::Handler::handleMessage",
+                "Recived message: " + msg.what);
+          if (msg.what == kNotificationMessage) {
+            Builder dialog = new AlertDialog.Builder(mContext);
+            dialog.setMessage(((String)msg.obj) + " (Press back to continue.)");
+            dialog.show();
+          }
+        }
+    };
   }
 
   public void setGame(Game game) {
@@ -223,7 +259,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     getHolder().setType(SurfaceHolder.SURFACE_TYPE_GPU);
 
     Assert.assertTrue(mGameThread == null);
-    mGameThread = new GameThread(mContext, holder);
+    mGameThread = new GameThread(mContext, mHandler, holder);
     mGameThread.setGame(mGame);
     mGameThread.start();
     mGameThreadStarted = true;
@@ -268,9 +304,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   private Game mGame;
   private GameThread mGameThread;
   private boolean mGameThreadStarted = false;
+  private Handler mHandler;
   private ProgressDialog mLoadingDialog;
   private boolean mProfiling = false;
 
+  private static final int kNotificationMessage = 666;
   private static final int kProfileKey = KeyEvent.KEYCODE_T;
   private static final String kProfilePath = "abb.trace";
 }

@@ -24,6 +24,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Random;
 import java.util.TreeMap;
 
@@ -34,7 +35,7 @@ public class GameState implements Game {
   public Map map = new Map(this);
   public int misc_sprites;
   public ArrayList<Entity> particles = new ArrayList<Entity>();
-  public ArrayList<Entity> projectiles = new ArrayList<Entity>();
+  public ArrayList<Projectile> projectiles = new ArrayList<Projectile>();
 
   public GameState(Context context) {
     mContext = context;
@@ -43,7 +44,6 @@ public class GameState implements Game {
 
   public void initializeGraphics(Graphics graphics) {
     avatar.loadFromUri(Uri.parse("content:///humanoid.entity"));
-
     String misc_sprites_path =
         Content.getTemporaryFilePath(Uri.parse("content:///misc.png"));
     Bitmap misc_sprites_bitmap = BitmapFactory.decodeFile(misc_sprites_path);
@@ -57,7 +57,8 @@ public class GameState implements Game {
     projectiles.clear();
     enemies.clear();
     avatar.stop();
-    avatar.alive = true;
+    avatar.releaseWeapon();
+    avatar.life = 1.0f;
     avatar.x = map.getStartingX();
     avatar.y = map.getStartingY();
     mViewX = mTargetViewX = avatar.x;
@@ -88,7 +89,7 @@ public class GameState implements Game {
   /** Run the game simulation for the specified amount of seconds. */
   protected void stepGame(float time_step) {
     // Update the view parameters.
-    if (avatar.alive) {
+    if (avatar.life > 0.0f) {
       if (!avatar.has_ground_contact) {
         mTargetZoom = kAirZoom;
       } else {
@@ -103,12 +104,13 @@ public class GameState implements Game {
     mViewY += (mTargetViewY - mViewY) * kViewSpeed * time_step;
 
     // Step the avatar.
-    if (avatar.alive) {
+    if (avatar.life > 0.0f) {
       avatar.step(time_step);
       map.collideEntity(avatar);
       map.processTriggers(avatar);
       if (Map.tileIsGoal(map.tileAt(avatar.x, avatar.y))) {
         map.advanceLevel();
+        map.reload();
         reset();
       }
     } else {
@@ -135,7 +137,7 @@ public class GameState implements Game {
       Enemy enemy = enemies.get(index);
       enemy.step(time_step);
       map.collideEntity(enemy);
-      if (!enemy.alive) {
+      if (enemy.life <= 0.0f) {
         vibrate(kEnemyDeathVibrateLength);
         for (int n = 0; n < kBloodBathSize; n++) {
           createBloodParticle(
@@ -149,16 +151,20 @@ public class GameState implements Game {
 
     // Step the projectiles and collide them against the enemies.
     for (int index = 0; index < projectiles.size(); ++index) {
-      Entity projectile = projectiles.get(index);
+      Projectile projectile = projectiles.get(index);
       projectile.step(time_step);
+      projectile.life -= time_step;
       for (int enemy_index = 0; enemy_index < enemies.size(); ++enemy_index) {
         Enemy enemy = enemies.get(enemy_index);
         if (projectile.collidesWith(enemy)) {
-          enemy.alive = false;
-          projectile.alive = false;
+          createBloodParticle(
+              enemy.x, enemy.y, projectile.dx / 2.0f, projectile.dy / 2.0f);
+          projectile.life = 0.0f;
+          enemy.life -= projectile.damage;
+          break;
         }
       }
-      if (!projectile.alive) {
+      if (projectile.life <= 0.0f) {
         projectiles.remove(index);
       }
     }
@@ -167,7 +173,7 @@ public class GameState implements Game {
     for (int index = 0; index < particles.size(); ++index) {
       Entity particle = particles.get(index);
       particle.step(time_step);
-      if (!particle.alive) {
+      if (particle.life <= 0.0f) {
         particles.remove(index);
       }
     }
@@ -185,7 +191,7 @@ public class GameState implements Game {
     }
 
     // Draw the avatar.
-    if (avatar.alive) {
+    if (avatar.life > 0.0f) {
       avatar.draw(graphics, mViewX, mViewY, mZoom);
     }
 
@@ -198,6 +204,14 @@ public class GameState implements Game {
     for (int index = 0; index < particles.size(); ++index) {
       particles.get(index).draw(graphics, mViewX, mViewY, mZoom);
     }
+  }
+
+  synchronized public void addNotification(String notification) {
+    pending_notifications_.add(notification);
+  }
+
+  synchronized public String getPendingNotification() {
+    return pending_notifications_.poll();
   }
 
   public Entity createEnemyFromUri(Uri uri, float x, float y) {
@@ -234,17 +248,20 @@ public class GameState implements Game {
       weapon.loadFromUri(uri);
       mWeaponCache.put(uri, weapon);
     }
-    return weapon;
+    return (Weapon)weapon.clone();
   }
 
   public void createProjectile(float x, float y, float dx, float dy,
+                               float timeout, float damage,
                                int image_handle, Rect image_rect,
                                boolean sprite_flipped_horizontal) {
-    Entity projectile = new Entity();
+    Projectile projectile = new Projectile();
     projectile.x = x;
     projectile.y = y;
     projectile.dx = dx;
     projectile.dy = dy;
+    projectile.life = timeout;
+    projectile.damage = damage;
     projectile.sprite_image = image_handle;
     projectile.sprite_rect = image_rect;
     projectile.sprite_flipped_horizontal = sprite_flipped_horizontal;
@@ -253,13 +270,15 @@ public class GameState implements Game {
   }
 
   public Entity createFireProjectile(float x, float y, float dx, float dy) {
-    Entity fire = new Fire();
+    Projectile fire = new Fire();
     fire.sprite_image = misc_sprites;
     fire.x = x;
     fire.y = y;
     fire.dx = dx;
     fire.dy = dy;
-    fire.ddy = -50.0f;  // Slight "up draft".
+    fire.ddy = -50.0f;   // Give fire a slight "up draft".
+    fire.life = 100.0f;  // Let the fire class choose its own death.
+    fire.damage = 0.2f;
     projectiles.add(fire);
     return fire;
   }
@@ -284,7 +303,7 @@ public class GameState implements Game {
     avatar.dy = saved_instance_state.getFloat("avatar.dy");
     avatar.ddx = saved_instance_state.getFloat("avatar.ddx");
     avatar.ddy = saved_instance_state.getFloat("avatar.ddy");
-    avatar.alive = saved_instance_state.getBoolean("avatar.alive");
+    avatar.life = saved_instance_state.getFloat("avatar.life");
   }
 
   public Bundle saveStateBundle() {
@@ -305,13 +324,14 @@ public class GameState implements Game {
     saved_instance_state.putFloat("avatar.dy", avatar.dy);
     saved_instance_state.putFloat("avatar.dx", avatar.ddx);
     saved_instance_state.putFloat("avatar.dy", avatar.ddy);
-    saved_instance_state.putBoolean("avatar.alive", avatar.alive);
+    saved_instance_state.putFloat("avatar.life", avatar.life);
     return saved_instance_state;
   }
 
   private Context mContext;
   private float mDeathTimer = kDeathTimer;
   private TreeMap<Uri, Enemy> mEnemyCache = new TreeMap<Uri, Enemy>();
+  private LinkedList<String> pending_notifications_ = new LinkedList<String>();
   private Random mRandom = new Random();
   private float mTargetViewX = 0.0f;
   private float mTargetViewY = 0.0f;

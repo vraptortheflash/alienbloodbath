@@ -29,7 +29,7 @@ public class Blood extends Entity {
 
     mTimeRemaining -= time_step;
     if (mTimeRemaining < 0) {
-      alive = false;  // Signal for deletion.
+      life = 0.0f;  // Signal for deletion.
     }
   }
 

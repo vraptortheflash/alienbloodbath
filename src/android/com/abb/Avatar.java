@@ -13,6 +13,7 @@ package android.com.abb;
 
 import android.graphics.Matrix;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.net.Uri;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -88,6 +89,7 @@ public class Avatar extends ArticulatedEntity {
     mCanvasWidth = graphics.getWidth();
     mCanvasHeight = graphics.getHeight();
 
+    // Draw the articulated entity.
     super.draw(graphics, center_x, center_y, zoom);
 
     // The weapon must be drawn after the avatar's articulated entity. In
@@ -103,6 +105,27 @@ public class Avatar extends ArticulatedEntity {
       float hand_ry = mArray9[5];
       mWeapon.draw(graphics, center_x, center_y, zoom,
                    hand_lx, hand_ly, hand_rx, hand_ry);
+    }
+
+    // Draw the avatar life and ammo meters.
+    float meter_width = mCanvasWidth / 2.0f;
+    mRect.set(0, 0, 28, 13);
+    mRectF.set(0, 0, 28, 13);
+    graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false);
+    if (life > 0.0f) {
+      float life_meter_width =
+          meter_width * life;
+      mRect.set(0, 16, 64, 20);
+      mRectF.set(30, 0, 30 + life_meter_width, 6);
+      graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false);
+    }
+    if (mWeapon != null) {
+      float ammo_meter_width =
+          meter_width * mWeapon.getAmmo() / mWeapon.getMaxAmmo();
+      ammo_meter_width = Math.max(ammo_meter_width, 0.0f);
+      mRect.set(0, 23, 64, 27);
+      mRectF.set(30, 8, 30 + ammo_meter_width, 14);
+      graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false);
     }
   }
 
@@ -128,7 +151,7 @@ public class Avatar extends ArticulatedEntity {
     int action = motion_event.getAction();
     if (action == MotionEvent.ACTION_DOWN ||
         action == MotionEvent.ACTION_MOVE) {
-      // Handled below.
+      // This case handled below.
     } else if (action == MotionEvent.ACTION_UP) {
       setKeyState(kKeyLeft, 0);
       setKeyState(kKeyRight, 0);
@@ -173,11 +196,19 @@ public class Avatar extends ArticulatedEntity {
     mWeapon = weapon;
   }
 
+  void releaseWeapon() {
+    mWeapon = null;
+  }
+
   private int mCanvasWidth;
   private int mCanvasHeight;
   private GameState mGameState;
   public Weapon mWeapon;
-  private float[] mArray9 = new float[9];  // To avoid allocations.
+
+  // To avoid allocations:
+  private float[] mArray9 = new float[9];
+  private Rect mRect = new Rect();
+  private RectF mRectF = new RectF();
 
   private static final float kAirAcceleration = 40.0f;
   private static final float kAnimationStopThreshold = 40.0f;
@@ -186,7 +217,7 @@ public class Avatar extends ArticulatedEntity {
   private static final float kGroundAcceleration = 700.0f;
   private static final float kGroundAnimationSpeed = 1.0f / 1500.0f;
   private static final float kGroundKineticFriction = 0.3f;
-  private static final float kJumpVelocity = 250.0f;
+  private static final float kJumpVelocity = 275.0f;
   private static final int kKeyLeft = KeyEvent.KEYCODE_A;
   private static final int kKeyRight = KeyEvent.KEYCODE_S;
   private static final int kKeyJump = KeyEvent.KEYCODE_K;

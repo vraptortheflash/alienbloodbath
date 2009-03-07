@@ -38,6 +38,8 @@ public class Weapon extends Entity {
     // values letting the user override only a subset if desired within the text
     // resource at the specified uri.
     TreeMap<String, Object> parameters = new TreeMap<String, Object>();
+    parameters.put(kParameterAmmo, new Integer(kDefaultAmmo));
+    parameters.put(kParameterDamage, new Float(kDefaultDamage));
     parameters.put(kParameterDelay, new Float(kDefaultDelay));
     parameters.put(kParameterProjectileRectBottom, new Integer(-1));
     parameters.put(kParameterProjectileRectLeft, new Integer(-1));
@@ -45,6 +47,7 @@ public class Weapon extends Entity {
     parameters.put(kParameterProjectileRectTop, new Integer(-1));
     parameters.put(kParameterSpread, new Float(kDefaultSpread));
     parameters.put(kParameterSprite, "none");
+    parameters.put(kParameterTimeout, new Float(kDefaultTimeout));
     parameters.put(kParameterWeaponRectBottom, new Integer(-1));
     parameters.put(kParameterWeaponRectLeft, new Integer(-1));
     parameters.put(kParameterWeaponRectRight, new Integer(-1));
@@ -76,8 +79,11 @@ public class Weapon extends Entity {
 
     // Now that the user defined weapon parameters have been parsed and merged,
     // we can initialize the weapon instance state accordingly.
+    mAmmo = ((Integer)parameters.get(kParameterAmmo)).intValue();
+    mDamage = ((Float)parameters.get(kParameterDamage)).floatValue();
     mDelay = ((Float)parameters.get(kParameterDelay)).floatValue();
     mSpread = ((Float)parameters.get(kParameterSpread)).floatValue();
+    mTimeout = ((Float)parameters.get(kParameterTimeout)).floatValue();
     mVelocity = ((Float)parameters.get(kParameterVelocity)).floatValue();
     mVibration = ((Integer)parameters.get(kParameterVibration)).intValue();
     mSpriteUri = Uri.parse(base_uri_string + (String)parameters.get(kParameterSprite));
@@ -97,6 +103,14 @@ public class Weapon extends Entity {
     mShooting = shooting;
   }
 
+  public int getAmmo() {
+    return mAmmo;
+  }
+
+  public int getMaxAmmo() {
+    return mMaxAmmo;
+  }
+
   @Override
   public void step(float time_step) {
     super.step(time_step);
@@ -104,7 +118,9 @@ public class Weapon extends Entity {
     // Update the shooting mechanism. The following is specialized for running
     // or standing on the ground versus jumping.
     mCurrentDelay -= time_step;
-    if (mShooting && mCurrentDelay < time_step && sprite_image != -1) {
+    if (mShooting && mCurrentDelay < time_step && sprite_image != -1 &&
+        mAmmo > 0) {
+      mAmmo -= 1;
       mCurrentDelay = mDelay;
       mPhase += 10.0f;
 
@@ -132,6 +148,7 @@ public class Weapon extends Entity {
 
       mGameState.createProjectile(x + x_offset, y + y_offset,
                                   dx + dx_offset, dy + dy_offset,
+                                  mTimeout, mDamage,
                                   sprite_image, mProjectileRect,
                                   sprite_flipped_horizontal);
 
@@ -178,23 +195,32 @@ public class Weapon extends Entity {
     return super.clone();
   }
 
+  private int mAmmo;
   private float mCurrentDelay;
+  private float mDamage;
   private float mDelay;
   private static Matrix mDrawingMatrix = new Matrix();
   private GameState mGameState;  // Needed for projectile instantiation.
+  private int mMaxAmmo = 25;
   private float mPhase;
   private Rect mProjectileRect;
   private boolean mShooting;
   private float mSpread;
   private Uri mSpriteUri;
+  private float mTimeout;
   private float mVelocity;
   private int mVibration;
 
+  private static final int kDefaultAmmo = 0;
+  private static final float kDefaultDamage = 0.0f;
   private static final float kDefaultDelay = 0.2f;  // Seconds between shots.
   private static final float kDefaultSpread = 15.0f * (float)Math.PI / 180.0f;
+  private static final float kDefaultTimeout = 1.0f;  // Seconds.
   private static final float kDefaultVelocity = 60.0f;
   private static final int kDefaultVibration = 0;
 
+  private static final String kParameterAmmo = "ammo";
+  private static final String kParameterDamage = "damage";
   private static final String kParameterDelay = "delay";
   private static final String kParameterProjectileRectBottom = "projectile_rect_bottom";
   private static final String kParameterProjectileRectLeft = "projectile_rect_left";
@@ -202,6 +228,7 @@ public class Weapon extends Entity {
   private static final String kParameterProjectileRectTop = "projectile_rect_top";
   private static final String kParameterSpread = "spread";
   private static final String kParameterSprite = "sprite";
+  private static final String kParameterTimeout = "timeout";
   private static final String kParameterWeaponRectBottom = "weapon_rect_bottom";
   private static final String kParameterWeaponRectLeft = "weapon_rect_left";
   private static final String kParameterWeaponRectRight = "weapon_rect_right";

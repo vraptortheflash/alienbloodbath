@@ -50,7 +50,7 @@ public class AlienBloodBathMain extends Activity {
   public boolean onCreateOptionsMenu(Menu menu) {
     boolean result = super.onCreateOptionsMenu(menu);
     menu.add(0, kSelectMap, 0, "Load Map...").setIcon(R.drawable.load);
-    menu.add(0, kDownloadMap, 0, "More Maps...").setIcon(R.drawable.download);
+    //menu.add(0, kDownloadMap, 0, "More Maps...").setIcon(R.drawable.download);
     menu.add(0, kAbout, 0, "About...").setIcon(R.drawable.about);
     return result;
   }
@@ -105,5 +105,6 @@ public class AlienBloodBathMain extends Activity {
   private final String kAboutPage = "http://code.google.com/p/alienbloodbath";
   private final String kMapsPage = "http://abbserver.appspot.com";
   private final int kSelectMap = 1;
-  private final String kStartupMap = "content:///The_Second_Wave/";
+  private final String kStartupMap = "content:///Classic/";
+  //private final String kStartupMap = "content:///The_Second_Wave/";
 }
