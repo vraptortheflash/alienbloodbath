@@ -29,6 +29,7 @@ import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.TreeMap;
 import java.util.Vector;
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGL11;  // For EGL_CONTEXT_LOST constant.
@@ -124,13 +125,23 @@ public class Graphics {
     Assert.assertNotNull(
         "Null bitmap specified in LoadImageFromBitmap", bitmap);
 
-    switch (mBackendType) {
-      case ANDROID2D:
-        return loadImageFromBitmapAndroid2D(bitmap);
-      case OPENGL:
-        return loadImageFromBitmapOpenGL(bitmap);
+    int bitmap_hash = hashBitmap(bitmap);
+    Integer cached_image_handle = mImageCache.get(new Integer(bitmap_hash));
+    if (cached_image_handle != null) {
+      return cached_image_handle.intValue();
+    } else {
+      int image_handle = -1;
+      switch (mBackendType) {
+        case ANDROID2D:
+          image_handle = loadImageFromBitmapAndroid2D(bitmap);
+          break;
+        case OPENGL:
+          image_handle = loadImageFromBitmapOpenGL(bitmap);
+          break;
+      }
+      mImageCache.put(new Integer(bitmap_hash), new Integer(image_handle));
+      return image_handle;
     }
-    return -1;
   }
 
   public void freeImage(int image_handle) {
@@ -283,22 +294,38 @@ public class Graphics {
    * Private shared methods  and state.
    */
 
-  void determineBackendType() {
+  private void determineBackendType() {
     // Determine which rendering back-end to use based off of the system setup,
-    // specifically the presence of rendering hardware. OpenGL appears to be
+    // specifically the presence of any rendering hardware. OpenGL appears to be
     // faster on both the Emulator and the HTC Dream handset than the Android2D
     // back end. The software OpenGL rasterizer is faster than the Android2D
     // graphics API so it should be preferred in nearly all situations. However,
     // when using either software back-end, pixel fill rate has been
-    // experimentally been shown to be bottleneck.
+    // experimentally been shown to be a bottleneck.
     mBackendType = BackendType.OPENGL;
   }
 
+  /** Determine a (generally) unique hash code from a Bitmap reference. This is
+   * intended to be used to quickly identify exact images while only examining a
+   * small subset of the pixels. */
+  static private int hashBitmap(Bitmap bitmap) {
+    int hash_result = 0;
+    hash_result = (hash_result << 7) ^ bitmap.getHeight();
+    hash_result = (hash_result << 7) ^ bitmap.getWidth();
+    for (int pixel = 0; pixel < 20; ++pixel) {
+      int x = (pixel * 50) % bitmap.getWidth();
+      int y = (pixel * 100) % bitmap.getHeight();
+      hash_result = (hash_result << 7) ^ bitmap.getPixel(x, y);
+    }
+    return hash_result;
+  }
+
   private enum BackendType { ANDROID2D, OPENGL }
-  private BackendType mBackendType;
-  private SurfaceHolder mSurfaceHolder;
-  private int mSurfaceHeight;
-  private int mSurfaceWidth;
+  private BackendType               mBackendType;
+  private TreeMap<Integer, Integer> mImageCache = new TreeMap<Integer, Integer>();
+  private SurfaceHolder             mSurfaceHolder;
+  private int                       mSurfaceHeight;
+  private int                       mSurfaceWidth;
 
   /**
    * Private Android 2D backend methods and state.
@@ -364,10 +391,10 @@ public class Graphics {
     Assert.fail("Method not yet implemented.");
   }
 
-  private Canvas mCanvasAndroid2D;
+  private Canvas            mCanvasAndroid2D;
   private ArrayList<Bitmap> mImagesAndroid2D = new ArrayList<Bitmap>();
-  private Paint mPaintAndroid2D = new Paint();
-  private Matrix mTransformationAndroid2D = new Matrix();
+  private Paint             mPaintAndroid2D = new Paint();
+  private Matrix            mTransformationAndroid2D = new Matrix();
 
   /**
    * Private OpenGL backend methods and state.
@@ -609,22 +636,22 @@ public class Graphics {
     }
   }
 
-  private int mCurrentTexture = -1;
-  private Vector<Integer> mTextureWidths = new Vector<Integer>();
+  private int             mCurrentTexture = -1;
+  private Vector<Integer> mTextureWidths  = new Vector<Integer>();
   private Vector<Integer> mTextureHeights = new Vector<Integer>();
-  private EGL10 mEgl;
-  private EGLConfig mEglConfig;
-  private EGLContext mEglContext;
-  private EGLDisplay mEglDisplay;
-  private EGLSurface mEglSurface;
-  private GL10 mGl;
-  private boolean mGlStateInitialized = false;
-  private boolean mGlSurfaceInitialized = false;
-  private boolean mHasHardwareAcceleration = false;
+  private EGL10           mEgl;
+  private EGLConfig       mEglConfig;
+  private EGLContext      mEglContext;
+  private EGLDisplay      mEglDisplay;
+  private EGLSurface      mEglSurface;
+  private GL10            mGl;
+  private boolean         mGlStateInitialized;
+  private boolean         mGlSurfaceInitialized;
+  private boolean         mHasHardwareAcceleration;
 
   // The following matrix definitions are used to avoid any allocations within
   // the draw methods.
-  private Matrix mScreenMatrix = new Matrix();
+  private Matrix  mScreenMatrix = new Matrix();
   private float[] mMatrix3x3 = new float[] {
     1, 0, 0, 0, 1, 0, 0, 0, 1 };
   private float[] mMatrix4x4 = new float[] {

@@ -61,19 +61,21 @@ public class Map {
     // Maps are organized into package where each package is its own set of
     // (ordered) levels, tiles, and tile definitions.
 
-    // Load level tiles.
+    // Load level layout.
     Uri level_uri =
         Uri.withAppendedPath(mBaseUri, "level_" + mLevelOffset + ".txt");
     String level_path = Content.getTemporaryFilePath(level_uri);
     loadLevelFromFile(level_path);
 
-    // Load level tile images.
+    // Load tile images.
     Uri tiles_uri =
-        Uri.withAppendedPath(mBaseUri, "tiles_" + mLevelOffset + ".png");
+        Uri.withAppendedPath(mBaseUri, "tiles_" + mLevelOffset + ".txt");
     if (!Content.exists(tiles_uri))
-      tiles_uri = Uri.withAppendedPath(mBaseUri, "tiles_default.png");
+      tiles_uri = Uri.withAppendedPath(mBaseUri, "tiles_default.txt");
     String tiles_path = Content.getTemporaryFilePath(tiles_uri);
-    loadTilesFromFile(tiles_path);
+    String tiles_image_path = Content.getTemporaryFilePath(
+        Uri.withAppendedPath(mBaseUri, getTilesFromReferenceFile(tiles_path)));
+    loadTilesFromFile(tiles_image_path);
 
     // Load tile effects.
     Uri effects_uri =
@@ -106,6 +108,16 @@ public class Map {
       int index = kMapHeight * x + y;
       mTriggers[index] = trigger_string;
     }
+  }
+
+  public String getTilesFromReferenceFile(String file_path) {
+    if (file_path == null) {
+      Log.e("Map::loadTilesFromReferenceFile", "Invalid null argument.");
+    }
+    String[] tiles_file = Content.readFileTokens(file_path);
+    Assert.assertEquals("Map::loadTilesFromReferenceFile: Tiles file " +
+                        "improperly formatted.", tiles_file.length, 1);
+    return tiles_file[0];
   }
 
   public void loadTilesFromFile(String file_path) {
@@ -422,30 +434,30 @@ public class Map {
     return saved_instance_state;
   }
 
-  private Uri mBaseUri;
+  private Uri       mBaseUri;
   private boolean[] mEffectsDeath;
   private boolean[] mEffectsExplode;
   private boolean[] mEffectsSolid;
   private GameState mGameState;
-  private int mLevelOffset = 0;  // Level within the mBaseUri map package.
-  private Random mRandom = new Random();
-  private Rect mRectSource = new Rect();
-  private RectF mRectDest = new RectF();
-  private float mStartingX;
-  private float mStartingY;
-  private char[] mTiles;
-  private Bitmap mTilesBitmap;
-  private int mTilesImage = -1;
-  private String[] mTriggers;
+  private int       mLevelOffset     = 0;  // Level within the mBaseUri package.
+  private Random    mRandom          = new Random();
+  private Rect      mRectSource      = new Rect();
+  private RectF     mRectDest        = new RectF();
+  private float     mStartingX;
+  private float     mStartingY;
+  private char[]    mTiles;
+  private Bitmap    mTilesBitmap;
+  private int       mTilesImage      = -1;
+  private String[]  mTriggers;
 
-  private static final char kBaseValue = 'a';
-  private static final int kEndingTile = 11;
-  private static final int kExplodeVibrateLength = 40;
-  private static final int kExplosionSize = 15;  // Number of particles.
-  private static final float kExplosionStrength = 200.0f;
-  private static final int kMapHeight = 100;
-  private static final int kMapWidth = 100;
-  private static final int kMaxTileCount = 25;
-  private static final int kStartingTile = 10;
-  private static final int kTileSize = 64;
+  private static final char  kBaseValue            = 'a';
+  private static final int   kEndingTile           = 11;
+  private static final int   kExplodeVibrateLength = 40;
+  private static final int   kExplosionSize        = 15;  // Particle count.
+  private static final float kExplosionStrength    = 200.0f;
+  private static final int   kMapHeight            = 100;
+  private static final int   kMapWidth             = 100;
+  private static final int   kMaxTileCount         = 25;
+  private static final int   kStartingTile         = 10;
+  private static final int   kTileSize             = 64;
 }

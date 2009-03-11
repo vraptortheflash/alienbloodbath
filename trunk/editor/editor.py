@@ -76,29 +76,23 @@ class EditorWindow:
     signals = { 'on_brushes_expose_event' : self.BrushesExposeEvent,
                 'on_tiles_expose_event' : self.TilesExposeEvent,
                 'on_quit_menuitem_activate' : gtk.main_quit,
+                'on_menuitem_new_activate' : self.NewMenu,
                 'on_menuitem_loadlevel_activate' : self.LoadLevelMenu,
                 'on_menuitem_loadbrushes_activate' : self.LoadBrushesMenu,
-                'on_menuitem_savelevel_activate' : self.SaveLevelMenu,
+                'on_menuitem_save_activate' : self.SaveLevelMenu,
+                'on_menuitem_savelevel_activate' : self.SaveLevelAsMenu,
                 'on_brushes_button_press_event' : self.BrushesClickEvent,
                 'on_tiles_button_press_event' : self.TilesClickEvent,
                 'on_tiles_scroll_event' : self.TilesScrollEvent,
                 'on_window_key_press_event' : self.TilesKeyEvent }
     self.tree.signal_autoconnect(signals)
 
-    # Misc editor state initialization.
-    self._tiles = []
-    for n in xrange(0, LEVEL_WIDTH * LEVEL_HEIGHT):
-      self._tiles.append(0)
-    self._triggers = []
-    for n in xrange(0, LEVEL_WIDTH * LEVEL_HEIGHT):
-      self._triggers.append(None)
+    # Initialize misc editor state and clear the document.
     self._brushes_surface = None
     self._selected_brush = 0
-    self._view_x = 0
-    self._view_y = 0
-    self._view_zoom = INITIAL_ZOOM
+    self.NewMenu(None)
 
-    # Load last opened files
+    # Load last opened files if any such records exist.
     if os.path.exists(LAST_BRUSH_PATH):
       file_path = open(LAST_BRUSH_PATH).readlines()[0].strip()
       if os.path.exists(file_path):
@@ -124,10 +118,23 @@ class EditorWindow:
       return -1
     return LEVEL_HEIGHT * int(world_x / TILE_SIZE) + int(world_y / TILE_SIZE)
 
+  def NewMenu(self, widget):
+    self._view_x = 0
+    self._view_y = 0
+    self._view_zoom = INITIAL_ZOOM
+    self._tiles = [0] * LEVEL_WIDTH * LEVEL_HEIGHT
+    self._triggers = [None] * LEVEL_WIDTH * LEVEL_HEIGHT
+    self._current_file = None
+    self.SetCleanWindowTitle()
+    self.window.queue_draw()
+
   def LoadLevelFromFile(self, file_path):
+    assert file_path
     assert 0 == os.system('mkdir -p %s' % SETTINGS_DIR)
     open(LAST_LEVEL_PATH, 'w').write(file_path)
 
+    self._current_file = file_path
+    self.SetCleanWindowTitle()
     level_lines = open(file_path).readlines()
     raw_tiles = level_lines[0].strip()
     for tile in xrange(LEVEL_WIDTH * LEVEL_HEIGHT):
@@ -155,7 +162,6 @@ class EditorWindow:
   def LoadBrushesFromFile(self, file_path):
     assert 0 == os.system('mkdir -p %s' % SETTINGS_DIR)
     open(LAST_BRUSH_PATH, 'w').write(file_path)
-
     self._brushes_surface = cairo.ImageSurface.create_from_png(file_path)
     self.window.queue_draw()
 
@@ -164,22 +170,46 @@ class EditorWindow:
     if file_path:
       self.LoadBrushesFromFile(file_path)
 
+  def SetDirtyWindowTitle(self):
+    if self._current_file:
+      window_title = self.window.get_title()
+      if window_title[0] != '*':
+        self.window.set_title('*' + self._current_file)
+    else:
+      self.window.set_title('*(Unsaved Level)')
+
+  def SetCleanWindowTitle(self):
+    if self._current_file:
+      self.window.set_title(self._current_file)
+    else:
+      self.window.set_title('(Unsaved Level)')
+
+  def SaveLevelToFile(self, file_path):
+    assert file_path
+    self._current_file = file_path
+    self.SetCleanWindowTitle()
+    level_string = map(lambda tile : '%c' % (tile + ord('a')), self._tiles)
+    level_file = open(file_path, 'w')
+    level_file.write(''.join(level_string))
+    for x in xrange(0, LEVEL_WIDTH):
+      for y in xrange(0, LEVEL_HEIGHT):
+        index = LEVEL_HEIGHT * x + y
+        trigger_string = self._triggers[index];
+        if trigger_string:
+          level_file.write('\n%d,%d,"%s"' % (x, y, trigger_string))
+
   def SaveLevelMenu(self, widget):
+    if self._current_file:
+      self.SaveLevelToFile(self._current_file)
+    else:
+      self.SaveLevelAsMenu(widget)
+
+  def SaveLevelAsMenu(self, widget):
     file_path = self.ChooseSaveFile()
-
-    assert 0 == os.system('mkdir -p %s' % SETTINGS_DIR)
-    open(LAST_LEVEL_PATH, 'w').write(file_path)
-
     if file_path:
-      level_string = map(lambda tile : '%c' % (tile + ord('a')), self._tiles)
-      level_file = open(file_path, 'w')
-      level_file.write(''.join(level_string))
-      for x in xrange(0, LEVEL_WIDTH):
-        for y in xrange(0, LEVEL_HEIGHT):
-          index = LEVEL_HEIGHT * x + y
-          trigger_string = self._triggers[index];
-          if trigger_string:
-            level_file.write('\n%d,%d,"%s"' % (x, y, trigger_string))
+      assert 0 == os.system('mkdir -p %s' % SETTINGS_DIR)
+      open(LAST_LEVEL_PATH, 'w').write(file_path)
+      self.SaveLevelToFile(file_path)
 
   def BrushesClickEvent(self, widget, event):
     self._selected_brush = int(event.y / BRUSHES_ZOOM / TILE_SIZE)
@@ -218,10 +248,12 @@ class EditorWindow:
       self._tiles[tile_index] = self._selected_brush
       self._triggers[tile_index] = None
       self.window.queue_draw()
+      self.SetDirtyWindowTitle()
     elif event.button == 3:  # Right click.
       trigger_editor_window = (
           TriggerEditorWindow(self.window, self._triggers, tile_index))
       self.window.queue_draw()
+      self.SetDirtyWindowTitle()
 
   def TilesKeyEvent(self, widget, event):
     if event.keyval == LEFT_KEY:

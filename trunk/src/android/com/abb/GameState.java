@@ -21,6 +21,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -30,12 +31,12 @@ import java.util.TreeMap;
 
 
 public class GameState implements Game {
-  public Avatar avatar = new Avatar(this);
-  public ArrayList<Enemy> enemies = new ArrayList<Enemy>();
-  public Map map = new Map(this);
-  public int misc_sprites;
-  public ArrayList<Entity> particles = new ArrayList<Entity>();
-  public ArrayList<Projectile> projectiles = new ArrayList<Projectile>();
+  public Avatar            avatar      = new Avatar(this);
+  public ArrayList<Enemy>  enemies     = new ArrayList<Enemy>();
+  public Map               map         = new Map(this);
+  public int               misc_sprites;
+  public ArrayList<Entity> particles   = new ArrayList<Entity>();
+  public ArrayList<Entity> projectiles = new ArrayList<Entity>();
 
   public GameState(Context context) {
     mContext = context;
@@ -67,6 +68,12 @@ public class GameState implements Game {
   }
 
   public boolean onKeyDown(int key_code) {
+    // Developement level navigation.
+    if (key_code == KeyEvent.KEYCODE_B) {
+      map.advanceLevel();
+      avatar.life = 0.0f;
+    }
+
     avatar.setKeyState(key_code, 1);
     return false;  // False to indicate not handled.
   }
@@ -137,7 +144,14 @@ public class GameState implements Game {
       Enemy enemy = enemies.get(index);
       enemy.step(time_step);
       map.collideEntity(enemy);
+      if (enemy.collidesWith(avatar) && avatar.life > 0.0f) {
+        avatar.life -= enemy.damage;
+        enemy.life = 0.0f;
+        vibrate(kEnemyAttackVibrateLength);
+        createBloodParticle(avatar.x, avatar.y, enemy.dx, enemy.dy);
+      }
       if (enemy.life <= 0.0f) {
+        enemies.remove(index);
         vibrate(kEnemyDeathVibrateLength);
         for (int n = 0; n < kBloodBathSize; n++) {
           createBloodParticle(
@@ -145,26 +159,27 @@ public class GameState implements Game {
               kBloodBathVelocity * (0.5f - mRandom.nextFloat()) + enemy.dx,
               kBloodBathVelocity * (0.5f - mRandom.nextFloat()) + enemy.dy);
         }
-        enemies.remove(index);
       }
     }
 
     // Step the projectiles and collide them against the enemies.
     for (int index = 0; index < projectiles.size(); ++index) {
-      Projectile projectile = projectiles.get(index);
+      Entity projectile = projectiles.get(index);
       projectile.step(time_step);
       projectile.life -= time_step;
       for (int enemy_index = 0; enemy_index < enemies.size(); ++enemy_index) {
         Enemy enemy = enemies.get(enemy_index);
         if (projectile.collidesWith(enemy)) {
-          createBloodParticle(
-              enemy.x, enemy.y, projectile.dx / 2.0f, projectile.dy / 2.0f);
+          createBloodParticle((enemy.x + projectile.x) / 2.0f,
+                              (enemy.y + projectile.y) / 2.0f,
+                              projectile.dx / 2.0f, projectile.dy / 2.0f);
           projectile.life = 0.0f;
           enemy.life -= projectile.damage;
           break;
         }
       }
       if (projectile.life <= 0.0f) {
+        projectile.release();
         projectiles.remove(index);
       }
     }
@@ -172,8 +187,10 @@ public class GameState implements Game {
     // Step the particles.
     for (int index = 0; index < particles.size(); ++index) {
       Entity particle = particles.get(index);
+      particle.life -= time_step;
       particle.step(time_step);
       if (particle.life <= 0.0f) {
+        particle.release();
         particles.remove(index);
       }
     }
@@ -191,9 +208,7 @@ public class GameState implements Game {
     }
 
     // Draw the avatar.
-    if (avatar.life > 0.0f) {
-      avatar.draw(graphics, mViewX, mViewY, mZoom);
-    }
+    avatar.draw(graphics, mViewX, mViewY, mZoom);
 
     // Draw the projectiles.
     for (int index = 0; index < projectiles.size(); ++index) {
@@ -207,11 +222,11 @@ public class GameState implements Game {
   }
 
   synchronized public void addNotification(String notification) {
-    pending_notifications_.add(notification);
+    mPendingNotifications.add(notification);
   }
 
   synchronized public String getPendingNotification() {
-    return pending_notifications_.poll();
+    return mPendingNotifications.poll();
   }
 
   public Entity createEnemyFromUri(Uri uri, float x, float y) {
@@ -230,8 +245,17 @@ public class GameState implements Game {
   }
 
   public Entity createBloodParticle(float x, float y, float dx, float dy) {
-    Entity blood = new Blood();
+    final float kTimeRemaining = 0.75f;  // Seconds.
+    final int kSpriteBase      = 1 * 64;
+    final int kSpriteWidth     = 64;
+    final int kSpriteHeight    = 64;
+
+    Entity blood = Entity.obtain();
+    blood.sprite_rect.set(
+        0, kSpriteBase, kSpriteWidth, kSpriteBase + kSpriteHeight);
+    blood.sprite_flipped_horizontal = mRandom.nextBoolean();
     blood.sprite_image = misc_sprites;
+    blood.life = kTimeRemaining;
     blood.x = x;
     blood.y = y;
     blood.dx = dx;
@@ -255,7 +279,7 @@ public class GameState implements Game {
                                float timeout, float damage,
                                int image_handle, Rect image_rect,
                                boolean sprite_flipped_horizontal) {
-    Projectile projectile = new Projectile();
+    Entity projectile = Entity.obtain();
     projectile.x = x;
     projectile.y = y;
     projectile.dx = dx;
@@ -263,24 +287,33 @@ public class GameState implements Game {
     projectile.life = timeout;
     projectile.damage = damage;
     projectile.sprite_image = image_handle;
-    projectile.sprite_rect = image_rect;
+    projectile.sprite_rect.set(image_rect);
     projectile.sprite_flipped_horizontal = sprite_flipped_horizontal;
     projectile.radius = Math.min(image_rect.width(), image_rect.height());
     projectiles.add(projectile);
   }
 
-  public Entity createFireProjectile(float x, float y, float dx, float dy) {
-    Projectile fire = new Fire();
+  public Entity createFireProjectile(float x, float y, float dx, float dy,
+                                     float damage,
+                                     boolean sprite_flipped_horizontal) {
+    Entity fire = Entity.obtain();
     fire.sprite_image = misc_sprites;
     fire.x = x;
     fire.y = y;
     fire.dx = dx;
     fire.dy = dy;
     fire.ddy = -50.0f;   // Give fire a slight "up draft".
-    fire.life = 100.0f;  // Let the fire class choose its own death.
-    fire.damage = 0.2f;
+    fire.life = 1.3f;
+    fire.damage = damage;
+    fire.is_flame = true;
+    fire.radius = 3.0f;
+    fire.sprite_flipped_horizontal = sprite_flipped_horizontal;
     projectiles.add(fire);
     return fire;
+  }
+
+  public Entity createFireProjectile(float x, float y, float dx, float dy) {
+    return createFireProjectile(x, y, dx, dy, 0.2f, false);
   }
 
   public void vibrate(long vibrate_milliseconds) {
@@ -328,29 +361,30 @@ public class GameState implements Game {
     return saved_instance_state;
   }
 
-  private Context mContext;
-  private float mDeathTimer = kDeathTimer;
-  private TreeMap<Uri, Enemy> mEnemyCache = new TreeMap<Uri, Enemy>();
-  private LinkedList<String> pending_notifications_ = new LinkedList<String>();
-  private Random mRandom = new Random();
-  private float mTargetViewX = 0.0f;
-  private float mTargetViewY = 0.0f;
-  private float mTargetZoom = kGroundZoom;
-  private Vibrator mVibrator;
-  private float mViewX = 0.0f;
-  private float mViewY = 0.0f;
-  private TreeMap<Uri, Weapon> mWeaponCache = new TreeMap<Uri, Weapon>();
-  private float mZoom = kGroundZoom;
+  private Context              mContext;
+  private float                mDeathTimer           = kDeathTimer;
+  private TreeMap<Uri, Enemy>  mEnemyCache           = new TreeMap<Uri, Enemy>();
+  private LinkedList<String>   mPendingNotifications = new LinkedList<String>();
+  private Random               mRandom               = new Random();
+  private float                mTargetViewX          = 0.0f;
+  private float                mTargetViewY          = 0.0f;
+  private float                mTargetZoom           = kGroundZoom;
+  private Vibrator             mVibrator;
+  private float                mViewX                = 0.0f;
+  private float                mViewY                = 0.0f;
+  private TreeMap<Uri, Weapon> mWeaponCache          = new TreeMap<Uri, Weapon>();
+  private float                mZoom                 = kGroundZoom;
 
-  private static final float kAirZoom = 0.6f;
-  private static final int kBloodBathSize = 20;  // Number of blood particles.
-  private static final float kBloodBathVelocity = 60.0f;
-  private static final float kDeathTimer = 4.0f;
-  private static final float kDeathZoom = 1.5f;
-  private static final float kGravity = 200.0f;
-  private static final float kGroundZoom = 0.8f;
-  private static final long kEnemyDeathVibrateLength = 30;  // Milliseconds.
-  private static final float kViewLead = 1.0f;
-  private static final float kViewSpeed = 2.0f;
-  private static final float kZoomSpeed = 1.0f;
+  private static final float kAirZoom                  = 0.6f;
+  private static final int   kBloodBathSize            = 20;  // Particle count.
+  private static final float kBloodBathVelocity        = 60.0f;
+  private static final float kDeathTimer               = 3.0f;
+  private static final float kDeathZoom                = 1.5f;
+  private static final long  kEnemyAttackVibrateLength = 50;  // Milliseconds.
+  private static final long  kEnemyDeathVibrateLength  = 30;  // Milliseconds.
+  private static final float kGravity                  = 200.0f;
+  private static final float kGroundZoom               = 0.8f;
+  private static final float kViewLead                 = 1.0f;
+  private static final float kViewSpeed                = 2.0f;
+  private static final float kZoomSpeed                = 1.0f;
 }

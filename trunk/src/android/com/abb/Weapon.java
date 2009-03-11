@@ -45,6 +45,7 @@ public class Weapon extends Entity {
     parameters.put(kParameterProjectileRectLeft, new Integer(-1));
     parameters.put(kParameterProjectileRectRight, new Integer(-1));
     parameters.put(kParameterProjectileRectTop, new Integer(-1));
+    parameters.put(kParameterProjectileType, kDefaultProjectileType);
     parameters.put(kParameterSpread, new Float(kDefaultSpread));
     parameters.put(kParameterSprite, "none");
     parameters.put(kParameterTimeout, new Float(kDefaultTimeout));
@@ -82,6 +83,7 @@ public class Weapon extends Entity {
     mAmmo = ((Integer)parameters.get(kParameterAmmo)).intValue();
     mDamage = ((Float)parameters.get(kParameterDamage)).floatValue();
     mDelay = ((Float)parameters.get(kParameterDelay)).floatValue();
+    mProjectileIsFlame = parameters.get(kParameterProjectileType).equals("flame");
     mSpread = ((Float)parameters.get(kParameterSpread)).floatValue();
     mTimeout = ((Float)parameters.get(kParameterTimeout)).floatValue();
     mVelocity = ((Float)parameters.get(kParameterVelocity)).floatValue();
@@ -131,7 +133,7 @@ public class Weapon extends Entity {
       float y_offset = -10.0f;
 
       if (!has_ground_contact) {
-        shot_angle = mPhase;
+        shot_angle = 6.28319f * mRandom.nextFloat();
         x_offset = shot_distance * (float)Math.cos(shot_angle);
         y_offset = shot_distance * (float)Math.sin(shot_angle);
       } else {
@@ -146,11 +148,17 @@ public class Weapon extends Entity {
         dx_offset *= -1.0f;
       }
 
-      mGameState.createProjectile(x + x_offset, y + y_offset,
-                                  dx + dx_offset, dy + dy_offset,
-                                  mTimeout, mDamage,
-                                  sprite_image, mProjectileRect,
-                                  sprite_flipped_horizontal);
+      if (mProjectileIsFlame) {
+        mGameState.createFireProjectile(x + x_offset, y + y_offset,
+                                        dx + dx_offset, dy + dy_offset,
+                                        mDamage, sprite_flipped_horizontal);
+      } else {
+        mGameState.createProjectile(x + x_offset, y + y_offset,
+                                    dx + dx_offset, dy + dy_offset,
+                                    mTimeout, mDamage,
+                                    sprite_image, mProjectileRect,
+                                    sprite_flipped_horizontal);
+      }
 
       if (mVibration > 0) {
         mGameState.vibrate(mVibration);
@@ -195,45 +203,48 @@ public class Weapon extends Entity {
     return super.clone();
   }
 
-  private int mAmmo;
-  private float mCurrentDelay;
-  private float mDamage;
-  private float mDelay;
+  private int           mAmmo;
+  private float         mCurrentDelay;
+  private float         mDamage;
+  private float         mDelay;
   private static Matrix mDrawingMatrix = new Matrix();
-  private GameState mGameState;  // Needed for projectile instantiation.
-  private int mMaxAmmo = 25;
-  private float mPhase;
-  private Rect mProjectileRect;
-  private boolean mShooting;
-  private float mSpread;
-  private Uri mSpriteUri;
-  private float mTimeout;
-  private float mVelocity;
-  private int mVibration;
+  private GameState     mGameState;
+  private int           mMaxAmmo       = 25;
+  private float         mPhase;
+  private boolean       mProjectileIsFlame;
+  private Rect          mProjectileRect;
+  private boolean       mShooting;
+  private float         mSpread;
+  private Uri           mSpriteUri;
+  private float         mTimeout;
+  private float         mVelocity;
+  private int           mVibration;
 
-  private static final int kDefaultAmmo = 0;
-  private static final float kDefaultDamage = 0.0f;
-  private static final float kDefaultDelay = 0.2f;  // Seconds between shots.
-  private static final float kDefaultSpread = 15.0f * (float)Math.PI / 180.0f;
-  private static final float kDefaultTimeout = 1.0f;  // Seconds.
-  private static final float kDefaultVelocity = 60.0f;
-  private static final int kDefaultVibration = 0;
+  private static final int    kDefaultAmmo           = 0;
+  private static final float  kDefaultDamage         = 0.0f;
+  private static final float  kDefaultDelay          = 0.2f;  // Seconds.
+  private static final String kDefaultProjectileType = "normal";
+  private static final float  kDefaultSpread         = 0.262f;
+  private static final float  kDefaultTimeout        = 1.0f;  // Seconds.
+  private static final float  kDefaultVelocity       = 60.0f;
+  private static final int    kDefaultVibration      = 0;
 
-  private static final String kParameterAmmo = "ammo";
-  private static final String kParameterDamage = "damage";
-  private static final String kParameterDelay = "delay";
+  private static final String kParameterAmmo                 = "ammo";
+  private static final String kParameterDamage               = "damage";
+  private static final String kParameterDelay                = "delay";
   private static final String kParameterProjectileRectBottom = "projectile_rect_bottom";
-  private static final String kParameterProjectileRectLeft = "projectile_rect_left";
-  private static final String kParameterProjectileRectRight = "projectile_rect_right";
-  private static final String kParameterProjectileRectTop = "projectile_rect_top";
-  private static final String kParameterSpread = "spread";
-  private static final String kParameterSprite = "sprite";
-  private static final String kParameterTimeout = "timeout";
-  private static final String kParameterWeaponRectBottom = "weapon_rect_bottom";
-  private static final String kParameterWeaponRectLeft = "weapon_rect_left";
-  private static final String kParameterWeaponRectRight = "weapon_rect_right";
-  private static final String kParameterWeaponRectTop = "weapon_rect_top";
-  private static final String kParameterVerticalSpread = "vertical_spread";
-  private static final String kParameterVelocity = "velocity";
-  private static final String kParameterVibration = "vibration";
+  private static final String kParameterProjectileRectLeft   = "projectile_rect_left";
+  private static final String kParameterProjectileRectRight  = "projectile_rect_right";
+  private static final String kParameterProjectileRectTop    = "projectile_rect_top";
+  private static final String kParameterProjectileType       = "projectile_type";
+  private static final String kParameterSpread               = "spread";
+  private static final String kParameterSprite               = "sprite";
+  private static final String kParameterTimeout              = "timeout";
+  private static final String kParameterWeaponRectBottom     = "weapon_rect_bottom";
+  private static final String kParameterWeaponRectLeft       = "weapon_rect_left";
+  private static final String kParameterWeaponRectRight      = "weapon_rect_right";
+  private static final String kParameterWeaponRectTop        = "weapon_rect_top";
+  private static final String kParameterVerticalSpread       = "vertical_spread";
+  private static final String kParameterVelocity             = "velocity";
+  private static final String kParameterVibration            = "vibration";
 }
