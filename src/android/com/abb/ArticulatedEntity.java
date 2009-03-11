@@ -138,7 +138,7 @@ public class ArticulatedEntity extends Entity {
    * the part. */
   public Matrix getPartTransformation(String part_name) {
     Part part = findPartByName(part_name);
-    Assert.assertNotNull("Unknown part name: " + part_name, part);
+    Assert.assertNotNull(part);
     return part.transformation;
   }
 
@@ -210,7 +210,7 @@ public class ArticulatedEntity extends Entity {
     }
 
     private float[] mTransformationData = new float[9];
-  }
+  }  // class Part
 
   /** The Animation class stores and provides access to a independent, time
    * varying set of values called tracks. */
@@ -332,7 +332,7 @@ public class ArticulatedEntity extends Entity {
     private float mTime;
     private TreeMap<String, ArrayList<KeyFrame>> mKeyFrames =
         new TreeMap<String, ArrayList<KeyFrame>>();
-  }
+  }  // class Animation
 
   private Animation mAnimation = new Animation();
   private TreeMap<String, Animation> mAnimationCache =

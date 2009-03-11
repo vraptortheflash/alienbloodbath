@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Mon Dec  8 21:09:42 2008 -->
+<!--Generated with glade3 3.4.5 on Sat Mar  7 21:28:19 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="window">
     <property name="visible">True</property>
@@ -25,11 +25,26 @@
                   <widget class="GtkMenu" id="menu1">
                     <property name="visible">True</property>
                     <child>
+                      <widget class="GtkImageMenuItem" id="menuitem_new">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">New</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_menuitem_new_activate"/>
+                        <accelerator key="n" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image5">
+                            <property name="stock">gtk-new</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
                       <widget class="GtkImageMenuItem" id="menuitem_loadlevel">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Load Level...</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_menuitem_loadlevel_activate"/>
+                        <accelerator key="o" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="menu-item-image91">
                             <property name="stock">gtk-open</property>
@@ -46,6 +61,20 @@
                         <child internal-child="image">
                           <widget class="GtkImage" id="menu-item-image92">
                             <property name="stock">gtk-open</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="menuitem_save">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Save Level</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_menuitem_save_activate"/>
+                        <accelerator key="s" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image7">
+                            <property name="stock">gtk-save</property>
                           </widget>
                         </child>
                       </widget>

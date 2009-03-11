@@ -243,6 +243,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     synchronized (mGame) {
       mGame.onMotionEvent(event);
     }
+    event.recycle();
     return true;
   }
 
@@ -300,15 +301,15 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
   }
 
-  private Context mContext;
-  private Game mGame;
-  private GameThread mGameThread;
-  private boolean mGameThreadStarted = false;
-  private Handler mHandler;
+  private Context        mContext;
+  private Game           mGame;
+  private GameThread     mGameThread;
+  private boolean        mGameThreadStarted;
+  private Handler        mHandler;
   private ProgressDialog mLoadingDialog;
-  private boolean mProfiling = false;
+  private boolean        mProfiling;
 
-  private static final int kNotificationMessage = 666;
-  private static final int kProfileKey = KeyEvent.KEYCODE_T;
-  private static final String kProfilePath = "abb.trace";
+  private static final int    kNotificationMessage = 666;
+  private static final int    kProfileKey          = KeyEvent.KEYCODE_T;
+  private static final String kProfilePath         = "abb.trace";
 }

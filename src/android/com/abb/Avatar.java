@@ -30,6 +30,10 @@ public class Avatar extends ArticulatedEntity {
 
   @Override
   public void step(float time_step) {
+    if (life <= 0.0f) {
+      return;
+    }
+
     ddy = kGravity;
     super.step(time_step);
 
@@ -48,8 +52,13 @@ public class Avatar extends ArticulatedEntity {
     // The following is a poor hack to simulate "friction" against the ground
     // surface. The problem with this implementation is that it does not account
     // for the time_step. TODO: Fix this friction implementation.
-    if (has_ground_contact && ddx == 0.0f) {
-      dx *= (1.0f - kGroundKineticFriction);
+    if (has_ground_contact) {
+      if (Math.abs(dx) > kMaxGroundVelocity) {
+        dx *= 0.9f;
+      }
+      if (ddx == 0.0f) {
+        dx *= (1.0f - kGroundKineticFriction);
+      }
     }
 
     // Update the avatar animation.
@@ -75,6 +84,8 @@ public class Avatar extends ArticulatedEntity {
     if (mWeapon != null) {
       mWeapon.x = x;
       mWeapon.y = y;
+      mWeapon.dx = dx;
+      mWeapon.dy = dy;
       mWeapon.has_ground_contact = has_ground_contact;
       mWeapon.sprite_flipped_horizontal = sprite_flipped_horizontal;
       mWeapon.step(time_step);
@@ -84,6 +95,10 @@ public class Avatar extends ArticulatedEntity {
   @Override
   public void draw(Graphics graphics, float center_x, float center_y,
                    float zoom) {
+    if (life <= 0.0f) {
+      return;
+    }
+
     // We intercept the draw method only to get the canvas dimensions. The
     // drawing buffer dimensions are used to interpret the touch events.
     mCanvasWidth = graphics.getWidth();
@@ -108,7 +123,7 @@ public class Avatar extends ArticulatedEntity {
     }
 
     // Draw the avatar life and ammo meters.
-    float meter_width = mCanvasWidth / 2.0f;
+    float meter_width = mCanvasWidth - 45;
     mRect.set(0, 0, 28, 13);
     mRectF.set(0, 0, 28, 13);
     graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false);
@@ -116,7 +131,7 @@ public class Avatar extends ArticulatedEntity {
       float life_meter_width =
           meter_width * life;
       mRect.set(0, 16, 64, 20);
-      mRectF.set(30, 0, 30 + life_meter_width, 6);
+      mRectF.set(30, 1, 30 + life_meter_width, 6);
       graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false);
     }
     if (mWeapon != null) {
@@ -124,12 +139,16 @@ public class Avatar extends ArticulatedEntity {
           meter_width * mWeapon.getAmmo() / mWeapon.getMaxAmmo();
       ammo_meter_width = Math.max(ammo_meter_width, 0.0f);
       mRect.set(0, 23, 64, 27);
-      mRectF.set(30, 8, 30 + ammo_meter_width, 14);
+      mRectF.set(30, 8, 30 + ammo_meter_width, 12);
       graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false);
     }
   }
 
   public void setKeyState(int key_code, int state) {
+    if (life <= 0.0f) {
+      return;
+    }
+
     if (key_code == kKeyLeft) {
       ddx = -kGroundAcceleration * state;
     } else if (key_code == kKeyRight) {
@@ -145,6 +164,10 @@ public class Avatar extends ArticulatedEntity {
   }
 
   public void onMotionEvent(MotionEvent motion_event) {
+    if (life <= 0.0f) {
+      return;
+    }
+
     // We translate motion events into key events and then pass it onto the key
     // event handler. Note: Pressure and size measurements are also available
     // from the API, but aren't yet used here.
@@ -157,10 +180,8 @@ public class Avatar extends ArticulatedEntity {
       setKeyState(kKeyRight, 0);
       setKeyState(kKeyJump, 0);
       setKeyState(kKeyShoot, 0);
-      motion_event.recycle();
       return;
     } else {
-      motion_event.recycle();
       return;
     }
 
@@ -189,7 +210,6 @@ public class Avatar extends ArticulatedEntity {
         setKeyState(kKeyShoot, 1);
       }
     }
-    motion_event.recycle();
   }
 
   void setWeapon(Weapon weapon) {
@@ -200,29 +220,30 @@ public class Avatar extends ArticulatedEntity {
     mWeapon = null;
   }
 
-  private int mCanvasWidth;
-  private int mCanvasHeight;
+  private int       mCanvasWidth;
+  private int       mCanvasHeight;
   private GameState mGameState;
-  public Weapon mWeapon;
+  public Weapon     mWeapon;
 
-  // To avoid allocations:
+  // To avoid allocations...
   private float[] mArray9 = new float[9];
-  private Rect mRect = new Rect();
-  private RectF mRectF = new RectF();
+  private Rect    mRect   = new Rect();
+  private RectF   mRectF  = new RectF();
 
-  private static final float kAirAcceleration = 40.0f;
+  private static final float kAirAcceleration        = 40.0f;
   private static final float kAnimationStopThreshold = 40.0f;
-  private static final float kDrawingScale = 0.4f;
-  private static final float kGravity = 300.0f;
-  private static final float kGroundAcceleration = 700.0f;
-  private static final float kGroundAnimationSpeed = 1.0f / 1500.0f;
-  private static final float kGroundKineticFriction = 0.3f;
-  private static final float kJumpVelocity = 275.0f;
-  private static final int kKeyLeft = KeyEvent.KEYCODE_A;
-  private static final int kKeyRight = KeyEvent.KEYCODE_S;
-  private static final int kKeyJump = KeyEvent.KEYCODE_K;
-  private static final int kKeyShoot = KeyEvent.KEYCODE_J;
-  private static final float kRadius = 25.0f;
-  private static final int kSpriteSize = 64;
-  private static final int kTouchMovementHeight = 30;
+  private static final float kDrawingScale           = 0.4f;
+  private static final float kGravity                = 300.0f;
+  private static final float kGroundAcceleration     = 700.0f;
+  private static final float kGroundAnimationSpeed   = 1.0f / 1500.0f;
+  private static final float kGroundKineticFriction  = 0.3f;
+  private static final float kMaxGroundVelocity      = 200.0f;
+  private static final float kJumpVelocity           = 275.0f;
+  private static final int   kKeyLeft                = KeyEvent.KEYCODE_A;
+  private static final int   kKeyRight               = KeyEvent.KEYCODE_S;
+  private static final int   kKeyJump                = KeyEvent.KEYCODE_K;
+  private static final int   kKeyShoot               = KeyEvent.KEYCODE_J;
+  private static final float kRadius                 = 25.0f;
+  private static final int   kSpriteSize             = 64;
+  private static final int   kTouchMovementHeight    = 30;
 }

@@ -11,23 +11,26 @@
 
 package android.com.abb;
 
-import android.graphics.Canvas;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import java.lang.CloneNotSupportedException;
 import java.lang.Math;
 import java.util.Random;
+import java.util.Stack;
 
 
 /** The Entity class is intended to be lowest level, drawable, physical in-game
- * object. */
+ * object. For example weapon projectiles, blood particles, and the avatar are
+ * represented by Entities. */
 public class Entity implements Cloneable {
+  public float   damage;
   public boolean has_ground_contact;
-  public float   life = 1.0f;
+  public boolean is_flame;
+  public float   life         = 1.0f;
   public float   radius;
-  public int     sprite_image;
-  public Rect    sprite_rect;
+  public int     sprite_image = -1;
+  public Rect    sprite_rect  = new Rect();
   public boolean sprite_flipped_horizontal;
   public boolean sprite_flipped_vertical;
 
@@ -37,6 +40,19 @@ public class Entity implements Cloneable {
   public float dy;
   public float ddx;  // Acceleration.
   public float ddy;
+
+  public Entity reset() {
+    damage                      = 0.0f;
+    has_ground_contact          = false;
+    is_flame                    = false;
+    life                        = 1.0f;
+    radius                      = 0.0f;
+    sprite_image                = -1;
+    sprite_flipped_horizontal   = false;
+    sprite_flipped_vertical     = false;
+    x = y = dx = dy = ddx = ddy = 0.0f;
+    return this;
+  }
 
   public void stop() {
     dx = dy = ddx = ddy = 0.0f;
@@ -48,10 +64,19 @@ public class Entity implements Cloneable {
     dx += ddx * time_step;
     dy += ddy * time_step;
 
-    dx = Math.max(dx, -kMaxVelocity);
-    dx = Math.min(dx,  kMaxVelocity);
-    dy = Math.max(dy, -2.0f * kMaxVelocity);
-    dy = Math.min(dy,  2.0f * kMaxVelocity);
+    dx = Math.min(Math.max(dx, -kMaxHorizontalVelocity), kMaxHorizontalVelocity);
+    dy = Math.min(Math.max(dy, -kMaxVerticalVelocity),  kMaxVerticalVelocity);
+
+    // Flames are a special case of the Entity class. For performance reasons it
+    // is benefitial to share a free-list with normal projectiles, but the
+    // sprite animation requires extra handling.
+    if (is_flame) {
+      int frame = (int)(kFlameFrames - life * kFlameFrameRate);
+      sprite_rect.left = 0;
+      sprite_rect.right = kFlameSpriteWidth;
+      sprite_rect.top = kFlameSpriteBase + kFlameSpriteHeight * frame;
+      sprite_rect.bottom = kFlameSpriteBase + kFlameSpriteHeight * (frame + 1);
+    }
   }
 
   /** Draw the entity to the canvas such that the specified coordinates are
@@ -80,6 +105,18 @@ public class Entity implements Cloneable {
             Math.abs(entity.y - y) < radius + entity.radius);
   }
 
+  static public Entity obtain() {
+    if (!mFreeList.empty()) {
+      return mFreeList.pop().reset();
+    } else {
+      return new Entity();
+    }
+  }
+
+  public void release() {
+    mFreeList.push(this);
+  }
+
   @Override
   public Object clone() {
     try {
@@ -92,7 +129,15 @@ public class Entity implements Cloneable {
   // The following allocations are made here to avoid allocating anything during
   // the game. They are intended to be used by this an any child class.
   protected static Random mRandom = new Random();
-  protected static RectF mRectF = new RectF();
+  protected static RectF  mRectF  = new RectF();
 
-  private static final float kMaxVelocity = 200.0f;
+  static private Stack<Entity> mFreeList = new Stack<Entity>();
+
+  private static final int   kFlameFrames           = 13;
+  private static final float kFlameFrameRate        = 10.0f;  // Frames / sec.
+  private static final int   kFlameSpriteBase       = 521;
+  private static final int   kFlameSpriteWidth      = 64;
+  private static final int   kFlameSpriteHeight     = 36;
+  private static final float kMaxHorizontalVelocity = 300.0f;
+  private static final float kMaxVerticalVelocity   = 400.0f;
 }
