@@ -163,6 +163,13 @@ public class Graphics {
     // reasons. TODO: Inline the 2D API implementation here.
     Assert.assertEquals(mBackendType, BackendType.OPENGL);
 
+    if (image_handle >= mTextureWidths.size()) {
+      Log.d("Graphics::drawImage", "Unknown image handle encountered. " +
+            "Assuming OpenGL context has been lost. Exiting.");
+      mContextLost = true;
+      return;
+    }
+
     if (image_handle != mCurrentTexture) {
       mCurrentTexture = image_handle;
       mGl.glBindTexture(GL10.GL_TEXTURE_2D, image_handle);
@@ -208,6 +215,13 @@ public class Graphics {
   public void drawImage(int image_handle, Rect source_rect, Matrix dest_matrix,
                         boolean flipped_horizontal, boolean flipped_vertical) {
     Assert.assertTrue("Invalid image handle in drawImage", image_handle >= 0);
+
+    if (image_handle >= mTextureWidths.size()) {
+      Log.d("Graphics::drawImage", "Unknown image handle encountered. " +
+            "Assuming OpenGL context has been lost. Exiting.");
+      mContextLost = true;
+      return;
+    }
 
     // The drawImageOpenGL implementation has been inlined here for performance
     // reasons. TODO: Inline the 2D API implementation here.

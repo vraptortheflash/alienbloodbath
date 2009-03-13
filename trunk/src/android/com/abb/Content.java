@@ -34,9 +34,20 @@ import junit.framework.Assert;
  * is not thread-safe. Extracted files are not cached. */
 public class Content {
   public static void initialize(Resources resources) {
+    mResources = resources;
+    prepare();
+  }
+
+  private static void safePrepare() {
+    if (!(new File(kTempContentPath)).exists()) {
+      prepare();
+    }
+  }
+
+  private static void prepare() {
     try {
       InputStream content_input_stream =
-          resources.openRawResource(R.raw.content_package);
+          mResources.openRawResource(R.raw.content_package);
       writeStreamToFile(content_input_stream, kTempContentPath);
       content_input_stream.close();
     } catch (IOException ex) {
@@ -46,12 +57,21 @@ public class Content {
   }
 
   public static void cleanup() {
-    (new File(kTempFilePath)).delete();
-    (new File(kTempContentPath)).delete();
+    safeDelete(kTempFilePath);
+    safeDelete(kTempContentPath);
+  }
+
+  protected static void safeDelete(String file_path) {
+    File file = new File(file_path);
+    if (file.exists()) {
+      file.delete();
+    }
   }
 
   public static boolean exists(Uri uri) {
     Log.d("Content::exists", uri.toString());
+
+    safePrepare();
 
     // Handle "file://" scheme.
     if (uri.getScheme().equals("file")) {
@@ -80,6 +100,8 @@ public class Content {
 
   public static String[] list(Uri uri) {
     Log.d("Content::list", uri.toString());
+
+    safePrepare();
 
     // Handle "file://" scheme.
     if (uri.getScheme().equals("file")) {
@@ -111,6 +133,8 @@ public class Content {
 
   public static String getTemporaryFilePath(Uri uri) {
     Log.d("Content::getTemporaryFilePath", uri.toString());
+
+    safePrepare();
 
     // Handle "file://" scheme.
     if (uri.getScheme().equals("file")) {
@@ -290,6 +314,8 @@ public class Content {
     }
     return entry_list.toArray(new String[0]);
   }
+
+  private static Resources mResources;
 
   private static final String kTempFilePath =
       "/data/data/android.com.abb/abbfile.tmp";
