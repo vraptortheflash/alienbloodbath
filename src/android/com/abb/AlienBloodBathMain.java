@@ -108,7 +108,7 @@ public class AlienBloodBathMain extends Activity {
   private final String kAboutPage = "http://code.google.com/p/alienbloodbath";
   private final String kMapsPage = "http://abbserver.appspot.com";
   private final int kSelectMap = 1;
-  private final String kStartupMap = "content:///Classic/";
-  //private final String kStartupMap = "content:///Demo/";
+  //private final String kStartupMap = "content:///Classic/";
+  private final String kStartupMap = "content:///Demo/";
   //private final String kStartupMap = "content:///The_Second_Wave/";
 }
