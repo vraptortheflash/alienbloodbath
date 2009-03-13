@@ -264,15 +264,20 @@ public class Graphics {
     mGl.glDrawArrays(GL10.GL_TRIANGLE_FAN, 0, 4);
   }
 
-  public void beginFrame() {
-   switch (mBackendType) {
+  /**
+   * Begin the start of the frame drawing operations. All drawing methods must
+   * be called between a call to beginFrame() and endFrame(). The beginFrame()
+   * method may return false to indicate a critical error, signaling that the
+   * graphics system must be restarted.
+   */
+  public boolean beginFrame() {
+    switch (mBackendType) {
       case ANDROID2D:
-        beginFrameAndroid2D();
-        break;
+        return beginFrameAndroid2D();
       case OPENGL:
-        beginFrameOpenGL();
-        break;
+        return beginFrameOpenGL();
     }
+    return false;
   }
 
   public void endFrame() {
@@ -354,9 +359,10 @@ public class Graphics {
     return mSurfaceHeight;
   }
 
-  private void beginFrameAndroid2D() {
+  private boolean beginFrameAndroid2D() {
     mCanvasAndroid2D = mSurfaceHolder.lockCanvas(null);
     mCanvasAndroid2D.drawRGB(0, 0, 0);
+    return true;
   }
 
   private void endFrameAndroid2D() {
@@ -613,7 +619,7 @@ public class Graphics {
     return mSurfaceHeight;
   }
 
-  private void beginFrameOpenGL() {
+  private boolean beginFrameOpenGL() {
     if (!mGlSurfaceInitialized) {
       initializeOpenGLSurface();
       mGlSurfaceInitialized = true;
@@ -623,6 +629,7 @@ public class Graphics {
       mGlStateInitialized = true;
     }
     mGl.glClear(GL10.GL_COLOR_BUFFER_BIT);
+    return !mContextLost;
   }
 
   private void endFrameOpenGL() {
@@ -632,13 +639,13 @@ public class Graphics {
     // associated data were lost (For instance because the device went to
     // sleep). We need to sleep until we get a new surface.
     if (mEgl.eglGetError() == EGL11.EGL_CONTEXT_LOST) {
+      mContextLost = true;
       Log.d("Graphics::endFrameBufferOpenGL", "Context Lost.");
     }
   }
 
   private int             mCurrentTexture = -1;
-  private Vector<Integer> mTextureWidths  = new Vector<Integer>();
-  private Vector<Integer> mTextureHeights = new Vector<Integer>();
+  private boolean         mContextLost;
   private EGL10           mEgl;
   private EGLConfig       mEglConfig;
   private EGLContext      mEglContext;
@@ -648,6 +655,8 @@ public class Graphics {
   private boolean         mGlStateInitialized;
   private boolean         mGlSurfaceInitialized;
   private boolean         mHasHardwareAcceleration;
+  private Vector<Integer> mTextureWidths  = new Vector<Integer>();
+  private Vector<Integer> mTextureHeights = new Vector<Integer>();
 
   // The following matrix definitions are used to avoid any allocations within
   // the draw methods.

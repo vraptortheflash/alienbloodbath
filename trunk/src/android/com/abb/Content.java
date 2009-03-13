@@ -45,7 +45,7 @@ public class Content {
     }
   }
 
-  protected void finalize() {
+  public static void cleanup() {
     (new File(kTempFilePath)).delete();
     (new File(kTempContentPath)).delete();
   }

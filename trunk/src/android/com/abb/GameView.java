@@ -11,6 +11,7 @@
 
 package android.com.abb;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.app.ProgressDialog;
@@ -119,8 +120,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
         try {
           synchronized (this) {
-            mGraphics.beginFrame();
-            mGame.onFrame(mGraphics, time_step);
+            if (mGraphics.beginFrame()) {
+              mGame.onFrame(mGraphics, time_step);
+            } else {
+              mHandler.sendMessage(mHandler.obtainMessage(kKillMessage));
+            }
           }
         } finally {
           mGraphics.endFrame();
@@ -192,6 +196,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             Builder dialog = new AlertDialog.Builder(mContext);
             dialog.setMessage(((String)msg.obj) + " (Press back to continue.)");
             dialog.show();
+          } else if (msg.what == kKillMessage) {
+            Activity current_activity = (Activity)mContext;
+            current_activity.finish();
           }
         }
     };
@@ -309,6 +316,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   private ProgressDialog mLoadingDialog;
   private boolean        mProfiling;
 
+  private static final int    kKillMessage         = 696;
   private static final int    kNotificationMessage = 666;
   private static final int    kProfileKey          = KeyEvent.KEYCODE_T;
   private static final String kProfilePath         = "abb.trace";

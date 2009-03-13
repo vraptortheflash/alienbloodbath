@@ -89,6 +89,9 @@ public class AlienBloodBathMain extends Activity {
   public void onSaveInstanceState(Bundle saved_instance_state) {
     saved_instance_state.putBundle("mGameState", mGameState.saveStateBundle());
     super.onSaveInstanceState(saved_instance_state);
+
+    // Clean up any temporary files used by the content management library.
+    Content.cleanup();
   }
 
   @Override
@@ -106,5 +109,6 @@ public class AlienBloodBathMain extends Activity {
   private final String kMapsPage = "http://abbserver.appspot.com";
   private final int kSelectMap = 1;
   private final String kStartupMap = "content:///Classic/";
+  //private final String kStartupMap = "content:///Demo/";
   //private final String kStartupMap = "content:///The_Second_Wave/";
 }
