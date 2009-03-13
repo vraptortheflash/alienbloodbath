@@ -150,8 +150,10 @@ public class Avatar extends ArticulatedEntity {
     }
 
     if (key_code == kKeyLeft) {
+      dx -= kVelocityBoost;
       ddx = -kGroundAcceleration * state;
     } else if (key_code == kKeyRight) {
+      dx += kVelocityBoost;
       ddx = +kGroundAcceleration * state;
     } else if (key_code == kKeyJump && state == 1 && has_ground_contact) {
       dy -= kJumpVelocity;
@@ -246,4 +248,5 @@ public class Avatar extends ArticulatedEntity {
   private static final float kRadius                 = 25.0f;
   private static final int   kSpriteSize             = 64;
   private static final int   kTouchMovementHeight    = 30;
+  private static final float kVelocityBoost          = 40.0f;
 }
