@@ -240,7 +240,7 @@ public class Avatar extends ArticulatedEntity {
   private static final float kGroundAnimationSpeed   = 1.0f / 1500.0f;
   private static final float kGroundKineticFriction  = 0.3f;
   private static final float kMaxGroundVelocity      = 200.0f;
-  private static final float kJumpVelocity           = 280.0f;
+  private static final float kJumpVelocity           = 295.0f;
   private static final int   kKeyLeft                = KeyEvent.KEYCODE_A;
   private static final int   kKeyRight               = KeyEvent.KEYCODE_S;
   private static final int   kKeyJump                = KeyEvent.KEYCODE_K;
