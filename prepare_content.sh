@@ -10,4 +10,4 @@ rm $TARGET
 rm $EPOCH
 
 cat $ALL_FILES | sha1sum > $EPOCH
-zip $TARGET $FILES $EPOCH
+zip $TARGET $ALL_FILES $EPOCH
