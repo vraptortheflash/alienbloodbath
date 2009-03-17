@@ -44,7 +44,7 @@ public class Content {
     }
   }
 
-  private static void prepare() {
+  synchronized private static void prepare() {
     try {
       InputStream content_input_stream =
           mResources.openRawResource(R.raw.content_package);
@@ -56,9 +56,12 @@ public class Content {
     }
   }
 
-  public static void cleanup() {
-    safeDelete(kTempFilePath);
+  synchronized public static void cleanup() {
     safeDelete(kTempContentPath);
+    for (String temporary_file : mFileCache.values()) {
+      safeDelete(temporary_file);
+    }
+    mFileCache.clear();
   }
 
   protected static void safeDelete(String file_path) {
@@ -131,7 +134,7 @@ public class Content {
     }
   }
 
-  public static String getTemporaryFilePath(Uri uri) {
+  synchronized public static String getTemporaryFilePath(Uri uri) {
     Log.d("Content::getTemporaryFilePath", uri.toString());
 
     safePrepare();
@@ -141,9 +144,15 @@ public class Content {
       return uri.getPath();
     }
 
+    // Attempt to resolve the file request from the file cache.
+    String cached_file_path = mFileCache.get(uri);
+    if (cached_file_path != null) {
+      return cached_file_path;
+    }
+
     // Handle "content://" scheme. We must extract the file to a temporary path
     // in order to handle this request.
-    else if (uri.getScheme().equals("content")) {
+    if (uri.getScheme().equals("content")) {
       ZipFile content_file;
       try {
         content_file = new ZipFile(kTempContentPath);
@@ -159,15 +168,20 @@ public class Content {
                     "Unable to find entry: " + entry_name);
         return null;
       }
+
+      String temporary_file_path =
+          kTempFileDirectory + entry_name.replace("/", "_");
       try {
         InputStream content_stream = content_file.getInputStream(content_entry);
-        writeStreamToFile(content_stream, kTempFilePath);
+        writeStreamToFile(content_stream, temporary_file_path);
       } catch (IOException ex) {
         Assert.fail("Content::getTemporaryFilePath. " +
                     "Unable to write out entry: " + ex.toString());
         return null;
       }
-      return kTempFilePath;
+
+      mFileCache.put(uri, temporary_file_path);
+      return temporary_file_path;
     }
 
     // Bad uri scheme.
@@ -315,10 +329,11 @@ public class Content {
     return entry_list.toArray(new String[0]);
   }
 
+  private static TreeMap<Uri, String> mFileCache = new TreeMap<Uri, String>();
   private static Resources mResources;
 
-  private static final String kTempFilePath =
-      "/data/data/android.com.abb/abbfile.tmp";
+  private static final String kTempFileDirectory =
+      "/data/data/android.com.abb/";
   private static final String kTempContentPath =
       "/data/data/android.com.abb/abbpackage.tmp";
 }
