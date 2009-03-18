@@ -54,7 +54,13 @@ public class GameState implements Game {
   /** Initialize the game state structure. Upon returning the game state should
    * be in a state representing a new game "life". */
   public void reset() {
+    for (Entity particle : particles) {
+      particle.release();
+    }
     particles.clear();
+    for (Entity projectile : projectiles) {
+      projectile.release();
+    }
     projectiles.clear();
     enemies.clear();
     avatar.stop();
