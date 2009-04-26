@@ -138,6 +138,6 @@ public class Entity implements Cloneable {
   private static final int   kFlameSpriteBase       = 521;
   private static final int   kFlameSpriteWidth      = 64;
   private static final int   kFlameSpriteHeight     = 36;
-  private static final float kMaxHorizontalVelocity = 300.0f;
-  private static final float kMaxVerticalVelocity   = 400.0f;
+  private static final float kMaxHorizontalVelocity = 500.0f;
+  private static final float kMaxVerticalVelocity   = 500.0f;
 }

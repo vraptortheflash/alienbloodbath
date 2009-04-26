@@ -389,7 +389,7 @@ public class GameState implements Game {
   private static final long  kEnemyAttackVibrateLength = 50;  // Milliseconds.
   private static final long  kEnemyDeathVibrateLength  = 30;  // Milliseconds.
   private static final float kGravity                  = 200.0f;
-  private static final float kGroundZoom               = 0.8f;
+  private static final float kGroundZoom               = 0.85f;
   private static final float kViewLead                 = 1.0f;
   private static final float kViewSpeed                = 2.0f;
   private static final float kZoomSpeed                = 1.0f;

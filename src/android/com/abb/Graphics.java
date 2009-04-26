@@ -157,13 +157,14 @@ public class Graphics {
 
   public void drawImage(int image_handle, Rect source_rect, RectF dest_rect,
                         boolean flipped_horizontal, boolean flipped_vertical) {
+    /* DEBUGGING ONLY
     Assert.assertTrue("Invalid image handle in drawImage", image_handle >= 0);
-
     // The drawImageOpenGL implementation has been inlined here for performance
     // reasons. TODO: Inline the 2D API implementation here.
     Assert.assertEquals(mBackendType, BackendType.OPENGL);
+    */
 
-    if (image_handle >= mTextureWidths.size()) {
+    if (image_handle >= mTextureData.size()) {
       Log.d("Graphics::drawImage", "Unknown image handle encountered. " +
             "Assuming OpenGL context has been lost. Exiting.");
       mContextLost = true;
@@ -179,8 +180,9 @@ public class Graphics {
     // All that is left is to set up the texture and model view transformation
     // matrices and render. Note that the OpenGL API expects matrices with a
     // column-major layout.
-    float texture_width = mTextureWidths.get(image_handle);
-    float texture_height = mTextureHeights.get(image_handle);
+    TextureData texture_data = mTextureData.get(image_handle);
+    float texture_width = texture_data.width;
+    float texture_height = texture_data.height;
 
     mMatrix4x4[1] = mMatrix4x4[2] = mMatrix4x4[4] =
         mMatrix4x4[6] = mMatrix4x4[8] = mMatrix4x4[9] = 0.0f;
@@ -214,18 +216,19 @@ public class Graphics {
 
   public void drawImage(int image_handle, Rect source_rect, Matrix dest_matrix,
                         boolean flipped_horizontal, boolean flipped_vertical) {
+    /* DEBUGGING ONLY
     Assert.assertTrue("Invalid image handle in drawImage", image_handle >= 0);
+    // The drawImageOpenGL implementation has been inlined here for performance
+    // reasons. TODO: Inline the 2D API implementation here.
+    Assert.assertEquals(mBackendType, BackendType.OPENGL);
+    */
 
-    if (image_handle >= mTextureWidths.size()) {
+    if (image_handle >= mTextureData.size()) {
       Log.d("Graphics::drawImage", "Unknown image handle encountered. " +
             "Assuming OpenGL context has been lost. Exiting.");
       mContextLost = true;
       return;
     }
-
-    // The drawImageOpenGL implementation has been inlined here for performance
-    // reasons. TODO: Inline the 2D API implementation here.
-    Assert.assertEquals(mBackendType, BackendType.OPENGL);
 
     if (image_handle != mCurrentTexture) {
       mCurrentTexture = image_handle;
@@ -236,8 +239,9 @@ public class Graphics {
     // All that is left is to set up the texture and model view transformation
     // matrices and render. Note that the OpenGL API expects matrices with a
     // column-major layout.
-    float texture_width = mTextureWidths.get(image_handle);
-    float texture_height = mTextureHeights.get(image_handle);
+    TextureData texture_data = mTextureData.get(image_handle);
+    float texture_width = texture_data.width;
+    float texture_height = texture_data.height;
 
     mMatrix4x4[1] = mMatrix4x4[2] = mMatrix4x4[4] =
         mMatrix4x4[6] = mMatrix4x4[8] = mMatrix4x4[9] = 0.0f;
@@ -502,7 +506,7 @@ public class Graphics {
 
     // Default settings for unknown hardware considerations. We choose to be on
     // the save side with respect to performance considerations.
-    mHasHardwareAcceleration = false;
+    mHasHardwareAcceleration = true;
 
     // Dream / G1.
     if (gl_renderer.indexOf("Q3Dimension") != -1) {
@@ -610,14 +614,13 @@ public class Graphics {
     // The size must be manually stored for retrieval during the rendering
     // process since the texture coordinate scheme under OpenGL is normalized
     // where as under the Android2D back end, texture coordinates are absolute.
-    if (mTextureWidths.size() <= texture_name) {
-      mTextureWidths.setSize(texture_name + 1);
+    if (mTextureData.size() <= texture_name) {
+      mTextureData.setSize(texture_name + 1);
     }
-    if (mTextureHeights.size() <= texture_name) {
-      mTextureHeights.setSize(texture_name + 1);
-    }
-    mTextureWidths.set(texture_name, bitmap.getWidth());
-    mTextureHeights.set(texture_name, bitmap.getHeight());
+    TextureData texture_data = new TextureData();
+    texture_data.width = bitmap.getWidth();
+    texture_data.height = bitmap.getHeight();
+    mTextureData.set(texture_name, texture_data);
     return texture_name;
   }
 
@@ -669,8 +672,12 @@ public class Graphics {
   private boolean         mGlStateInitialized;
   private boolean         mGlSurfaceInitialized;
   private boolean         mHasHardwareAcceleration;
-  private Vector<Integer> mTextureWidths  = new Vector<Integer>();
-  private Vector<Integer> mTextureHeights = new Vector<Integer>();
+
+  class TextureData {
+    public int height;
+    public int width;
+  }
+  private Vector<TextureData> mTextureData = new Vector<TextureData>();
 
   // The following matrix definitions are used to avoid any allocations within
   // the draw methods.
