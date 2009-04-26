@@ -60,7 +60,7 @@ public class GameState implements Game {
   }
 
   /** Initialize the game state structure. Upon returning the game state should
-   * be in a state representing a new game "life". */
+   * be in a state representing a new game life. */
   public void reset() {
     for (Entity particle : particles) {
       particle.release();
@@ -138,7 +138,7 @@ public class GameState implements Game {
       if (mDeathTimer == kDeathTimer) {
         avatar.stop();
         playSound(kSoundAvatarDeath);
-        mVibrator.vibrate(400);  // Milliseconds.
+        mVibrator.vibrate(kAvatarDeathVibrateLength);
         mTargetZoom = kDeathZoom;
         for (int n = 0; n < 2 * kBloodBathSize; n++) {
           createBloodParticle(
@@ -425,12 +425,13 @@ public class GameState implements Game {
   private float                 mZoom                 = kGroundZoom;
 
   private static final float kAirZoom                  = 0.6f;
-  private static final int   kBloodBathSize            = 20;  // Particle count.
+  private static final long  kAvatarDeathVibrateLength = 250;  // Milliseconds.
+  private static final int   kBloodBathSize            = 20;   // Particle count.
   private static final float kBloodBathVelocity        = 60.0f;
   private static final float kDeathTimer               = 3.0f;
   private static final float kDeathZoom                = 1.5f;
-  private static final long  kEnemyAttackVibrateLength = 50;  // Milliseconds.
-  private static final long  kEnemyDeathVibrateLength  = 30;  // Milliseconds.
+  private static final long  kEnemyAttackVibrateLength = 50;   // Milliseconds.
+  private static final long  kEnemyDeathVibrateLength  = 30;   // Milliseconds.
   private static final float kGravity                  = 200.0f;
   private static final float kGroundZoom               = 0.85f;
   private static final int   kMaxSounds                = 5;
