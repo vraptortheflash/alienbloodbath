@@ -191,7 +191,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         @Override
         public void handleMessage(Message msg) {
           Log.d("GameView::Handler::handleMessage",
-                "Recived message: " + msg.what);
+                "Received message: " + msg.what);
           if (msg.what == kNotificationMessage) {
             Builder dialog = new AlertDialog.Builder(mContext);
             dialog.setMessage(((String)msg.obj) + " (Press back to continue.)");

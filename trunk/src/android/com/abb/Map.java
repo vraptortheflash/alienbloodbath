@@ -67,15 +67,19 @@ public class Map {
     String level_path = Content.getTemporaryFilePath(level_uri);
     loadLevelFromFile(level_path);
 
-    // Load tile images.
+    // Load tiles background image.
     Uri tiles_uri =
         Uri.withAppendedPath(mBaseUri, "tiles_" + mLevelOffset + ".txt");
     if (!Content.exists(tiles_uri))
       tiles_uri = Uri.withAppendedPath(mBaseUri, "tiles_default.txt");
     String tiles_path = Content.getTemporaryFilePath(tiles_uri);
+    String[] image_paths = Content.readFileTokens(tiles_path);
     String tiles_image_path = Content.getTemporaryFilePath(
-        Uri.withAppendedPath(mBaseUri, getTilesFromReferenceFile(tiles_path)));
+        Uri.withAppendedPath(mBaseUri, image_paths[0]));
     loadTilesFromFile(tiles_image_path);
+    String background_image_path = Content.getTemporaryFilePath(
+        Uri.withAppendedPath(mBaseUri, image_paths[1]));
+    loadBackgroundFromFile(background_image_path);
 
     // Load tile effects.
     Uri effects_uri =
@@ -110,23 +114,17 @@ public class Map {
     }
   }
 
-  public String getTilesFromReferenceFile(String file_path) {
-    if (file_path == null) {
-      Log.e("Map::loadTilesFromReferenceFile", "Invalid null argument.");
-    }
-    String[] tiles_file = Content.readFileTokens(file_path);
-    Assert.assertEquals("Map::loadTilesFromReferenceFile: Tiles file " +
-                        "improperly formatted.", tiles_file.length, 1);
-    return tiles_file[0];
-  }
-
   public void loadTilesFromFile(String file_path) {
-    if (file_path == null) {
-      Log.e("Map::loadTilesFromFile", "Invalid null argument.");
-    }
     mTilesBitmap = BitmapFactory.decodeFile(file_path);
     if (mTilesBitmap == null) {
-      Log.e("Map::loadTilesFromFile", "Cannot find: " + file_path);
+      Log.e("Map::loadTilesFromFile", "Cannot find/load: " + file_path);
+    }
+  }
+
+  public void loadBackgroundFromFile(String file_path) {
+    mBackgroundBitmap = BitmapFactory.decodeFile(file_path);
+    if (mBackgroundBitmap == null) {
+      Log.e("Map::loadBackgroundFromFile", "Cannot find/load: " + file_path);
     }
   }
 
@@ -141,12 +139,13 @@ public class Map {
     for (int effect = 0; effect < effects_tokens.length; effect += 2) {
       int tile_id = Integer.parseInt(effects_tokens[effect]);
       String tile_effect = effects_tokens[effect + 1];
-      if (tile_effect.equals("death"))
+      if (tile_effect.equals("death")) {
         mEffectsDeath[tile_id] = true;
-      else if (tile_effect.equals("explode"))
+      } else if (tile_effect.equals("explode")) {
         mEffectsExplode[tile_id] = true;
-      else if (tile_effect.equals("solid"))
+      } else if (tile_effect.equals("solid")) {
         mEffectsSolid[tile_id] = true;;
+      }
     }
   }
 
@@ -339,18 +338,30 @@ public class Map {
     // Load the textures required for rending here, in the primary thread, since
     // the OpenGL backend requires that all calls be from the same thread which
     // initialized it.
+    if (mBackgroundBitmap != null) {
+      graphics.freeImage(mBackgroundImage);
+      mBackgroundImage = graphics.loadImageFromBitmap(mBackgroundBitmap);
+      mBackgroundBitmap = null;
+    }
     if (mTilesBitmap != null) {
       graphics.freeImage(mTilesImage);
       mTilesImage = graphics.loadImageFromBitmap(mTilesBitmap);
       mTilesBitmap = null;
     }
 
-    // Draw tiles.
+    // Draw the background.
     mRectSource.top = mRectSource.left = 0;
-    mRectSource.right = mRectSource.bottom = kTileSize;
-
+    mRectSource.bottom = mRectSource.right = 512;
     int canvas_width = graphics.getWidth();
     int canvas_height = graphics.getHeight();
+    mRectDest.top = mRectDest.left = 0.0f;
+    mRectDest.right = canvas_width;
+    mRectDest.bottom = canvas_height;
+    graphics.drawImage(mBackgroundImage, mRectSource, mRectDest, false, false);
+
+    // Draw the tiles.
+    mRectSource.top = mRectSource.left = 0;
+    mRectSource.right = mRectSource.bottom = kTileSize;
     int half_canvas_width = canvas_width / 2;
     int half_canvas_height = canvas_height / 2;
     float x_min = center_x - half_canvas_width / zoom;
@@ -375,7 +386,7 @@ public class Map {
           }
         }
 
-        // Draw the tile;
+        // Draw the tile.
         int tile_id = mTiles[tile_index];
         if (tile_id == 0) {
           continue;  // Not a visual tile.
@@ -434,6 +445,8 @@ public class Map {
     return saved_instance_state;
   }
 
+  private Bitmap    mBackgroundBitmap;
+  private int       mBackgroundImage = -1;
   private Uri       mBaseUri;
   private boolean[] mEffectsDeath;
   private boolean[] mEffectsExplode;

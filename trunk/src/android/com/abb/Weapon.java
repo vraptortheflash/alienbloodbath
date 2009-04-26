@@ -80,7 +80,7 @@ public class Weapon extends Entity {
 
     // Now that the user defined weapon parameters have been parsed and merged,
     // we can initialize the weapon instance state accordingly.
-    mAmmo = ((Integer)parameters.get(kParameterAmmo)).intValue();
+    mAmmo = mMaxAmmo = ((Integer)parameters.get(kParameterAmmo)).intValue();
     mDamage = ((Float)parameters.get(kParameterDamage)).floatValue();
     mDelay = ((Float)parameters.get(kParameterDelay)).floatValue();
     mProjectileIsFlame = parameters.get(kParameterProjectileType).equals("flame");
@@ -127,13 +127,14 @@ public class Weapon extends Entity {
       mPhase += 10.0f;
 
       float shot_angle;
-      float shot_distance = 3 * sprite_rect.width() / 4;
+      float shot_distance = sprite_rect.width() / 2;
       float shot_velocity = mVelocity;
       float x_offset = shot_distance;
       float y_offset = -10.0f;
 
       if (!has_ground_contact) {
-        shot_angle = 6.28319f * mRandom.nextFloat();
+        shot_angle =
+            (float)Math.atan2(dy, dx) + mSpread * (float)Math.sin(mPhase);
         x_offset = shot_distance * (float)Math.cos(shot_angle);
         y_offset = shot_distance * (float)Math.sin(shot_angle);
       } else {
@@ -143,7 +144,7 @@ public class Weapon extends Entity {
       float dx_offset = shot_velocity * (float)Math.cos(shot_angle);
       float dy_offset = shot_velocity * (float)Math.sin(shot_angle);
 
-      if (sprite_flipped_horizontal) {
+      if (has_ground_contact && sprite_flipped_horizontal) {
         x_offset *= -1.0f;
         dx_offset *= -1.0f;
       }
@@ -209,7 +210,7 @@ public class Weapon extends Entity {
   private float         mDelay;
   private static Matrix mDrawingMatrix = new Matrix();
   private GameState     mGameState;
-  private int           mMaxAmmo       = 25;
+  private int           mMaxAmmo;
   private float         mPhase;
   private boolean       mProjectileIsFlame;
   private Rect          mProjectileRect;

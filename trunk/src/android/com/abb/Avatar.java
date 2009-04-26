@@ -34,18 +34,24 @@ public class Avatar extends ArticulatedEntity {
       return;
     }
 
+    // General motion updates.
     ddy = kGravity;
     super.step(time_step);
+    dx = Math.min(Math.max(dx, -kMaxHorizontalVelocity), kMaxHorizontalVelocity);
+    dy = Math.min(Math.max(dy, -kMaxVerticalVelocity),  kMaxVerticalVelocity);
+    if (dy > 0.0f) {
+      mJumping = false;
+    }
 
     // Update the horizontal acceleration according to the current controls and
     // the contact with the ground.
-    if (ddx > 0 && has_ground_contact) {
+    if (ddx > 0.0f && has_ground_contact) {
       ddx = +kGroundAcceleration;
-    } else if (ddx > 0 && !has_ground_contact) {
+    } else if (ddx > 0.0f && !has_ground_contact) {
       ddx = +kAirAcceleration;
-    } else if (ddx < 0 && has_ground_contact) {
+    } else if (ddx < 0.0f && has_ground_contact) {
       ddx = -kGroundAcceleration;
-    } else if (ddx < 0 && !has_ground_contact) {
+    } else if (ddx < 0.0f && !has_ground_contact) {
       ddx = -kAirAcceleration;
     }
 
@@ -62,9 +68,9 @@ public class Avatar extends ArticulatedEntity {
     }
 
     // Update the avatar animation.
-    if (dx < 0) {
+    if (dx < 0.0f) {
       sprite_flipped_horizontal = true;
-    } else if (dx > 0) {
+    } else if (dx > 0.0f) {
       sprite_flipped_horizontal = false;
     }
     if (has_ground_contact) {
@@ -124,22 +130,22 @@ public class Avatar extends ArticulatedEntity {
 
     // Draw the avatar life and ammo meters.
     float meter_width = mCanvasWidth - 45;
-    mRect.set(0, 0, 28, 13);
-    mRectF.set(0, 0, 28, 13);
+    mRect.set(0, 0, 31, 17);
+    mRectF.set(0, 0, 31, 17);
     graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false);
     if (life > 0.0f) {
-      float life_meter_width =
-          meter_width * life;
-      mRect.set(0, 16, 64, 20);
-      mRectF.set(30, 1, 30 + life_meter_width, 6);
+      float life_meter_width = meter_width * life;
+      mRect.set(0, 22, 64, 26);
+      mRectF.set(32, 2, 32 + life_meter_width, 6);
       graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false);
     }
     if (mWeapon != null) {
       float ammo_meter_width =
-          meter_width * mWeapon.getAmmo() / mWeapon.getMaxAmmo();
+          Math.min(meter_width,
+                   meter_width * mWeapon.getAmmo() / mWeapon.getMaxAmmo());
       ammo_meter_width = Math.max(ammo_meter_width, 0.0f);
-      mRect.set(0, 23, 64, 27);
-      mRectF.set(30, 8, 30 + ammo_meter_width, 12);
+      mRect.set(0, 29, 64, 33);
+      mRectF.set(32, 8, 32 + ammo_meter_width, 12);
       graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false);
     }
   }
@@ -149,16 +155,29 @@ public class Avatar extends ArticulatedEntity {
       return;
     }
 
+    // Horizontal movement.
     if (key_code == kKeyLeft) {
-      dx -= kVelocityBoost;
       ddx = -kGroundAcceleration * state;
-    } else if (key_code == kKeyRight) {
-      dx += kVelocityBoost;
+    }
+    if (key_code == kKeyRight) {
       ddx = +kGroundAcceleration * state;
-    } else if (key_code == kKeyJump && state == 1 && has_ground_contact) {
+    }
+
+    // Vertical movement. The following is tricky since plausible physics
+    // simulations are not preferred by users, yet we still want to let users
+    // interact with physical objects in the game.
+    if (key_code == kKeyJump && state == 1 && has_ground_contact) {
       dy -= kJumpVelocity;
       has_ground_contact = false;
-    } else if (key_code == kKeyShoot) {
+      mJumping = true;
+    }
+    if (key_code == kKeyJump && state == 0 && mJumping && dy < 0.0f) {
+      dy = Math.min(0.0f, dy + kJumpVelocity);
+      mJumping = false;
+    }
+
+    // Shooting.
+    if (key_code == kKeyShoot) {
       if (mWeapon != null) {
         mWeapon.enableShooting(state == 1);
       }
@@ -225,6 +244,7 @@ public class Avatar extends ArticulatedEntity {
   private int       mCanvasWidth;
   private int       mCanvasHeight;
   private GameState mGameState;
+  private boolean   mJumping;
   public Weapon     mWeapon;
 
   // To avoid allocations...
@@ -232,14 +252,16 @@ public class Avatar extends ArticulatedEntity {
   private Rect    mRect   = new Rect();
   private RectF   mRectF  = new RectF();
 
-  private static final float kAirAcceleration        = 40.0f;
+  private static final float kAirAcceleration        = 2000.0f;
   private static final float kAnimationStopThreshold = 40.0f;
   private static final float kDrawingScale           = 0.4f;
   private static final float kGravity                = 300.0f;
-  private static final float kGroundAcceleration     = 700.0f;
+  private static final float kGroundAcceleration     = 2000.0f;
   private static final float kGroundAnimationSpeed   = 1.0f / 1500.0f;
   private static final float kGroundKineticFriction  = 0.3f;
   private static final float kMaxGroundVelocity      = 200.0f;
+  private static final float kMaxHorizontalVelocity  = 300.0f;
+  private static final float kMaxVerticalVelocity    = 300.0f;
   private static final float kJumpVelocity           = 295.0f;
   private static final int   kKeyLeft                = KeyEvent.KEYCODE_A;
   private static final int   kKeyRight               = KeyEvent.KEYCODE_S;
