@@ -45,6 +45,11 @@ public class Content {
   }
 
   synchronized private static void prepare() {
+    if (!(new File(kTempFileDirectory)).exists()) {
+      boolean success = (new File(kTempFileDirectory)).mkdir();
+      Assert.assertTrue("Could not create cache directory.", success);
+    }
+
     try {
       InputStream content_input_stream =
           mResources.openRawResource(R.raw.content_package);
@@ -333,7 +338,7 @@ public class Content {
   private static Resources mResources;
 
   private static final String kTempFileDirectory =
-      "/data/data/android.com.abb/";
+      "/data/data/android.com.abb/cache/";
   private static final String kTempContentPath =
-      "/data/data/android.com.abb/abbpackage.tmp";
+      "/data/data/android.com.abb/cache/abbpackage.tmp";
 }

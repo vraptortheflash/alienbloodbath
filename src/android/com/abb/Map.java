@@ -88,6 +88,9 @@ public class Map {
       effects_uri = Uri.withAppendedPath(mBaseUri, "effects_default.txt");
     String effects_path = Content.getTemporaryFilePath(effects_uri);
     loadEffectsFromFile(effects_path);
+
+    // Pre-cache audio.
+    mGameState.preloadSound(kSoundExplosion);
   }
 
   public void loadLevelFromFile(String file_path) {
