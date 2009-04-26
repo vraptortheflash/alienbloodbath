@@ -17,6 +17,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Vibrator;
@@ -40,7 +42,13 @@ public class GameState implements Game {
 
   public GameState(Context context) {
     mContext = context;
+    mSoundPool = new SoundPool(kMaxSounds, AudioManager.STREAM_MUSIC, 100);
+    mAudioManager = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
     mVibrator = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
+
+    preloadSound(kSoundAvatarDamage);
+    preloadSound(kSoundAvatarDeath);
+    preloadSound(kSoundEnemyDeath);
   }
 
   public void initializeGraphics(Graphics graphics) {
@@ -129,6 +137,7 @@ public class GameState implements Game {
     } else {
       if (mDeathTimer == kDeathTimer) {
         avatar.stop();
+        playSound(kSoundAvatarDeath);
         mVibrator.vibrate(400);  // Milliseconds.
         mTargetZoom = kDeathZoom;
         for (int n = 0; n < 2 * kBloodBathSize; n++) {
@@ -153,11 +162,13 @@ public class GameState implements Game {
       if (enemy.collidesWith(avatar) && avatar.life > 0.0f) {
         avatar.life -= enemy.damage;
         enemy.life = 0.0f;
+        playSound(kSoundAvatarDamage);
         vibrate(kEnemyAttackVibrateLength);
         createBloodParticle(avatar.x, avatar.y, enemy.dx, enemy.dy);
       }
       if (enemy.life <= 0.0f) {
         enemies.remove(index);
+        playSound(kSoundEnemyDeath);
         vibrate(kEnemyDeathVibrateLength);
         for (int n = 0; n < kBloodBathSize; n++) {
           createBloodParticle(
@@ -308,7 +319,7 @@ public class GameState implements Game {
     fire.y = y;
     fire.dx = dx;
     fire.dy = dy;
-    fire.ddy = -50.0f;   // Give fire a slight "up draft".
+    fire.ddy = -50.0f;  // Give the particle a slight up-draft.
     fire.life = 1.3f;
     fire.damage = damage;
     fire.is_flame = true;
@@ -324,6 +335,35 @@ public class GameState implements Game {
 
   public void vibrate(long vibrate_milliseconds) {
     mVibrator.vibrate(vibrate_milliseconds);
+  }
+
+  public void preloadSound(Uri uri) {
+    if (!mSoundMap.containsKey(uri)) {
+      Log.d("GameState::playSound", "Loading: " + uri.toString());
+      String file_path = Content.getTemporaryFilePath(uri);
+      int sound_id = mSoundPool.load(file_path, 1 /*Priority*/);
+      mSoundMap.put(uri, new Integer(sound_id));
+    }
+  }
+
+  public void playSound(Uri uri) {
+    int volume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+    if (volume <= 0) {
+      return;
+    }
+
+    int sound_id = -1;
+    if (mSoundMap.containsKey(uri)) {
+      sound_id = mSoundMap.get(uri).intValue();
+    } else {
+      Log.d("GameState::playSound", "Loading: " + uri.toString());
+      String file_path = Content.getTemporaryFilePath(uri);
+      sound_id = mSoundPool.load(file_path, 1 /*Priority*/);
+      mSoundMap.put(uri, new Integer(sound_id));
+    }
+
+    mSoundPool.play(sound_id, volume, volume,
+                    1 /*Priority*/, 0 /*Loop*/, 1.0f /*Rate*/);
   }
 
   public void loadStateBundle(Bundle saved_instance_state) {
@@ -367,19 +407,22 @@ public class GameState implements Game {
     return saved_instance_state;
   }
 
-  private Context              mContext;
-  private float                mDeathTimer           = kDeathTimer;
-  private TreeMap<Uri, Enemy>  mEnemyCache           = new TreeMap<Uri, Enemy>();
-  private LinkedList<String>   mPendingNotifications = new LinkedList<String>();
-  private Random               mRandom               = new Random();
-  private float                mTargetViewX          = 0.0f;
-  private float                mTargetViewY          = 0.0f;
-  private float                mTargetZoom           = kGroundZoom;
-  private Vibrator             mVibrator;
-  private float                mViewX                = 0.0f;
-  private float                mViewY                = 0.0f;
-  private TreeMap<Uri, Weapon> mWeaponCache          = new TreeMap<Uri, Weapon>();
-  private float                mZoom                 = kGroundZoom;
+  private AudioManager          mAudioManager;
+  private Context               mContext;
+  private float                 mDeathTimer           = kDeathTimer;
+  private TreeMap<Uri, Enemy>   mEnemyCache           = new TreeMap<Uri, Enemy>();
+  private LinkedList<String>    mPendingNotifications = new LinkedList<String>();
+  private Random                mRandom               = new Random();
+  private TreeMap<Uri, Integer> mSoundMap             = new TreeMap<Uri, Integer>();
+  private SoundPool             mSoundPool;
+  private float                 mTargetViewX          = 0.0f;
+  private float                 mTargetViewY          = 0.0f;
+  private float                 mTargetZoom           = kGroundZoom;
+  private Vibrator              mVibrator;
+  private float                 mViewX                = 0.0f;
+  private float                 mViewY                = 0.0f;
+  private TreeMap<Uri, Weapon>  mWeaponCache          = new TreeMap<Uri, Weapon>();
+  private float                 mZoom                 = kGroundZoom;
 
   private static final float kAirZoom                  = 0.6f;
   private static final int   kBloodBathSize            = 20;  // Particle count.
@@ -390,6 +433,10 @@ public class GameState implements Game {
   private static final long  kEnemyDeathVibrateLength  = 30;  // Milliseconds.
   private static final float kGravity                  = 200.0f;
   private static final float kGroundZoom               = 0.85f;
+  private static final int   kMaxSounds                = 5;
+  private static final Uri   kSoundAvatarDamage        = Uri.parse("content://avatar_damage.mp3");
+  private static final Uri   kSoundAvatarDeath         = Uri.parse("content://avatar_death.mp3");
+  private static final Uri   kSoundEnemyDeath          = Uri.parse("content://enemy_death.mp3");
   private static final float kViewLead                 = 1.0f;
   private static final float kViewSpeed                = 2.0f;
   private static final float kZoomSpeed                = 1.0f;

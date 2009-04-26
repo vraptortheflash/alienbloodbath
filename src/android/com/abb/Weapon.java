@@ -16,7 +16,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.net.Uri;
-import android.util.Log;
 import java.lang.Math;
 import java.util.TreeMap;
 import java.util.Random;
@@ -46,6 +45,7 @@ public class Weapon extends Entity {
     parameters.put(kParameterProjectileRectRight, new Integer(-1));
     parameters.put(kParameterProjectileRectTop, new Integer(-1));
     parameters.put(kParameterProjectileType, kDefaultProjectileType);
+    parameters.put(kParameterSound, "none");
     parameters.put(kParameterSpread, new Float(kDefaultSpread));
     parameters.put(kParameterSprite, "none");
     parameters.put(kParameterTimeout, new Float(kDefaultTimeout));
@@ -84,6 +84,13 @@ public class Weapon extends Entity {
     mDamage = ((Float)parameters.get(kParameterDamage)).floatValue();
     mDelay = ((Float)parameters.get(kParameterDelay)).floatValue();
     mProjectileIsFlame = parameters.get(kParameterProjectileType).equals("flame");
+    String sound = (String)parameters.get(kParameterSound);
+    if (!sound.equals("none")) {
+      mSoundUri = Uri.parse(base_uri_string + sound);
+      mGameState.preloadSound(mSoundUri);
+    } else {
+      mSoundUri = null;
+    }
     mSpread = ((Float)parameters.get(kParameterSpread)).floatValue();
     mTimeout = ((Float)parameters.get(kParameterTimeout)).floatValue();
     mVelocity = ((Float)parameters.get(kParameterVelocity)).floatValue();
@@ -164,6 +171,9 @@ public class Weapon extends Entity {
       if (mVibration > 0) {
         mGameState.vibrate(mVibration);
       }
+      if (mSoundUri != null) {
+        mGameState.playSound(mSoundUri);
+      }
     }
   }
 
@@ -214,6 +224,7 @@ public class Weapon extends Entity {
   private float         mPhase;
   private boolean       mProjectileIsFlame;
   private Rect          mProjectileRect;
+  private Uri           mSoundUri;
   private boolean       mShooting;
   private float         mSpread;
   private Uri           mSpriteUri;
@@ -238,6 +249,7 @@ public class Weapon extends Entity {
   private static final String kParameterProjectileRectRight  = "projectile_rect_right";
   private static final String kParameterProjectileRectTop    = "projectile_rect_top";
   private static final String kParameterProjectileType       = "projectile_type";
+  private static final String kParameterSound                = "sound";
   private static final String kParameterSpread               = "spread";
   private static final String kParameterSprite               = "sprite";
   private static final String kParameterTimeout              = "timeout";

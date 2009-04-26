@@ -167,6 +167,7 @@ public class Avatar extends ArticulatedEntity {
     // simulations are not preferred by users, yet we still want to let users
     // interact with physical objects in the game.
     if (key_code == kKeyJump && state == 1 && has_ground_contact) {
+      mGameState.playSound(kSoundJump);
       dy -= kJumpVelocity;
       has_ground_contact = false;
       mJumping = true;
@@ -268,6 +269,7 @@ public class Avatar extends ArticulatedEntity {
   private static final int   kKeyJump                = KeyEvent.KEYCODE_K;
   private static final int   kKeyShoot               = KeyEvent.KEYCODE_J;
   private static final float kRadius                 = 25.0f;
+  private static final Uri   kSoundJump              = Uri.parse("content://avatar_jump.mp3");
   private static final int   kSpriteSize             = 64;
   private static final int   kTouchMovementHeight    = 30;
   private static final float kVelocityBoost          = 40.0f;
