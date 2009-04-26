@@ -274,6 +274,7 @@ public class Map {
           entity.dy = Math.min(entity.dy, -kExplosionStrength);
           setTileAt(x, y, (char)0);  // Clear the exploding tile.
           mGameState.vibrate(kExplodeVibrateLength);
+          mGameState.playSound(kSoundExplosion);
           for (int n = 0; n < kExplosionSize; n++) {
             float random_angle = mRandom.nextFloat() * 2.0f * (float)Math.PI;
             float random_magnitude =
@@ -471,6 +472,7 @@ public class Map {
   private static final int   kMapHeight            = 100;
   private static final int   kMapWidth             = 100;
   private static final int   kMaxTileCount         = 25;
+  private static final Uri   kSoundExplosion       = Uri.parse("content://explosion.mp3");
   private static final int   kStartingTile         = 10;
   private static final int   kTileSize             = 64;
 }
