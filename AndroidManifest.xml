@@ -24,7 +24,8 @@
       </intent-filter>
     </activity>
 
-    <activity android:name=".AlienBloodBathMain">
+    <activity android:name=".AlienBloodBathMain"
+	      android:screenOrientation="landscape">
     </activity>
 
   </application>

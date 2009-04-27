@@ -45,10 +45,6 @@ public class Map {
     loadFromUri(mBaseUri, mLevelOffset);
   }
 
-  public void loadFromUri(Uri base_uri) {
-    loadFromUri(base_uri, 0);
-  }
-
   public void loadFromUri(Uri base_uri, int level_offset) {
     Log.d("Map::loadFromUri", "Loading Map from " + base_uri.toString());
     mBaseUri = base_uri;
