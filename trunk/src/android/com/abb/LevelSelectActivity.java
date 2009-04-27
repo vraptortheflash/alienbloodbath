@@ -48,13 +48,10 @@ public class LevelSelectActivity extends ListActivity {
 
   @Override
   protected void onListItemClick(ListView l, View v, int position, long id) {
-    /*
-    Intent intent = new Intent(Intent.ACTION_VIEW,
-                               Uri.parse(mMapUris.get(position)),
-                               this, AlienBloodBathMain.class);
-    setResult(RESULT_OK, intent);
-    finish();
-    */
+    String level_index = Integer.toString(position);
+    Uri level_directory = Uri.parse(kRootDirectory);
+    startActivity(new Intent(level_index, level_directory,
+                             this, AlienBloodBathMain.class));
   }
 
   private void populateLevels() {
@@ -86,10 +83,14 @@ public class LevelSelectActivity extends ListActivity {
       View row_view = inflater.inflate(R.layout.level_select_row, null);
 
       TextView label = (TextView)row_view.findViewById(R.id.ROW_LABEL);
-      label.setText("Stage " + position + ":");
+      label.setText("Stage " + (position + 1) + ":");
 
       TextView description = (TextView)row_view.findViewById(R.id.ROW_DESCRIPTION);
-      description.setText("Level Description Here");
+      if (position < 2) {
+        description.setText("Best: 72% @ 2'24\"");
+      } else {
+        description.setText("Stage not yet attempted.");
+      }
 
       ImageView icon = (ImageView)row_view.findViewById(R.id.ROW_ICON);
       if (position < 2) {

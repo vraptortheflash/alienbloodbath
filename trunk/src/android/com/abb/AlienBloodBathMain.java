@@ -38,10 +38,14 @@ public class AlienBloodBathMain extends Activity {
     mGameView = (GameView)findViewById(R.id.GAME_VIEW);
     mGameView.setGame(mGameState);
 
+    Intent intent = getIntent();
+    int level_index = Integer.parseInt(intent.getAction());
+    Uri level_directory = intent.getData();
+
     if (saved_instance_state != null) {
       mGameState.loadStateBundle(saved_instance_state.getBundle("mGameState"));
     } else {
-      mGameState.map.loadFromUri(Uri.parse(kStartupMap));
+      mGameState.map.loadFromUri(level_directory, level_index);
       mGameState.reset();
     }
   }
@@ -59,10 +63,6 @@ public class AlienBloodBathMain extends Activity {
   @Override
   public boolean onMenuItemSelected(int feature_id, MenuItem item) {
     switch (item.getItemId()) {
-      case kSelectMap:
-        startActivityForResult(
-            new Intent(this, LevelSelectActivity.class), kSelectMap);
-        return true;
       case kDownloadMap:
         startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(kMapsPage)));
         return true;
@@ -74,19 +74,6 @@ public class AlienBloodBathMain extends Activity {
         return true;
     }
     return super.onMenuItemSelected(feature_id, item);
-  }
-
-  @Override
-  public void onActivityResult(int request_code, int result_code,
-                               Intent intent) {
-    switch (request_code) {
-      case kSelectMap:
-        if (intent != null) {
-          mGameState.map.loadFromUri(intent.getData());
-          mGameState.reset();
-        }
-        break;
-    }
   }
 
   @Override
@@ -110,11 +97,10 @@ public class AlienBloodBathMain extends Activity {
   private final int kAbout = 2;
   private final int kFeedback = 3;
   private final int kDownloadMap = 4;
-  private final String kAboutPage = "http://code.google.com/p/alienbloodbath";
-  private final String kFeedbackPage = "http://spreadsheets.google.com/embeddedform?key=p8QSDoz2S_XEYxN68-QJMEg";
-  private final String kMapsPage = "http://abbserver.appspot.com";
-  private final int kSelectMap = 1;
-  //private final String kStartupMap = "content:///Classic/";
-  //private final String kStartupMap = "content:///Demo/";
-  private final String kStartupMap = "content:///The_Second_Wave/";
+  private final String kAboutPage =
+      "http://code.google.com/p/alienbloodbath";
+  private final String kFeedbackPage =
+      "http://spreadsheets.google.com/embeddedform?key=p8QSDoz2S_XEYxN68-QJMEg";
+  private final String kMapsPage =
+      "http://abbserver.appspot.com";
 }
