@@ -61,7 +61,7 @@ public class AlienBloodBathMain extends Activity {
     switch (item.getItemId()) {
       case kSelectMap:
         startActivityForResult(
-            new Intent(this, MapSelectActivity.class), kSelectMap);
+            new Intent(this, LevelSelectActivity.class), kSelectMap);
         return true;
       case kDownloadMap:
         startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(kMapsPage)));
