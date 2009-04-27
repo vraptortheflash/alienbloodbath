@@ -81,20 +81,24 @@ public class LevelSelectActivity extends ListActivity {
       LayoutInflater inflater = (LayoutInflater)mContext.getSystemService(
           Context.LAYOUT_INFLATER_SERVICE);
       View row_view = inflater.inflate(R.layout.level_select_row, null);
-
-      TextView label = (TextView)row_view.findViewById(R.id.ROW_LABEL);
-      label.setText("Stage " + (position + 1) + ":");
-
-      TextView description = (TextView)row_view.findViewById(R.id.ROW_DESCRIPTION);
-      if (position < 2) {
-        description.setText("Best: 72% @ 2'24\"");
-      } else {
-        description.setText("Stage not yet attempted.");
-      }
+      Level level = mLevels.get(position);
 
       ImageView icon = (ImageView)row_view.findViewById(R.id.ROW_ICON);
-      if (position < 2) {
+      if (level.complete) {
         icon.setImageResource(R.drawable.level_old);
+      }
+
+      TextView label = (TextView)row_view.findViewById(R.id.ROW_LABEL);
+      label.setText("Stage " + (position + 1) + ": " + level.name);
+
+      TextView time = (TextView)row_view.findViewById(R.id.ROW_TIME);
+      if (level.complete) {
+        time.setText("2'32\"");
+      }
+
+      TextView health = (TextView)row_view.findViewById(R.id.ROW_HEALTH);
+      if (level.complete) {
+        health.setText("72%");
       }
 
       return row_view;
@@ -104,6 +108,9 @@ public class LevelSelectActivity extends ListActivity {
   }
 
   private class Level {
+    public boolean complete;
+    float health;
+    String name;
   }
 
   private ArrayList<Level> mLevels = new ArrayList<Level>();

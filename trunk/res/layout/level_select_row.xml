@@ -7,11 +7,8 @@
 	      >
   <ImageView
      android:id="@+id/ROW_ICON"
-     android:layout_width="22px"
-     android:paddingLeft="2px"
-     android:paddingRight="2px"
-     android:paddingTop="2px"
-     android:layout_height="wrap_content"
+     android:layout_width="wrap_content"
+     android:layout_height="fill_parent"
      android:gravity="center_vertical"
      android:src="@drawable/level_new"
      />
@@ -22,17 +19,47 @@
 		>
     <TextView
        android:id="@+id/ROW_LABEL"
-       android:layout_width="wrap_content"
+       android:paddingLeft="20px"
+       android:layout_width="fill_parent"
        android:layout_height="wrap_content"
        android:gravity="center_vertical"
-       android:textSize="26sp"
+       android:textSize="25sp"
        />
-    <TextView
-       android:id="@+id/ROW_DESCRIPTION"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:gravity="center_vertical"
-       android:textSize="14sp"
-       />
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+		  android:layout_width="fill_parent"
+		  android:layout_height="wrap_content"
+		  android:orientation="horizontal"
+		  >
+      <ImageView
+	 android:layout_width="wrap_content"
+	 android:layout_height="wrap_content"
+	 android:paddingLeft="5px"
+	 android:paddingRight="3px"
+	 android:src="@drawable/time"
+	 />
+      <TextView
+	 android:id="@+id/ROW_TIME"
+	 android:layout_width="wrap_content"
+	 android:layout_height="wrap_content"
+	 android:paddingRight="10px"
+	 android:gravity="center_vertical"
+	 android:textSize="14sp"
+	 android:text="--"
+	 />
+      <ImageView
+	 android:layout_width="wrap_content"
+	 android:layout_height="wrap_content"
+	 android:paddingRight="3px"
+	 android:src="@drawable/health"
+	 />
+      <TextView
+	 android:id="@+id/ROW_HEALTH"
+	 android:layout_width="wrap_content"
+	 android:layout_height="wrap_content"
+	 android:gravity="center_vertical"
+	 android:textSize="14sp"
+	 android:text="--"
+	 />
+    </LinearLayout>
   </LinearLayout>
 </LinearLayout>
