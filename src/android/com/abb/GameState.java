@@ -85,6 +85,7 @@ public class GameState implements Game {
     mViewX = mTargetViewX = avatar.x;
     mViewY = mTargetViewY = avatar.y;
     mDeathTimer = kDeathTimer;
+    mTimer = 0.0f;
   }
 
   public boolean onKeyDown(int key_code) {
@@ -109,6 +110,8 @@ public class GameState implements Game {
 
   /** Run the game simulation for the specified amount of seconds. */
   protected void stepGame(float time_step) {
+    mTimer += time_step;
+
     // Update the view parameters.
     if (avatar.life > 0.0f) {
       if (!avatar.has_ground_contact) {
@@ -130,6 +133,11 @@ public class GameState implements Game {
       map.collideEntity(avatar);
       map.processTriggers(avatar);
       if (Map.tileIsGoal(map.tileAt(avatar.x, avatar.y))) {
+        AvatarDatabase avatar_database = new AvatarDatabase(mContext);
+        avatar_database.setStringValue(
+            map.getLevelString() + "_health", Float.toString(avatar.life));
+        avatar_database.setStringValue(
+            map.getLevelString() + "_time", Float.toString(mTimer));
         finish();
       }
     } else {
@@ -417,6 +425,7 @@ public class GameState implements Game {
   private float                 mTargetViewX          = 0.0f;
   private float                 mTargetViewY          = 0.0f;
   private float                 mTargetZoom           = kGroundZoom;
+  private float                 mTimer;
   private Vibrator              mVibrator;
   private float                 mViewX                = 0.0f;
   private float                 mViewY                = 0.0f;

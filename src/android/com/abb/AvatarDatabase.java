@@ -29,17 +29,18 @@ public class AvatarDatabase {
   void deleteValue(String key) {
     SQLiteDatabase db = mDatabaseOpenHelper.getWritableDatabase();
     db.execSQL("DELETE FROM " + kDatabaseTable + " " +
-               "WHERE avatar_key = " + key);
+               "WHERE avatar_key = \"" + key + "\"");
   }
 
   String getStringValue(String key) {
     SQLiteDatabase db = mDatabaseOpenHelper.getReadableDatabase();
     Cursor cursor = db.rawQuery("SELECT avatar_value FROM " + kDatabaseTable +
-                                " WHERE avatar_key = " + key, null);
+                                " WHERE avatar_key = \"" + key + "\"", null);
     Assert.assertTrue(cursor.getCount() == 0 || cursor.getCount() == 1);
 
     String result = null;
     if (cursor.getCount() == 1) {
+      cursor.moveToNext();
       result = cursor.getString(0);
     }
     cursor.close();
@@ -50,7 +51,7 @@ public class AvatarDatabase {
     SQLiteDatabase db = mDatabaseOpenHelper.getWritableDatabase();
     db.execSQL("REPLACE INTO " + kDatabaseTable + " " +
                "(avatar_key, avatar_value) VALUES " +
-               "(" + key + ", " + value + ")");
+               "(\"" + key + "\", \"" + value + "\")");
   }
 
   private class AvatarDatabaseOpenHelper extends SQLiteOpenHelper {
@@ -69,7 +70,7 @@ public class AvatarDatabase {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
       Log.w("AvatarDatabase", "Upgrading database from version " + oldVersion +
             " to " + newVersion + ", which will destroy all old data");
-      db.execSQL("DROP TABLE IF EXISTS notes");
+      db.execSQL("DROP TABLE IF EXISTS " + kDatabaseTable);
       onCreate(db);
     }
   }  // class AvatarDatabaseOpenHelper
