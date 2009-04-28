@@ -37,10 +37,6 @@ public class Map {
     mGameState = game_state;
   }
 
-  public void advanceLevel() {
-    mLevelOffset += 1;
-  }
-
   public void reload() {
     loadFromUri(mBaseUri, mLevelOffset);
   }
@@ -85,7 +81,7 @@ public class Map {
     String effects_path = Content.getTemporaryFilePath(effects_uri);
     loadEffectsFromFile(effects_path);
 
-    // Pre-cache audio.
+    // Pre-cache audio clips.
     mGameState.preloadSound(kSoundExplosion);
   }
 

@@ -18,6 +18,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -32,8 +34,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 
 public class LevelSelectActivity extends ListActivity {
@@ -52,6 +52,16 @@ public class LevelSelectActivity extends ListActivity {
     Uri level_directory = Uri.parse(kRootDirectory);
     startActivity(new Intent(level_index, level_directory,
                              this, AlienBloodBathMain.class));
+  }
+
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+    return AlienBloodBathActivity.onCreateOptionsMenu(this, menu);
+  }
+
+  @Override
+  public boolean onMenuItemSelected(int feature_id, MenuItem item) {
+    return AlienBloodBathActivity.onMenuItemSelected(this, feature_id, item);
   }
 
   private void populateLevels() {
@@ -84,19 +94,17 @@ public class LevelSelectActivity extends ListActivity {
       Level level = mLevels.get(position);
 
       ImageView icon = (ImageView)row_view.findViewById(R.id.ROW_ICON);
+      TextView label = (TextView)row_view.findViewById(R.id.ROW_LABEL);
+      TextView time = (TextView)row_view.findViewById(R.id.ROW_TIME);
+      TextView health = (TextView)row_view.findViewById(R.id.ROW_HEALTH);
+
       if (level.complete) {
         icon.setImageResource(R.drawable.level_old);
       }
-
-      TextView label = (TextView)row_view.findViewById(R.id.ROW_LABEL);
       label.setText("Stage " + (position + 1) + ": " + level.name);
-
-      TextView time = (TextView)row_view.findViewById(R.id.ROW_TIME);
       if (level.complete) {
         time.setText("2'32\"");
       }
-
-      TextView health = (TextView)row_view.findViewById(R.id.ROW_HEALTH);
       if (level.complete) {
         health.setText("72%");
       }
