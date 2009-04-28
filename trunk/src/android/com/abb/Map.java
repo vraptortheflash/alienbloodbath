@@ -37,6 +37,10 @@ public class Map {
     mGameState = game_state;
   }
 
+  public String getLevelString() {
+    return mBaseUri.toString() + mLevelOffset;
+  }
+
   public void reload() {
     loadFromUri(mBaseUri, mLevelOffset);
   }
