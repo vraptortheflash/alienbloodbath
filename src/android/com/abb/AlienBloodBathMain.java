@@ -12,11 +12,10 @@
 package android.com.abb;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
@@ -34,7 +33,7 @@ public class AlienBloodBathMain extends Activity {
 
     setContentView(R.layout.main);
 
-    mGameState = new GameState((Context)this);
+    mGameState = new GameState(this, this);
     mGameView = (GameView)findViewById(R.id.GAME_VIEW);
     mGameView.setGame(mGameState);
 
@@ -51,29 +50,21 @@ public class AlienBloodBathMain extends Activity {
   }
 
   @Override
+  public void onConfigurationChanged(Configuration newConfig) {
+    super.onConfigurationChanged(newConfig);
+    // Note that we ignore the orientation configuration change here since the
+    // reload would be too costly. In addition, we explicitly specify a
+    // landscape orientation for this activity in the AndroidManifest.xml file.
+  }
+
+  @Override
   public boolean onCreateOptionsMenu(Menu menu) {
-    boolean result = super.onCreateOptionsMenu(menu);
-    //menu.add(0, kSelectMap, 0, "Load Map...").setIcon(R.drawable.load);
-    //menu.add(0, kDownloadMap, 0, "More Maps...").setIcon(R.drawable.download);
-    menu.add(0, kFeedback, 0, "Feedback...").setIcon(R.drawable.feedback);
-    menu.add(0, kAbout, 0, "About...").setIcon(R.drawable.about);
-    return result;
+    return AlienBloodBathActivity.onCreateOptionsMenu(this, menu);
   }
 
   @Override
   public boolean onMenuItemSelected(int feature_id, MenuItem item) {
-    switch (item.getItemId()) {
-      case kDownloadMap:
-        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(kMapsPage)));
-        return true;
-      case kAbout:
-        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(kAboutPage)));
-        return true;
-      case kFeedback:
-        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(kFeedbackPage)));
-        return true;
-    }
-    return super.onMenuItemSelected(feature_id, item);
+    return AlienBloodBathActivity.onMenuItemSelected(this, feature_id, item);
   }
 
   @Override
@@ -93,14 +84,4 @@ public class AlienBloodBathMain extends Activity {
 
   private GameState mGameState;
   private GameView mGameView;
-
-  private final int kAbout = 2;
-  private final int kFeedback = 3;
-  private final int kDownloadMap = 4;
-  private final String kAboutPage =
-      "http://code.google.com/p/alienbloodbath";
-  private final String kFeedbackPage =
-      "http://spreadsheets.google.com/embeddedform?key=p8QSDoz2S_XEYxN68-QJMEg";
-  private final String kMapsPage =
-      "http://abbserver.appspot.com";
 }

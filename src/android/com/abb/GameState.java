@@ -11,6 +11,7 @@
 
 package android.com.abb;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -40,7 +41,8 @@ public class GameState implements Game {
   public ArrayList<Entity> particles   = new ArrayList<Entity>();
   public ArrayList<Entity> projectiles = new ArrayList<Entity>();
 
-  public GameState(Context context) {
+  public GameState(Context context, Activity activity) {
+    mActivity = activity;
     mContext = context;
     mSoundPool = new SoundPool(kMaxSounds, AudioManager.STREAM_MUSIC, 100);
     mAudioManager = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
@@ -57,6 +59,10 @@ public class GameState implements Game {
         Content.getTemporaryFilePath(Uri.parse("content:///misc.png"));
     Bitmap misc_sprites_bitmap = BitmapFactory.decodeFile(misc_sprites_path);
     misc_sprites = graphics.loadImageFromBitmap(misc_sprites_bitmap);
+  }
+
+  public void finish() {
+    mActivity.finish();
   }
 
   /** Initialize the game state structure. Upon returning the game state should
@@ -82,12 +88,6 @@ public class GameState implements Game {
   }
 
   public boolean onKeyDown(int key_code) {
-    // Developement level navigation.
-    if (key_code == KeyEvent.KEYCODE_B) {
-      map.advanceLevel();
-      avatar.life = 0.0f;
-    }
-
     avatar.setKeyState(key_code, 1);
     return false;  // False to indicate not handled.
   }
@@ -130,9 +130,7 @@ public class GameState implements Game {
       map.collideEntity(avatar);
       map.processTriggers(avatar);
       if (Map.tileIsGoal(map.tileAt(avatar.x, avatar.y))) {
-        map.advanceLevel();
-        map.reload();
-        reset();
+        finish();
       }
     } else {
       if (mDeathTimer == kDeathTimer) {
@@ -407,6 +405,7 @@ public class GameState implements Game {
     return saved_instance_state;
   }
 
+  private Activity              mActivity;
   private AudioManager          mAudioManager;
   private Context               mContext;
   private float                 mDeathTimer           = kDeathTimer;
