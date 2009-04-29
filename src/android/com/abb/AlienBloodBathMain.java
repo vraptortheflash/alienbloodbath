@@ -14,6 +14,7 @@ package android.com.abb;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
@@ -33,6 +34,7 @@ public class AlienBloodBathMain extends Activity {
                          WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
     setContentView(R.layout.main);
+    setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
     mGameState = new GameState(this, this);
     mGameView = (GameView)findViewById(R.id.GAME_VIEW);
