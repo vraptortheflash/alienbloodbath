@@ -4,7 +4,7 @@
 *A:* Try un-installing existing versions first.
 
 *Q:* How many levels are there? <br>
-*A:* Three in the public "lite" version. Feel free to contribute a level editor and / or more levels.
+*A:* Three levels are available in the public "lite" version. Feel free to contribute to the level editor or more levels of your own.
 
 *Q:* Why is it so bad? <br>
 *A:* Code patches are welcome.
