@@ -1,10 +1,10 @@
 #summary Alien Blood Bath FAQs
 
-Q: Problems updating?
+Q: Problems updating? <br>
 A: Try un-installing existing versions first.
 
-Q: How many levels are there?
+Q: How many levels are there? <br>
 A: Three in the public "lite" version. Feel free to contribute a level editor and / or more levels.
 
-Q: Why is it so bad?
+Q: Why is it so bad? <br>
 A. Code patches are welcome.
