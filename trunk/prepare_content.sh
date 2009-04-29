@@ -8,7 +8,7 @@ EPOCH="content_package/epoch.txt"
 ALL_FILES=`find -L content_package | grep -v \~ | grep -v \.svn | grep -v \.drop`
 DEMO_FILES=`find -L content_package | grep -v \~ | grep -v \.svn | grep -v \.drop | grep -v Classic | grep -v The_Second_Wave`
 
-CONTENT_FILES=$DEMO_FILES
+CONTENT_FILES=$ALL_FILES
 
 rm $TARGET
 rm $EPOCH
