@@ -203,7 +203,8 @@ public class Weapon extends Entity {
       mDrawingMatrix.preRotate(
           57.2958f * (float)Math.atan2(hand_ly - hand_ry, hand_lx - hand_rx));
       mDrawingMatrix.preTranslate(x_offset, y_offset);
-      mDrawingMatrix.preScale(sprite_rect.width(), sprite_rect.height());
+      mDrawingMatrix.preScale(zoom * sprite_rect.width(),
+                              zoom * sprite_rect.height());
       graphics.drawImage(sprite_image, sprite_rect, mDrawingMatrix,
                          false, sprite_flipped_horizontal);
     }
