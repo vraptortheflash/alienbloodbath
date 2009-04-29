@@ -479,7 +479,7 @@ public class GameState implements Game {
   private static final long  kEnemyDeathVibrateLength  = 30;   // Milliseconds.
   private static final float kGravity                  = 200.0f;
   private static final float kGroundZoom               = 0.85f;
-  private static final int   kMaxSounds                = 5;
+  private static final int   kMaxSounds                = 10;
   private static final Uri   kSoundAvatarDamage        = Uri.parse("content://avatar_damage.mp3");
   private static final Uri   kSoundAvatarDeath         = Uri.parse("content://avatar_death.mp3");
   private static final Uri   kSoundAvatarWin           = Uri.parse("content://avatar_win.mp3");
