@@ -30,6 +30,46 @@
 		  android:layout_height="wrap_content"
 		  android:orientation="horizontal"
 		  >
+      <TextView
+	 android:layout_width="wrap_content"
+	 android:layout_height="wrap_content"
+	 android:paddingLeft="5px"
+	 android:paddingRight="3px"
+	 android:gravity="center_vertical"
+	 android:textSize="12sp"
+	 android:textStyle="italic"
+	 android:text="Best:"
+	 />
+      <ImageView
+	 android:layout_width="wrap_content"
+	 android:layout_height="wrap_content"
+	 android:paddingLeft="5px"
+	 android:paddingRight="3px"
+	 android:src="@drawable/kills"
+	 />
+      <TextView
+	 android:id="@+id/ROW_KILLS"
+	 android:layout_width="wrap_content"
+	 android:layout_height="wrap_content"
+	 android:gravity="center_vertical"
+	 android:textSize="14sp"
+	 android:text="--"
+	 />
+      <ImageView
+	 android:layout_width="wrap_content"
+	 android:layout_height="wrap_content"
+	 android:paddingLeft="5px"
+	 android:paddingRight="3px"
+	 android:src="@drawable/health"
+	 />
+      <TextView
+	 android:id="@+id/ROW_HEALTH"
+	 android:layout_width="wrap_content"
+	 android:layout_height="wrap_content"
+	 android:gravity="center_vertical"
+	 android:textSize="14sp"
+	 android:text="--"
+	 />
       <ImageView
 	 android:layout_width="wrap_content"
 	 android:layout_height="wrap_content"
@@ -39,21 +79,6 @@
 	 />
       <TextView
 	 android:id="@+id/ROW_TIME"
-	 android:layout_width="wrap_content"
-	 android:layout_height="wrap_content"
-	 android:paddingRight="10px"
-	 android:gravity="center_vertical"
-	 android:textSize="14sp"
-	 android:text="--"
-	 />
-      <ImageView
-	 android:layout_width="wrap_content"
-	 android:layout_height="wrap_content"
-	 android:paddingRight="3px"
-	 android:src="@drawable/health"
-	 />
-      <TextView
-	 android:id="@+id/ROW_HEALTH"
 	 android:layout_width="wrap_content"
 	 android:layout_height="wrap_content"
 	 android:gravity="center_vertical"

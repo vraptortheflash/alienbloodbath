@@ -30,6 +30,7 @@ public class AvatarDatabase {
     SQLiteDatabase db = mDatabaseOpenHelper.getWritableDatabase();
     db.execSQL("DELETE FROM " + kDatabaseTable + " " +
                "WHERE avatar_key = \"" + key + "\"");
+    db.close();
   }
 
   String getStringValue(String key) {
@@ -44,6 +45,7 @@ public class AvatarDatabase {
       result = cursor.getString(0);
     }
     cursor.close();
+    db.close();
     return result;
   }
 
@@ -52,6 +54,7 @@ public class AvatarDatabase {
     db.execSQL("REPLACE INTO " + kDatabaseTable + " " +
                "(avatar_key, avatar_value) VALUES " +
                "(\"" + key + "\", \"" + value + "\")");
+    db.close();
   }
 
   private class AvatarDatabaseOpenHelper extends SQLiteOpenHelper {

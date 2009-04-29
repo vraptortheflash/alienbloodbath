@@ -48,9 +48,10 @@ public class GameState implements Game {
     mAudioManager = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
     mVibrator = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
 
+    preloadSound(kSoundEnemyDeath);
     preloadSound(kSoundAvatarDamage);
     preloadSound(kSoundAvatarDeath);
-    preloadSound(kSoundEnemyDeath);
+    preloadSound(kSoundAvatarWin);
   }
 
   public void initializeGraphics(Graphics graphics) {
@@ -85,7 +86,10 @@ public class GameState implements Game {
     mViewX = mTargetViewX = avatar.x;
     mViewY = mTargetViewY = avatar.y;
     mDeathTimer = kDeathTimer;
+    mKills = 0;
     mTimer = 0.0f;
+    mWinTimer = kWinTimer;
+    mHasWon = false;
   }
 
   public boolean onKeyDown(int key_code) {
@@ -113,7 +117,7 @@ public class GameState implements Game {
     mTimer += time_step;
 
     // Update the view parameters.
-    if (avatar.life > 0.0f) {
+    if (avatar.life > 0.0f && !mHasWon) {
       if (!avatar.has_ground_contact) {
         mTargetZoom = kAirZoom;
       } else {
@@ -127,18 +131,49 @@ public class GameState implements Game {
     mViewX += (mTargetViewX - mViewX) * kViewSpeed * time_step;
     mViewY += (mTargetViewY - mViewY) * kViewSpeed * time_step;
 
+    // If we have reached the goal, stop updating the motion of game entities.
+    if (mHasWon) {
+      mTargetZoom = kWinZoom;
+      mWinTimer -= time_step;
+      if (mWinTimer < 0) {
+        finish();
+      }
+      return;
+    }
+
     // Step the avatar.
     if (avatar.life > 0.0f) {
       avatar.step(time_step);
       map.collideEntity(avatar);
       map.processTriggers(avatar);
       if (Map.tileIsGoal(map.tileAt(avatar.x, avatar.y))) {
+        mHasWon = true;
+        playSound(kSoundAvatarWin);
+        avatar.stop();
+
+        // Update the high score for this level. The order of score precedence
+        // is: kill count, avatar health, and then level completion time.
         AvatarDatabase avatar_database = new AvatarDatabase(mContext);
-        avatar_database.setStringValue(
-            map.getLevelString() + "_health", Float.toString(avatar.life));
-        avatar_database.setStringValue(
-            map.getLevelString() + "_time", Float.toString(mTimer));
-        finish();
+        String level_kills =
+            avatar_database.getStringValue(map.getLevelString() + "_kills");
+        String level_health =
+            avatar_database.getStringValue(map.getLevelString() + "_health");
+        String level_time =
+            avatar_database.getStringValue(map.getLevelString() + "_time");
+        if (level_kills == null ||
+            mKills > Integer.valueOf(level_kills) ||
+            (mKills == Integer.valueOf(level_kills) &&
+             avatar.life > Float.valueOf(level_health)) ||
+            (mKills == Integer.valueOf(level_kills) &&
+             avatar.life == Float.valueOf(level_health) &&
+             mTimer < Float.valueOf(level_time))) {
+          avatar_database.setStringValue(
+              map.getLevelString() + "_kills", Integer.toString(mKills));
+          avatar_database.setStringValue(
+              map.getLevelString() + "_health", Float.toString(avatar.life));
+          avatar_database.setStringValue(
+              map.getLevelString() + "_time", Float.toString(mTimer));
+        }
       }
     } else {
       if (mDeathTimer == kDeathTimer) {
@@ -197,6 +232,9 @@ public class GameState implements Game {
                               (enemy.y + projectile.y) / 2.0f,
                               projectile.dx / 2.0f, projectile.dy / 2.0f);
           projectile.life = 0.0f;
+          if (enemy.life > 0 && enemy.life - projectile.damage < 0) {
+            mKills++;
+          }
           enemy.life -= projectile.damage;
           break;
         }
@@ -353,11 +391,6 @@ public class GameState implements Game {
   }
 
   public void playSound(Uri uri) {
-    int volume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-    if (volume <= 0) {
-      return;
-    }
-
     int sound_id = -1;
     if (mSoundMap.containsKey(uri)) {
       sound_id = mSoundMap.get(uri).intValue();
@@ -368,6 +401,7 @@ public class GameState implements Game {
       mSoundMap.put(uri, new Integer(sound_id));
     }
 
+    int volume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
     mSoundPool.play(sound_id, volume, volume,
                     1 /*Priority*/, 0 /*Loop*/, 1.0f /*Rate*/);
   }
@@ -418,6 +452,8 @@ public class GameState implements Game {
   private Context               mContext;
   private float                 mDeathTimer           = kDeathTimer;
   private TreeMap<Uri, Enemy>   mEnemyCache           = new TreeMap<Uri, Enemy>();
+  private boolean               mHasWon;
+  private int                   mKills;
   private LinkedList<String>    mPendingNotifications = new LinkedList<String>();
   private Random                mRandom               = new Random();
   private TreeMap<Uri, Integer> mSoundMap             = new TreeMap<Uri, Integer>();
@@ -430,6 +466,7 @@ public class GameState implements Game {
   private float                 mViewX                = 0.0f;
   private float                 mViewY                = 0.0f;
   private TreeMap<Uri, Weapon>  mWeaponCache          = new TreeMap<Uri, Weapon>();
+  private float                 mWinTimer             = kWinTimer;
   private float                 mZoom                 = kGroundZoom;
 
   private static final float kAirZoom                  = 0.6f;
@@ -445,8 +482,11 @@ public class GameState implements Game {
   private static final int   kMaxSounds                = 5;
   private static final Uri   kSoundAvatarDamage        = Uri.parse("content://avatar_damage.mp3");
   private static final Uri   kSoundAvatarDeath         = Uri.parse("content://avatar_death.mp3");
+  private static final Uri   kSoundAvatarWin           = Uri.parse("content://avatar_win.mp3");
   private static final Uri   kSoundEnemyDeath          = Uri.parse("content://enemy_death.mp3");
   private static final float kViewLead                 = 1.0f;
   private static final float kViewSpeed                = 2.0f;
+  private static final float kWinTimer                 = 3.5f;
+  private static final float kWinZoom                  = 1.7f;
   private static final float kZoomSpeed                = 1.0f;
 }

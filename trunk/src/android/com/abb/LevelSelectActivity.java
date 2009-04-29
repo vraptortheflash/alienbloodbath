@@ -30,6 +30,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import junit.framework.Assert;
 
 
 public class LevelSelectActivity extends ListActivity {
@@ -86,14 +87,23 @@ public class LevelSelectActivity extends ListActivity {
       String level_path = kRootDirectory + "level_" + level_index + ".txt";
       Uri level_path_uri = Uri.parse(level_path);
       if (Content.exists(level_path_uri)) {
-      String level_string = kRootDirectory + level_index;
+        String level_string = kRootDirectory + level_index;
+        String level_kills =
+            avatar_database.getStringValue(level_string + "_kills");
         String level_health =
             avatar_database.getStringValue(level_string + "_health");
         String level_time =
             avatar_database.getStringValue(level_string + "_time");
 
         Level level = new Level();
-        if (level_time == null) {
+
+        String level_description_path =
+            kRootDirectory + "description_" + level_index + ".txt";
+        String[] description =
+            Content.readUriLines(Uri.parse(level_description_path));
+        level.name = description[0];
+
+        if (level_kills == null) {
           Assert.assertNull(level_health);
           level.complete = false;
           mLevels.add(level);
@@ -101,6 +111,7 @@ public class LevelSelectActivity extends ListActivity {
         } else {
           level.complete = true;
           level.health = Float.valueOf(level_health);
+          level.kills = Integer.valueOf(level_kills);
           level.time = Float.valueOf(level_time);
           mLevels.add(level);
         }
@@ -133,20 +144,17 @@ public class LevelSelectActivity extends ListActivity {
 
       ImageView icon = (ImageView)row_view.findViewById(R.id.ROW_ICON);
       TextView label = (TextView)row_view.findViewById(R.id.ROW_LABEL);
-      TextView time = (TextView)row_view.findViewById(R.id.ROW_TIME);
+      TextView kills = (TextView)row_view.findViewById(R.id.ROW_KILLS);
       TextView health = (TextView)row_view.findViewById(R.id.ROW_HEALTH);
+      TextView time = (TextView)row_view.findViewById(R.id.ROW_TIME);
 
-      if (level.complete) {
-        icon.setImageResource(R.drawable.level_old);
-      }
       label.setText("Stage " + (position + 1) + ": " + level.name);
       if (level.complete) {
         DecimalFormat formatter = new DecimalFormat("0.0");
         time.setText(formatter.format(level.time) + "s");
-      }
-      if (level.complete) {
-        DecimalFormat formatter = new DecimalFormat("0.0");
         health.setText(formatter.format(100.0f * level.health) + "%");
+        kills.setText(Integer.toString(level.kills));
+        icon.setImageResource(R.drawable.level_old);
       }
       return row_view;
     }
@@ -157,12 +165,14 @@ public class LevelSelectActivity extends ListActivity {
   private class Level {
     public boolean complete;
     float health;
-    float time;
+    int kills;
     String name;
+    float time;
   }
 
   private LevelArrayAdapter mLevelArrayAdapter;
   private ArrayList<Level> mLevels = new ArrayList<Level>();
 
-  private final String kRootDirectory = "content:///The_Second_Wave/";
+  private final String kRootDirectory = "content:///Demo/";
+  //private final String kRootDirectory = "content:///The_Second_Wave/";
 }
