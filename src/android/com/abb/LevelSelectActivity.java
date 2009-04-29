@@ -173,6 +173,7 @@ public class LevelSelectActivity extends ListActivity {
   private LevelArrayAdapter mLevelArrayAdapter;
   private ArrayList<Level> mLevels = new ArrayList<Level>();
 
-  private final String kRootDirectory = "content:///Demo/";
+  private final String kRootDirectory = "content:///Classic/";
+  //private final String kRootDirectory = "content:///Demo/";
   //private final String kRootDirectory = "content:///The_Second_Wave/";
 }
