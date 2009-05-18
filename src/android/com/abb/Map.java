@@ -354,9 +354,11 @@ public class Map {
     mRectSource.bottom = mRectSource.right = 512;
     int canvas_width = graphics.getWidth();
     int canvas_height = graphics.getHeight();
-    mRectDest.top = mRectDest.left = 0.0f;
-    mRectDest.right = canvas_width;
-    mRectDest.bottom = canvas_height;
+    float kMinZoom = 0.6f;
+    float background_zoom = canvas_width / 3.0f * (zoom - kMinZoom);
+    mRectDest.top = mRectDest.left = -background_zoom;
+    mRectDest.right = canvas_width + background_zoom;
+    mRectDest.bottom = canvas_height + background_zoom;
     graphics.drawImage(mBackgroundImage, mRectSource, mRectDest, false, false);
 
     // Draw the tiles.

@@ -37,7 +37,7 @@ public class AlienBloodBathMain extends Activity {
     setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
     mGameState = new GameState(this, this);
-    mGameView = (GameView)findViewById(R.id.GAME_VIEW);
+    mGameView = (GameView)findViewById(R.id.game_view);
     mGameView.setGame(mGameState);
 
     Intent intent = getIntent();

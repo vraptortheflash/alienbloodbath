@@ -1,6 +1,7 @@
 #!/bin/bash
 
-rm content_package/Demo/*
+rm -rf content_package/Demo
+mkdir content_package/Demo
 
 cp content_package/The_Second_Wave/ak47.*                         content_package/Demo/
 cp content_package/The_Second_Wave/aug.*                          content_package/Demo/
