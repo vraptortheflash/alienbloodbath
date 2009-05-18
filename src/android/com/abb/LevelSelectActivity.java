@@ -12,7 +12,7 @@
 package android.com.abb;
 
 import android.content.Context;
-import android.app.ListActivity;
+import android.app.TabActivity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -25,6 +25,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TabHost;
 import android.widget.TextView;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -33,18 +34,32 @@ import java.util.List;
 import junit.framework.Assert;
 
 
-public class LevelSelectActivity extends ListActivity {
+public class LevelSelectActivity extends TabActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    setContentView(R.layout.level_select_main);
+
+    TabHost mTabHost = getTabHost();
+    mTabHost.addTab(mTabHost.newTabSpec("tab_test1")
+                    .setIndicator("", getResources().getDrawable(R.drawable.maps))
+                    .setContent(R.id.textview1));
+    mTabHost.addTab(mTabHost.newTabSpec("tab_test2")
+                    .setIndicator("", getResources().getDrawable(R.drawable.avatar))
+                    .setContent(R.id.textview2));
+    mTabHost.addTab(mTabHost.newTabSpec("tab_test2")
+                    .setIndicator("", getResources().getDrawable(R.drawable.settings))
+                    .setContent(R.id.textview3));
+    mTabHost.setCurrentTab(0);
+
     Content.initialize(getResources());
 
-    populateLevels();
-    mLevelArrayAdapter = new LevelArrayAdapter(this);
-    setListAdapter(mLevelArrayAdapter);
+    //populateLevels();
+    //mLevelArrayAdapter = new LevelArrayAdapter(this);
+    //setListAdapter(mLevelArrayAdapter);
   }
 
-  @Override
+  //@Override
   protected void onListItemClick(ListView l, View v, int position, long id) {
     String level_index = Integer.toString(position);
     Uri level_directory = Uri.parse(kRootDirectory);
@@ -71,7 +86,7 @@ public class LevelSelectActivity extends ListActivity {
     return AlienBloodBathActivity.onMenuItemSelected(this, feature_id, item);
   }
 
- @Override
+  @Override
   public void onSaveInstanceState(Bundle saved_instance_state) {
     super.onSaveInstanceState(saved_instance_state);
 
@@ -173,7 +188,7 @@ public class LevelSelectActivity extends ListActivity {
   private LevelArrayAdapter mLevelArrayAdapter;
   private ArrayList<Level> mLevels = new ArrayList<Level>();
 
-  private final String kRootDirectory = "content:///Classic/";
+  //private final String kRootDirectory = "content:///Classic/";
   //private final String kRootDirectory = "content:///Demo/";
-  //private final String kRootDirectory = "content:///The_Second_Wave/";
+  private final String kRootDirectory = "content:///The_Second_Wave/";
 }
