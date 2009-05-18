@@ -22,6 +22,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -34,33 +35,35 @@ import java.util.List;
 import junit.framework.Assert;
 
 
-public class LevelSelectActivity extends TabActivity {
+public class LevelSelectActivity extends TabActivity implements ListView.OnItemClickListener {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.level_select_main);
 
     TabHost mTabHost = getTabHost();
-    mTabHost.addTab(mTabHost.newTabSpec("tab_test1")
+    mTabHost.addTab(mTabHost.newTabSpec("levellistview")
                     .setIndicator("", getResources().getDrawable(R.drawable.maps))
-                    .setContent(R.id.textview1));
-    mTabHost.addTab(mTabHost.newTabSpec("tab_test2")
+                    .setContent(R.id.levellistview));
+    mTabHost.addTab(mTabHost.newTabSpec("avatarview")
                     .setIndicator("", getResources().getDrawable(R.drawable.avatar))
-                    .setContent(R.id.textview2));
-    mTabHost.addTab(mTabHost.newTabSpec("tab_test2")
+                    .setContent(R.id.avatarview));
+    mTabHost.addTab(mTabHost.newTabSpec("settingsview")
                     .setIndicator("", getResources().getDrawable(R.drawable.settings))
-                    .setContent(R.id.textview3));
+                    .setContent(R.id.settingsview));
     mTabHost.setCurrentTab(0);
 
     Content.initialize(getResources());
 
-    //populateLevels();
-    //mLevelArrayAdapter = new LevelArrayAdapter(this);
-    //setListAdapter(mLevelArrayAdapter);
+    loadLevels();
+    mLevelArrayAdapter = new LevelArrayAdapter(this);
+    ListView list_view = (ListView)findViewById(R.id.levellistview);
+    list_view.setAdapter(mLevelArrayAdapter);
+    list_view.setOnItemClickListener(this);
   }
 
-  //@Override
-  protected void onListItemClick(ListView l, View v, int position, long id) {
+  @Override
+  public void onItemClick(AdapterView parent, View v, int position, long id) {
     String level_index = Integer.toString(position);
     Uri level_directory = Uri.parse(kRootDirectory);
     startActivityForResult(new Intent(level_index, level_directory,
@@ -72,7 +75,7 @@ public class LevelSelectActivity extends TabActivity {
                                   Intent data) {
     // Since the user may have beat a new level, we need to refresh the list of
     // levels.
-    populateLevels();
+    loadLevels();
     mLevelArrayAdapter.refresh();
   }
 
@@ -94,7 +97,7 @@ public class LevelSelectActivity extends TabActivity {
     Content.cleanup();
   }
 
-  private void populateLevels() {
+  private void loadLevels() {
     AvatarDatabase avatar_database = new AvatarDatabase(this);
 
     mLevels.clear();

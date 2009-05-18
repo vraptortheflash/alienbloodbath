@@ -175,10 +175,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private SurfaceHolder mSurfaceHolder;
   }  // class GameThread
 
-  class GameViewHandler extends Handler {
-
-  }
-
   public GameView(Context context, AttributeSet attrs) {
     super(context, attrs);
     mContext = context;

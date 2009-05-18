@@ -115,6 +115,7 @@ public class GameState implements Game {
   /** Run the game simulation for the specified amount of seconds. */
   protected void stepGame(float time_step) {
     mTimer += time_step;
+    time_step *= mGameSpeed;
 
     // Update the view parameters.
     if (avatar.life > 0.0f && !mHasWon) {
@@ -135,8 +136,9 @@ public class GameState implements Game {
     if (mHasWon) {
       mTargetZoom = kWinZoom;
       mWinTimer -= time_step;
-      if (mWinTimer < 0) {
+      if (mWinTimer < 0.0f && mWinTimer > -10.0f) {
         finish();
+        mWinTimer = -10.0f;  // Hack to avoid calling finish() more than once.
       }
       return;
     }
@@ -452,6 +454,7 @@ public class GameState implements Game {
   private Context               mContext;
   private float                 mDeathTimer           = kDeathTimer;
   private TreeMap<Uri, Enemy>   mEnemyCache           = new TreeMap<Uri, Enemy>();
+  private float                 mGameSpeed            = 0.75f;
   private boolean               mHasWon;
   private int                   mKills;
   private LinkedList<String>    mPendingNotifications = new LinkedList<String>();
