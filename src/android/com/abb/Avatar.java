@@ -248,7 +248,7 @@ public class Avatar extends ArticulatedEntity {
   private boolean   mJumping;
   public Weapon     mWeapon;
 
-  // To avoid allocations...
+  // To avoid allocations, the following are used.
   private float[] mArray9 = new float[9];
   private Rect    mRect   = new Rect();
   private RectF   mRectF  = new RectF();

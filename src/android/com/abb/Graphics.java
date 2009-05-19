@@ -163,6 +163,11 @@ public class Graphics {
     // reasons. TODO: Inline the 2D API implementation here.
     Assert.assertEquals(mBackendType, BackendType.OPENGL);
     */
+    if (mBackendType == BackendType.ANDROID2D) {
+      drawImageAndroid2D(image_handle, source_rect, dest_rect,
+                         flipped_horizontal, flipped_vertical);
+      return;
+    }
 
     if (image_handle >= mTextureData.size()) {
       Log.d("Graphics::drawImage", "Unknown image handle encountered. " +
@@ -222,6 +227,9 @@ public class Graphics {
     // reasons. TODO: Inline the 2D API implementation here.
     Assert.assertEquals(mBackendType, BackendType.OPENGL);
     */
+    if (mBackendType == BackendType.ANDROID2D) {
+      return;
+    }
 
     if (image_handle >= mTextureData.size()) {
       Log.d("Graphics::drawImage", "Unknown image handle encountered. " +
