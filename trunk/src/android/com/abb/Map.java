@@ -351,7 +351,7 @@ public class Map {
 
     // Draw the background.
     mRectSource.top = mRectSource.left = 0;
-    mRectSource.bottom = mRectSource.right = 512;
+    mRectSource.bottom = mRectSource.right = 256;
     int canvas_width = graphics.getWidth();
     int canvas_height = graphics.getHeight();
     float kMinZoom = 0.6f;
