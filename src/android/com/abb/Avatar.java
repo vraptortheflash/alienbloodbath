@@ -178,7 +178,7 @@ public class Avatar extends ArticulatedEntity {
     }
 
     // Shooting.
-    if (key_code == kKeyShoot) {
+    if (key_code == kKeyShoot1 || key_code == kKeyShoot2) {
       if (mWeapon != null) {
         mWeapon.enableShooting(state == 1);
       }
@@ -201,7 +201,7 @@ public class Avatar extends ArticulatedEntity {
       setKeyState(kKeyLeft, 0);
       setKeyState(kKeyRight, 0);
       setKeyState(kKeyJump, 0);
-      setKeyState(kKeyShoot, 0);
+      setKeyState(kKeyShoot1, 0);
       return;
     } else {
       return;
@@ -210,7 +210,7 @@ public class Avatar extends ArticulatedEntity {
     // The touch event was in the movement section of the display surface.
     if (motion_event.getY() > mCanvasHeight - kTouchMovementHeight) {
       setKeyState(kKeyJump, 0);
-      setKeyState(kKeyShoot, 0);
+      setKeyState(kKeyShoot1, 0);
       if (motion_event.getX() < mCanvasWidth / 2) {
         setKeyState(kKeyRight, 0);
         setKeyState(kKeyLeft, 1);
@@ -225,11 +225,11 @@ public class Avatar extends ArticulatedEntity {
       setKeyState(kKeyLeft, 0);
       setKeyState(kKeyRight, 0);
       if (motion_event.getX() < mCanvasWidth / 2) {
-        setKeyState(kKeyShoot, 0);
+        setKeyState(kKeyShoot1, 0);
         setKeyState(kKeyJump, 1);
       } else {
         setKeyState(kKeyJump, 0);
-        setKeyState(kKeyShoot, 1);
+        setKeyState(kKeyShoot1, 1);
       }
     }
   }
@@ -267,7 +267,8 @@ public class Avatar extends ArticulatedEntity {
   private static final int   kKeyLeft                = KeyEvent.KEYCODE_A;
   private static final int   kKeyRight               = KeyEvent.KEYCODE_S;
   private static final int   kKeyJump                = KeyEvent.KEYCODE_K;
-  private static final int   kKeyShoot               = KeyEvent.KEYCODE_J;
+  private static final int   kKeyShoot1              = KeyEvent.KEYCODE_J;
+  private static final int   kKeyShoot2              = KeyEvent.KEYCODE_L;
   private static final float kRadius                 = 25.0f;
   private static final Uri   kSoundJump              = Uri.parse("content://avatar_jump.mp3");
   private static final int   kSpriteSize             = 64;
