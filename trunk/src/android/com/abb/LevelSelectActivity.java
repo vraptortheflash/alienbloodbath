@@ -17,6 +17,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.animation.TranslateAnimation;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -41,17 +42,17 @@ public class LevelSelectActivity extends TabActivity implements ListView.OnItemC
     super.onCreate(savedInstanceState);
     setContentView(R.layout.level_select_main);
 
-    TabHost mTabHost = getTabHost();
-    mTabHost.addTab(mTabHost.newTabSpec("levellistview")
+    TabHost tab_host = getTabHost();
+    tab_host.addTab(tab_host.newTabSpec("levellistview")
                     .setIndicator("", getResources().getDrawable(R.drawable.maps))
                     .setContent(R.id.levellistview));
-    mTabHost.addTab(mTabHost.newTabSpec("avatarview")
+    tab_host.addTab(tab_host.newTabSpec("avatarview")
                     .setIndicator("", getResources().getDrawable(R.drawable.avatar))
                     .setContent(R.id.avatarview));
-    mTabHost.addTab(mTabHost.newTabSpec("settingsview")
+    tab_host.addTab(tab_host.newTabSpec("settingsview")
                     .setIndicator("", getResources().getDrawable(R.drawable.settings))
                     .setContent(R.id.settingsview));
-    mTabHost.setCurrentTab(0);
+    tab_host.setCurrentTab(0);
 
     Content.initialize(getResources());
 
@@ -64,6 +65,11 @@ public class LevelSelectActivity extends TabActivity implements ListView.OnItemC
 
   @Override
   public void onItemClick(AdapterView parent, View v, int position, long id) {
+    // Since the loading may take a while, we hide the current view by moving
+    // out of the screen to give the user immediate feedback.
+    TabHost tab_host = getTabHost();
+    tab_host.startAnimation(new TranslateAnimation(0, 0, 1024, 1024));
+
     String level_index = Integer.toString(position);
     Uri level_directory = Uri.parse(kRootDirectory);
     startActivityForResult(new Intent(level_index, level_directory,

@@ -11,12 +11,12 @@ thigh_l		0.0	50
 thigh_l		1.0	-60
 thigh_l		2.0	50
 
-leg_r		0.0	20
+leg_r		0.0	30
 leg_r		1.0	40
-leg_r		2.0	20
+leg_r		2.0	30
 
 leg_l		0.0	40
-leg_l		1.0	20
+leg_l		1.0	30
 leg_l		2.0	40
 
 torso		0.0	179
