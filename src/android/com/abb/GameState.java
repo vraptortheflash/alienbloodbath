@@ -29,6 +29,7 @@ import android.view.MotionEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 import java.util.TreeMap;
 
@@ -55,9 +56,9 @@ public class GameState implements Game {
   }
 
   public void initializeGraphics(Graphics graphics) {
-    avatar.loadFromUri(Uri.parse("content:///humanoid.entity"));
+    avatar.loadFromUri(Uri.parse("file:///android_asset/avatar.animated"));
     String misc_sprites_path =
-        Content.getTemporaryFilePath(Uri.parse("content:///misc.png"));
+        Content.getFilePath(Uri.parse("file:///android_asset/misc.png"));
     Bitmap misc_sprites_bitmap = BitmapFactory.decodeFile(misc_sprites_path);
     misc_sprites = graphics.loadImageFromBitmap(misc_sprites_bitmap);
   }
@@ -106,9 +107,35 @@ public class GameState implements Game {
     avatar.onMotionEvent(motion_event);
   }
 
+  private int mFrame = 0;
+  private long mStepTime;
+  private long mDrawTime;
+
   public boolean onFrame(Graphics graphics, float time_step) {
+    long time_0 = System.nanoTime();
     stepGame(time_step);
+    long time_1 = System.nanoTime();
     drawGame(graphics);
+    long time_2 = System.nanoTime();
+
+    mStepTime += time_1 - time_0;
+    mDrawTime += time_2 - time_1;
+    ++mFrame;
+    if (mFrame == 30) {
+      mStepTime /= 30;
+      mDrawTime /= 30;
+
+      float step_seconds = (float)mStepTime * 1.0e-9f;
+      float draw_seconds = (float)mDrawTime * 1.0e-9f;
+      Log.d("GameThread::run",
+            "Step budget: %" + (int)(step_seconds * 3000.0f));
+      Log.d("GameThread::run",
+            "Draw budget: %" + (int)(draw_seconds * 3000.0f));
+
+      mFrame = 0;
+      mStepTime = mDrawTime = 0;
+    }
+
     return true;  // True to keep updating.
   }
 
@@ -282,6 +309,9 @@ public class GameState implements Game {
     for (int index = 0; index < particles.size(); ++index) {
       particles.get(index).draw(graphics, mViewX, mViewY, mZoom);
     }
+
+    // Draw the user interface and avatar statistics meters.
+    avatar.drawHud(graphics);
   }
 
   synchronized public void addNotification(String notification) {
@@ -386,7 +416,7 @@ public class GameState implements Game {
   public void preloadSound(Uri uri) {
     if (!mSoundMap.containsKey(uri)) {
       Log.d("GameState::playSound", "Loading: " + uri.toString());
-      String file_path = Content.getTemporaryFilePath(uri);
+      String file_path = Content.getFilePath(uri);
       int sound_id = mSoundPool.load(file_path, 1 /*Priority*/);
       mSoundMap.put(uri, new Integer(sound_id));
     }
@@ -398,7 +428,7 @@ public class GameState implements Game {
       sound_id = mSoundMap.get(uri).intValue();
     } else {
       Log.d("GameState::playSound", "Loading: " + uri.toString());
-      String file_path = Content.getTemporaryFilePath(uri);
+      String file_path = Content.getFilePath(uri);
       sound_id = mSoundPool.load(file_path, 1 /*Priority*/);
       mSoundMap.put(uri, new Integer(sound_id));
     }
@@ -476,20 +506,20 @@ public class GameState implements Game {
   private static final long  kAvatarDeathVibrateLength = 250;  // Milliseconds.
   private static final int   kBloodBathSize            = 20;   // Particle count.
   private static final float kBloodBathVelocity        = 60.0f;
-  private static final float kDeathTimer               = 3.0f;
+  private static final float kDeathTimer               = 2.0f;
   private static final float kDeathZoom                = 1.5f;
   private static final long  kEnemyAttackVibrateLength = 50;   // Milliseconds.
   private static final long  kEnemyDeathVibrateLength  = 30;   // Milliseconds.
   private static final float kGravity                  = 200.0f;
   private static final float kGroundZoom               = 0.85f;
   private static final int   kMaxSounds                = 10;
-  private static final Uri   kSoundAvatarDamage        = Uri.parse("content://avatar_damage.mp3");
-  private static final Uri   kSoundAvatarDeath         = Uri.parse("content://avatar_death.mp3");
-  private static final Uri   kSoundAvatarWin           = Uri.parse("content://avatar_win.mp3");
-  private static final Uri   kSoundEnemyDeath          = Uri.parse("content://enemy_death.mp3");
+  private static final Uri   kSoundAvatarDamage        = Uri.parse("file:///android_asset/avatar_damage.mp3");
+  private static final Uri   kSoundAvatarDeath         = Uri.parse("file:///android_asset/avatar_death.mp3");
+  private static final Uri   kSoundAvatarWin           = Uri.parse("file:///android_asset/avatar_win.mp3");
+  private static final Uri   kSoundEnemyDeath          = Uri.parse("file:///android_asset/enemy_death.mp3");
   private static final float kViewLead                 = 1.0f;
   private static final float kViewSpeed                = 2.0f;
-  private static final float kWinTimer                 = 3.5f;
+  private static final float kWinTimer                 = 3.0f;
   private static final float kWinZoom                  = 1.7f;
   private static final float kZoomSpeed                = 1.0f;
 }

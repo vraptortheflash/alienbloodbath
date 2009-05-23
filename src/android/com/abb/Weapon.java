@@ -59,7 +59,7 @@ public class Weapon extends Entity {
     // Given a fully-specified default weapon parameters map, we can parse and
     // merge in the user defined values. Note that the following method rejects
     // all keys provided by the user which were not defined above.
-    String file_path = Content.getTemporaryFilePath(uri);
+    String file_path = Content.getFilePath(uri);
     String[] tokens = Content.readFileTokens(file_path);
     Content.mergeKeyValueTokensWithMap(tokens, parameters);
     Content.assertIntegerNotNone(parameters, kParameterProjectileRectBottom);
@@ -108,6 +108,11 @@ public class Weapon extends Entity {
         ((Integer)parameters.get(kParameterProjectileRectBottom)).intValue());
   }
 
+  public void setTarget(float target_x, float target_y) {
+    mTargetX = target_x;
+    mTargetY = target_y;
+  }
+
   public void enableShooting(boolean shooting) {
     mShooting = shooting;
   }
@@ -133,28 +138,14 @@ public class Weapon extends Entity {
       mCurrentDelay = mDelay;
       mPhase += 10.0f;
 
-      float shot_angle;
       float shot_distance = sprite_rect.width() / 2;
       float shot_velocity = mVelocity;
-      float x_offset = shot_distance;
-      float y_offset = -10.0f;
-
-      if (!has_ground_contact) {
-        shot_angle =
-            (float)Math.atan2(dy, dx) + mSpread * (float)Math.sin(mPhase);
-        x_offset = shot_distance * (float)Math.cos(shot_angle);
-        y_offset = shot_distance * (float)Math.sin(shot_angle);
-      } else {
-        shot_angle = mSpread * (float)Math.sin(mPhase);
-      }
-
+      float shot_angle = ((float)Math.atan2(mTargetY, mTargetX) +
+                          mSpread * (float)Math.sin(mPhase));
+      float x_offset = shot_distance * (float)Math.cos(shot_angle);
+      float y_offset = shot_distance * (float)Math.sin(shot_angle);
       float dx_offset = shot_velocity * (float)Math.cos(shot_angle);
       float dy_offset = shot_velocity * (float)Math.sin(shot_angle);
-
-      if (has_ground_contact && sprite_flipped_horizontal) {
-        x_offset *= -1.0f;
-        dx_offset *= -1.0f;
-      }
 
       if (mProjectileIsFlame) {
         mGameState.createFireProjectile(x + x_offset, y + y_offset,
@@ -187,7 +178,7 @@ public class Weapon extends Entity {
     // graphics class must only be interacted with from the main thread. This is
     // a product of the lack of thread safety in OpenGL.
     if (mSpriteUri != null) {
-      String image_path = Content.getTemporaryFilePath(mSpriteUri);
+      String image_path = Content.getFilePath(mSpriteUri);
       Bitmap image_bitmap = BitmapFactory.decodeFile(image_path);
       sprite_image = graphics.loadImageFromBitmap(image_bitmap);
       mSpriteUri = null;
@@ -206,7 +197,7 @@ public class Weapon extends Entity {
       mDrawingMatrix.preScale(zoom * sprite_rect.width(),
                               zoom * sprite_rect.height());
       graphics.drawImage(sprite_image, sprite_rect, mDrawingMatrix,
-                         false, sprite_flipped_horizontal);
+                         false, sprite_flipped_horizontal, 1);
     }
   }
 
@@ -229,6 +220,8 @@ public class Weapon extends Entity {
   private boolean       mShooting;
   private float         mSpread;
   private Uri           mSpriteUri;
+  private float         mTargetX;
+  private float         mTargetY;
   private float         mTimeout;
   private float         mVelocity;
   private int           mVibration;

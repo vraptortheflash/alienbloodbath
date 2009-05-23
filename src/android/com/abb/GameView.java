@@ -79,6 +79,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       // http://blogs.sun.com/dholmes/entry/inside_the_hotspot_vm_clocks
       long time = System.nanoTime();
 
+      int frame = 0;
       while (mRunning) {
         synchronized (this) {
           while (mPaused && mRunning) {
@@ -96,7 +97,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         long current_time = System.nanoTime();
         float time_step = (float)(current_time - time) * 1.0e-9f;
         time = current_time;
-        if (time_step < kMinTimeStep) {
+
+        ++frame;
+        if (frame % 30 == 0) {
+          Log.d("GameThread::run",
+                "Frame rate: " + (int)(1.0f / time_step));
+        }
+
+        if (false && time_step < kMinTimeStep) {
           float remaining_time = kMinTimeStep - time_step;
           time_step = kMinTimeStep;
           try {
@@ -109,11 +117,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             // continue on. It's not worth the cycles to handle.
           }
         } else {
-          // In the case where the thread took too long, let the thread yield to
-          // other processes. This should usually only happen in the case
-          // something "big" is happening and we don't need / want to starve the
-          // more important system threads.
-          yield();
+          // In the case where the thread took too long, consider letting the
+          // thread yield to other processes. This should usually only happen in
+          // the case something "big" is happening and we don't need / want to
+          // starve the more important system threads.
+          // yield();
         }
         time_step = Math.max(time_step, kMinTimeStep);
         time_step = Math.min(time_step, kMaxTimeStep);

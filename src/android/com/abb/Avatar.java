@@ -19,12 +19,12 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 
 
-public class Avatar extends ArticulatedEntity {
+public class Avatar extends AnimatedEntity {
   public Avatar(GameState game_state) {
     super();
     mGameState = game_state;
 
-    setDrawingScale(kDrawingScale);
+    //setDrawingScale(kDrawingScale);
     radius = kRadius;  // Collision radius.
   }
 
@@ -73,17 +73,15 @@ public class Avatar extends ArticulatedEntity {
     } else if (dx > 0.0f) {
       sprite_flipped_horizontal = false;
     }
+    stepAnimation(time_step);
     if (has_ground_contact) {
       if (Math.abs(dx) > kAnimationStopThreshold) {
-        loadAnimationFromUri("content:///run.humanoid.animation");
-        stepAnimation(kGroundAnimationSpeed * Math.abs(dx));
+        setAnimation("running");
       } else {
-        loadAnimationFromUri("content:///stand.humanoid.animation");
-        stepAnimation(time_step);
+        setAnimation("standing");
       }
     } else {
-      loadAnimationFromUri("content:///jump.humanoid.animation");
-      stepAnimation(time_step);
+      setAnimation("jumping");
     }
 
     // Update the equipped weapon instance.
@@ -94,8 +92,41 @@ public class Avatar extends ArticulatedEntity {
       mWeapon.dy = dy;
       mWeapon.has_ground_contact = has_ground_contact;
       mWeapon.sprite_flipped_horizontal = sprite_flipped_horizontal;
+      mWeapon.setTarget(mTargetX, mTargetY);
       mWeapon.step(time_step);
     }
+  }
+
+  public void drawHud(Graphics graphics) {
+    // Draw the avatar life and ammo meters.
+    float meter_width = mCanvasWidth - 45;
+    mRect.set(0, 0, 31, 17);
+    mRectF.set(0, 0, 31, 17);
+    graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false, 1);
+    if (life > 0.0f) {
+      float life_meter_width = meter_width * life;
+      mRect.set(0, 22, 64, 26);
+      mRectF.set(32, 2, 32 + life_meter_width, 6);
+      graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false, 1);
+    }
+    if (mWeapon != null) {
+      float ammo_meter_width =
+          Math.min(meter_width,
+                   meter_width * mWeapon.getAmmo() / mWeapon.getMaxAmmo());
+      ammo_meter_width = Math.max(ammo_meter_width, 0.0f);
+      mRect.set(0, 29, 64, 33);
+      mRectF.set(32, 8, 32 + ammo_meter_width, 12);
+      graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false, 1);
+    }
+
+    // Draw the touch screen indicators.
+    mRect.set(40, 4, 58, 12);
+    mRectF.set(0, 0, 12, 8);
+    mRectF.offset(mCanvasWidth / 3 - 6, mCanvasHeight - kTouchMovementHeight);
+    graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false, 1);
+    mRectF.set(0, 0, 12, 8);
+    mRectF.offset(2 * mCanvasWidth / 3 - 6, mCanvasHeight - kTouchMovementHeight);
+    graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false, 1);
   }
 
   @Override
@@ -118,35 +149,20 @@ public class Avatar extends ArticulatedEntity {
     // draw method calculates the model's hand positions which we use to draw
     // the weapon on top of.
     if (mWeapon != null) {
+      /*
       super.getPartTransformation("farm_l").getValues(mArray9);
       float hand_lx = mArray9[2];
       float hand_ly = mArray9[5];
       super.getPartTransformation("farm_r").getValues(mArray9);
       float hand_rx = mArray9[2];
       float hand_ry = mArray9[5];
+      */
+      float hand_lx = mCanvasWidth / 2 - 5;
+      float hand_ly = mCanvasHeight / 2;
+      float hand_rx = mCanvasWidth / 2 + 5;
+      float hand_ry = mCanvasHeight / 2;
       mWeapon.draw(graphics, center_x, center_y, zoom,
                    hand_lx, hand_ly, hand_rx, hand_ry);
-    }
-
-    // Draw the avatar life and ammo meters.
-    float meter_width = mCanvasWidth - 45;
-    mRect.set(0, 0, 31, 17);
-    mRectF.set(0, 0, 31, 17);
-    graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false);
-    if (life > 0.0f) {
-      float life_meter_width = meter_width * life;
-      mRect.set(0, 22, 64, 26);
-      mRectF.set(32, 2, 32 + life_meter_width, 6);
-      graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false);
-    }
-    if (mWeapon != null) {
-      float ammo_meter_width =
-          Math.min(meter_width,
-                   meter_width * mWeapon.getAmmo() / mWeapon.getMaxAmmo());
-      ammo_meter_width = Math.max(ammo_meter_width, 0.0f);
-      mRect.set(0, 29, 64, 33);
-      mRectF.set(32, 8, 32 + ammo_meter_width, 12);
-      graphics.drawImage(mGameState.misc_sprites, mRect, mRectF, false, false);
     }
   }
 
@@ -172,10 +188,13 @@ public class Avatar extends ArticulatedEntity {
       has_ground_contact = false;
       mJumping = true;
     }
-    if (key_code == kKeyJump && state == 0 && mJumping && dy < 0.0f) {
-      dy = Math.min(0.0f, dy + kJumpVelocity);
-      mJumping = false;
-    }
+    // The following body of code handles the jump release mechanism for jumping
+    // short heights. It has been disabled for the touch controls since multi-
+    // touch on the phone is not available.
+    // if (key_code == kKeyJump && state == 0 && mJumping && dy < 0.0f) {
+    //   dy = Math.min(0.0f, dy + kJumpVelocity);
+    //   mJumping = false;
+    // }
 
     // Shooting.
     if (key_code == kKeyShoot1 || key_code == kKeyShoot2) {
@@ -194,44 +213,46 @@ public class Avatar extends ArticulatedEntity {
     // event handler. Note: Pressure and size measurements are also available
     // from the API, but aren't yet used here.
     int action = motion_event.getAction();
-    if (action == MotionEvent.ACTION_DOWN ||
-        action == MotionEvent.ACTION_MOVE) {
-      // This case handled below.
-    } else if (action == MotionEvent.ACTION_UP) {
+
+    if (action == MotionEvent.ACTION_UP) {
       setKeyState(kKeyLeft, 0);
       setKeyState(kKeyRight, 0);
       setKeyState(kKeyJump, 0);
       setKeyState(kKeyShoot1, 0);
-      return;
-    } else {
       return;
     }
 
-    // The touch event was in the movement section of the display surface.
-    if (motion_event.getY() > mCanvasHeight - kTouchMovementHeight) {
-      setKeyState(kKeyJump, 0);
-      setKeyState(kKeyShoot1, 0);
-      if (motion_event.getX() < mCanvasWidth / 2) {
-        setKeyState(kKeyRight, 0);
-        setKeyState(kKeyLeft, 1);
-      } else {
-        setKeyState(kKeyLeft, 0);
-        setKeyState(kKeyRight, 1);
+    if (action == MotionEvent.ACTION_DOWN ||
+        action == MotionEvent.ACTION_MOVE) {
+      // The touch event was in the movement section of the display surface.
+      if (motion_event.getY() > mCanvasHeight - kTouchMovementHeight) {
+        int third_width = mCanvasWidth / 3;
+        if (motion_event.getX() < third_width) {
+          setKeyState(kKeyShoot1, 0);
+          setKeyState(kKeyJump, 0);
+          setKeyState(kKeyRight, 0);
+          setKeyState(kKeyLeft, 1);
+        } else if (motion_event.getX() < 2 * third_width) {
+          setKeyState(kKeyShoot1, 0);
+          setKeyState(kKeyRight, 0);
+          setKeyState(kKeyLeft, 0);
+          setKeyState(kKeyJump, 1);
+        } else {
+          setKeyState(kKeyShoot1, 0);
+          setKeyState(kKeyLeft, 0);
+          setKeyState(kKeyJump, 0);
+          setKeyState(kKeyRight, 1);
+        }
+        return;
       }
+
+      // The touch event was in the action section. (Any area outside of the
+      // movement section of the display surface.)
+      mTargetX = motion_event.getX() - mCanvasWidth / 2;
+      mTargetY = motion_event.getY() - mCanvasHeight / 2;
+      setKeyState(kKeyShoot1, 1);
     }
-    // the touch event was in the action section. (Any area above the movement
-    // section of the display surface.)
-    else {
-      setKeyState(kKeyLeft, 0);
-      setKeyState(kKeyRight, 0);
-      if (motion_event.getX() < mCanvasWidth / 2) {
-        setKeyState(kKeyShoot1, 0);
-        setKeyState(kKeyJump, 1);
-      } else {
-        setKeyState(kKeyJump, 0);
-        setKeyState(kKeyShoot1, 1);
-      }
-    }
+    return;
   }
 
   void setWeapon(Weapon weapon) {
@@ -246,6 +267,8 @@ public class Avatar extends ArticulatedEntity {
   private int       mCanvasHeight;
   private GameState mGameState;
   private boolean   mJumping;
+  private float     mTargetX;
+  private float     mTargetY;
   public Weapon     mWeapon;
 
   // To avoid allocations, the following are used.
@@ -269,9 +292,8 @@ public class Avatar extends ArticulatedEntity {
   private static final int   kKeyJump                = KeyEvent.KEYCODE_K;
   private static final int   kKeyShoot1              = KeyEvent.KEYCODE_J;
   private static final int   kKeyShoot2              = KeyEvent.KEYCODE_L;
-  private static final float kRadius                 = 25.0f;
-  private static final Uri   kSoundJump              = Uri.parse("content://avatar_jump.mp3");
-  private static final int   kSpriteSize             = 64;
-  private static final int   kTouchMovementHeight    = 30;
+  private static final float kRadius                 = 20.0f;
+  private static final Uri   kSoundJump              = Uri.parse("file:///android_asset/avatar_jump.mp3");
+  private static final int   kTouchMovementHeight    = 45;
   private static final float kVelocityBoost          = 40.0f;
 }

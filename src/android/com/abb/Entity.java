@@ -96,7 +96,8 @@ public class Entity implements Cloneable {
 
       graphics.drawImage(
           sprite_image, sprite_rect, mRectF,
-          sprite_flipped_horizontal, sprite_flipped_vertical);
+          sprite_flipped_horizontal, sprite_flipped_vertical,
+          1 /*block count*/);
     }
   }
 
