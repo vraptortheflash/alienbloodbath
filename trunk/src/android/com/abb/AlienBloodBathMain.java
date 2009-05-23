@@ -28,7 +28,8 @@ public class AlienBloodBathMain extends Activity {
   @Override
   public void onCreate(Bundle saved_instance_state) {
     super.onCreate(saved_instance_state);
-    Content.initialize(getResources());
+    Content.initialize(this);
+
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                          WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -74,9 +75,6 @@ public class AlienBloodBathMain extends Activity {
   public void onSaveInstanceState(Bundle saved_instance_state) {
     saved_instance_state.putBundle("mGameState", mGameState.saveStateBundle());
     super.onSaveInstanceState(saved_instance_state);
-
-    // Clean up any temporary files used by the content management library.
-    Content.cleanup();
   }
 
   @Override

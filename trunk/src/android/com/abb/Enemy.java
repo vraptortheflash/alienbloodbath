@@ -75,7 +75,7 @@ public class Enemy extends ArticulatedEntity {
     // Given a fully-specified default enemy parameters map, we can parse and
     // merge in the user defined values. Note that the following method rejects
     // all keys provided by the user which were not defined above.
-    String file_path = Content.getTemporaryFilePath(uri);
+    String file_path = Content.getFilePath(uri);
     String[] tokens = Content.readFileTokens(file_path);
     Content.mergeKeyValueTokensWithMap(tokens, parameters);
     Content.assertStringNotNone(parameters, kParameterEntity);

@@ -13,7 +13,6 @@ package android.com.abb;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.Rect;
@@ -42,16 +41,16 @@ public class ArticulatedEntity extends Entity {
     // mappings representing a directed acyclic graph (DAG) of articulated
     // parts. There is to be a single root named "root". The file format is
     // expected to be an ASCII text file laid out with a single arc per line.
-    // The first line specifies the image Uri. Each line after the first must be
-    // of the format "<part name> <root part name> <rect left> <rect top> <rect
-    // right> <rect bottom>".
+    // The first line specifies the image file name. Each line after the first
+    // must be of the format "<part name> <root part name> <rect left> <rect
+    // top> <rect right> <rect bottom>".
     //
     // For example:
-    // content:///entity.png
+    // entity.png
     // thigh  root   0   0  30  10
     // leg    thigh  10  0  30  20
 
-    String file_path = Content.getTemporaryFilePath(uri);
+    String file_path = Content.getFilePath(uri);
     String[] tokens = Content.readFileTokens(file_path);
 
     final int kLineTokenCount = 6;
@@ -111,7 +110,7 @@ public class ArticulatedEntity extends Entity {
     // graphics class must only be interacted with from the main thread. This is
     // a product of the lack of thread safety in OpenGL.
     if (mImageUri != null) {
-      String image_path = Content.getTemporaryFilePath(mImageUri);
+      String image_path = Content.getFilePath(mImageUri);
       Bitmap image_bitmap = BitmapFactory.decodeFile(image_path);
       mImageHandle = graphics.loadImageFromBitmap(image_bitmap);
       mImageUri = null;
@@ -175,7 +174,7 @@ public class ArticulatedEntity extends Entity {
         transformation.preTranslate(-image_rect.width() / 2, 0.0f);
         transformation.preScale(image_rect.width(), image_rect.height());
         graphics.drawImage(
-            image_handle, image_rect, transformation, false, false);
+            image_handle, image_rect, transformation, false, false, 1);
       }
 
       // Draw children. The root node transformation is handled specially to
@@ -234,7 +233,7 @@ public class ArticulatedEntity extends Entity {
       // leg       0.0  180
       // leg       0.5  170
 
-      String file_path = Content.getTemporaryFilePath(uri);
+      String file_path = Content.getFilePath(uri);
       String[] tokens = Content.readFileTokens(file_path);
 
       final int kLineTokenCount = 3;

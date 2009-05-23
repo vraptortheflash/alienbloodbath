@@ -60,7 +60,7 @@ public class Map {
     // Load level layout.
     Uri level_uri =
         Uri.withAppendedPath(mBaseUri, "level_" + mLevelOffset + ".txt");
-    String level_path = Content.getTemporaryFilePath(level_uri);
+    String level_path = Content.getFilePath(level_uri);
     loadLevelFromFile(level_path);
 
     // Load tiles background image.
@@ -68,12 +68,12 @@ public class Map {
         Uri.withAppendedPath(mBaseUri, "tiles_" + mLevelOffset + ".txt");
     if (!Content.exists(tiles_uri))
       tiles_uri = Uri.withAppendedPath(mBaseUri, "tiles_default.txt");
-    String tiles_path = Content.getTemporaryFilePath(tiles_uri);
+    String tiles_path = Content.getFilePath(tiles_uri);
     String[] image_paths = Content.readFileTokens(tiles_path);
-    String tiles_image_path = Content.getTemporaryFilePath(
+    String tiles_image_path = Content.getFilePath(
         Uri.withAppendedPath(mBaseUri, image_paths[0]));
     loadTilesFromFile(tiles_image_path);
-    String background_image_path = Content.getTemporaryFilePath(
+    String background_image_path = Content.getFilePath(
         Uri.withAppendedPath(mBaseUri, image_paths[1]));
     loadBackgroundFromFile(background_image_path);
 
@@ -82,8 +82,12 @@ public class Map {
         Uri.withAppendedPath(mBaseUri, "effects_" + mLevelOffset + ".txt");
     if (!Content.exists(effects_uri))
       effects_uri = Uri.withAppendedPath(mBaseUri, "effects_default.txt");
-    String effects_path = Content.getTemporaryFilePath(effects_uri);
+    String effects_path = Content.getFilePath(effects_uri);
     loadEffectsFromFile(effects_path);
+
+    // Build the run length level encoding which is used to accelerate the
+    // rendering.
+    computeRunLengthEncoding();
 
     // Pre-cache audio clips.
     mGameState.preloadSound(kSoundExplosion);
@@ -169,6 +173,24 @@ public class Map {
       if (mTiles[n] == kStartingTile) {
         mStartingX = (n / kMapWidth) * kTileSize;
         mStartingY = (n % kMapWidth) * kTileSize;
+      }
+    }
+  }
+
+  private void computeRunLengthEncoding() {
+    mTilesRunLength = new char[mTiles.length];
+    for (int y = 0; y < kMapHeight; ++y) {
+      for (int x = 0; x < kMapWidth; ++x) {
+        char run_length = 1;
+        char tile_type = mTiles[kMapWidth * x + y];
+        while (x + run_length < kMapWidth &&
+               mTiles[kMapWidth * (x + run_length) + y] == tile_type &&
+               !mEffectsExplode[mTiles[kMapWidth * (x + run_length) + y]] &&
+               mTriggers[kMapWidth * (x + run_length) + y] == null &&
+               run_length <= 16) {
+          ++run_length;
+        }
+        mTilesRunLength[kMapWidth * x + y] = run_length;
       }
     }
   }
@@ -349,17 +371,19 @@ public class Map {
       mTilesBitmap = null;
     }
 
+    int canvas_width = graphics.getWidth();
+    int canvas_height = graphics.getHeight();
+
     // Draw the background.
     mRectSource.top = mRectSource.left = 0;
     mRectSource.bottom = mRectSource.right = 256;
-    int canvas_width = graphics.getWidth();
-    int canvas_height = graphics.getHeight();
     float kMinZoom = 0.6f;
     float background_zoom = canvas_width / 3.0f * (zoom - kMinZoom);
     mRectDest.top = mRectDest.left = -background_zoom;
     mRectDest.right = canvas_width + background_zoom;
     mRectDest.bottom = canvas_height + background_zoom;
-    graphics.drawImage(mBackgroundImage, mRectSource, mRectDest, false, false);
+    graphics.drawImage(
+        mBackgroundImage, mRectSource, mRectDest, false, false, 1);
 
     // Draw the tiles.
     mRectSource.top = mRectSource.left = 0;
@@ -370,10 +394,11 @@ public class Map {
     float x_max = center_x + (half_canvas_width + kTileSize) / zoom;
     float y_min = center_y - half_canvas_height / zoom;
     float y_max = center_y + (half_canvas_height + kTileSize) / zoom;
-    for (float x = x_min; x < x_max; x += kTileSize) {
-      for (float y = y_min; y < y_max; y += kTileSize) {
+    for (float y = y_min; y <= y_max; y += kTileSize) {
+      for (float x = x_min; x <= x_max; ) {
         int tile_index = indexAt(x, y);
         if (tile_index < 0) {
+          x += kTileSize;
           continue;  // Tile out of bounds.
         }
 
@@ -390,22 +415,23 @@ public class Map {
 
         // Draw the tile.
         int tile_id = mTiles[tile_index];
-        if (tile_id == 0) {
-          continue;  // Not a visual tile.
+        int run_length = mTilesRunLength[tile_index];
+        if (tile_id != 0) {  // Tile is a visual tile.
+          int index_x = (int)(x / kTileSize + 0.5f);
+          int index_y = (int)(y / kTileSize + 0.5f);
+          mRectSource.top = kTileSize * tile_id;
+          mRectSource.bottom = kTileSize * tile_id + kTileSize;
+          mRectDest.left = kTileSize * index_x * zoom;
+          mRectDest.top = kTileSize * index_y * zoom;
+          mRectDest.right =  (kTileSize * index_x + kTileSize) * zoom;
+          mRectDest.bottom = (kTileSize * index_y + kTileSize) * zoom;
+          mRectDest.offset(
+              -center_x * zoom + half_canvas_width - kTileSize / 2 * zoom,
+              -center_y * zoom + half_canvas_height - kTileSize / 2 * zoom);
+          graphics.drawImage(
+              mTilesImage, mRectSource, mRectDest, false, false, run_length);
         }
-
-        int index_x = (int)(x / kTileSize + 0.5f);
-        int index_y = (int)(y / kTileSize + 0.5f);
-        mRectSource.top = kTileSize * tile_id;
-        mRectSource.bottom = kTileSize * tile_id + kTileSize;
-        mRectDest.left = kTileSize * index_x * zoom;
-        mRectDest.top = kTileSize * index_y * zoom;
-        mRectDest.right =  (kTileSize * index_x + kTileSize) * zoom;
-        mRectDest.bottom = (kTileSize * index_y + kTileSize) * zoom;
-        mRectDest.offset(
-            -center_x * zoom + half_canvas_width - kTileSize / 2 * zoom,
-            -center_y * zoom + half_canvas_height - kTileSize / 2 * zoom);
-        graphics.drawImage(mTilesImage, mRectSource, mRectDest, false, false);
+        x += kTileSize * run_length;
       }
     }
   }
@@ -463,6 +489,7 @@ public class Map {
   private char[]    mTiles;
   private Bitmap    mTilesBitmap;
   private int       mTilesImage      = -1;
+  private char[]    mTilesRunLength;
   private String[]  mTriggers;
 
   private static final char  kBaseValue            = 'a';
@@ -473,7 +500,7 @@ public class Map {
   private static final int   kMapHeight            = 100;
   private static final int   kMapWidth             = 100;
   private static final int   kMaxTileCount         = 25;
-  private static final Uri   kSoundExplosion       = Uri.parse("content://explosion.mp3");
+  private static final Uri   kSoundExplosion       = Uri.parse("file:///android_asset/explosion.mp3");
   private static final int   kStartingTile         = 10;
   private static final int   kTileSize             = 64;
 }

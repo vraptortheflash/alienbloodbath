@@ -156,18 +156,14 @@ public class Graphics {
   }
 
   public void drawImage(int image_handle, Rect source_rect, RectF dest_rect,
-                        boolean flipped_horizontal, boolean flipped_vertical) {
+                        boolean flipped_horizontal, boolean flipped_vertical,
+                        int block_count) {
     /* DEBUGGING ONLY
     Assert.assertTrue("Invalid image handle in drawImage", image_handle >= 0);
     // The drawImageOpenGL implementation has been inlined here for performance
     // reasons. TODO: Inline the 2D API implementation here.
     Assert.assertEquals(mBackendType, BackendType.OPENGL);
     */
-    if (mBackendType == BackendType.ANDROID2D) {
-      drawImageAndroid2D(image_handle, source_rect, dest_rect,
-                         flipped_horizontal, flipped_vertical);
-      return;
-    }
 
     if (image_handle >= mTextureData.size()) {
       Log.d("Graphics::drawImage", "Unknown image handle encountered. " +
@@ -216,11 +212,12 @@ public class Graphics {
     mGl.glMatrixMode(GL10.GL_MODELVIEW);
     mGl.glLoadMatrixf(mMatrix4x4, 0);
 
-    mGl.glDrawArrays(GL10.GL_TRIANGLE_FAN, 0, 4);
+    mGl.glDrawArrays(GL10.GL_TRIANGLE_STRIP, 0, 2 * block_count + 2);
   }
 
   public void drawImage(int image_handle, Rect source_rect, Matrix dest_matrix,
-                        boolean flipped_horizontal, boolean flipped_vertical) {
+                        boolean flipped_horizontal, boolean flipped_vertical,
+                        int block_count) {
     /* DEBUGGING ONLY
     Assert.assertTrue("Invalid image handle in drawImage", image_handle >= 0);
     // The drawImageOpenGL implementation has been inlined here for performance
@@ -287,7 +284,7 @@ public class Graphics {
     mGl.glMatrixMode(GL10.GL_MODELVIEW);
     mGl.glLoadMatrixf(mMatrix4x4, 0);
 
-    mGl.glDrawArrays(GL10.GL_TRIANGLE_FAN, 0, 4);
+    mGl.glDrawArrays(GL10.GL_TRIANGLE_STRIP, 0, 2 * block_count + 2);
   }
 
   /**
@@ -438,7 +435,7 @@ public class Graphics {
     //                                         /khronos/opengles/GL10.html
 
     mEgl = (EGL10)EGLContext.getEGL();
-    mEglDisplay = mEgl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
+    mEglDisplay = mEgl.eglGetDisplay(EGL11.EGL_DEFAULT_DISPLAY);
 
     // We can now initialize EGL for that display.
     int[] version = new int[2];
@@ -447,7 +444,7 @@ public class Graphics {
           "Found version: " + version[0] + "." + version[1]);
 
     int attrib_list[] = {  // Use default bit depths.
-      EGL10.EGL_NONE
+      EGL11.EGL_NONE
     };
 
     EGLConfig[] configs = new EGLConfig[1];
@@ -455,7 +452,7 @@ public class Graphics {
     mEgl.eglChooseConfig(mEglDisplay, attrib_list, configs, 1, num_config);
     mEglConfig = configs[0];
     mEglContext = mEgl.eglCreateContext(
-        mEglDisplay, mEglConfig, EGL10.EGL_NO_CONTEXT, null);
+        mEglDisplay, mEglConfig, EGL11.EGL_NO_CONTEXT, null);
     mGl = (GL10)mEglContext.getGL();
 
     final boolean kEnableOpenGLDebugging = false;
@@ -533,10 +530,24 @@ public class Graphics {
     mGl.glLoadIdentity();
     mGl.glOrthof(0, getWidthOpenGL(), 0, getHeightOpenGL(), -1, 1);
 
-    // Since we will only be rendering quads, set up a shared vertex and texture
-    // coordinate array. The following is so convoluted I really wonder if this
-    // is right of if the Java / OpenGL ES folks need their heads examined.
-    float[] corner_array = { 0, 0,  1, 0,  1, 1, 0, 1 };
+    // Since we will only be rendering triangle strips, set up a shared vertex
+    // and texture coordinate array. The following array lays out 16 quads.
+    float[] corner_array = { 0, 0,  0, 1,  1, 0,  1, 1,
+                             2, 0,  2, 1,
+                             3, 0,  3, 1,
+                             4, 0,  4, 1,
+                             5, 0,  5, 1,
+                             6, 0,  6, 1,
+                             7, 0,  7, 1,
+                             8, 0,  8, 1,
+                             9, 0,  9, 1,
+                             10, 0,  10, 1,
+                             11, 0,  11, 1,
+                             12, 0,  12, 1,
+                             13, 0,  13, 1,
+                             14, 0,  14, 1,
+                             15, 0,  15, 1,
+                             16, 0,  16, 1, };
     ByteBuffer corner_byte_buffer =
         ByteBuffer.allocateDirect(4 * corner_array.length);
     corner_byte_buffer.order(ByteOrder.nativeOrder());
@@ -580,6 +591,19 @@ public class Graphics {
     }
   }
 
+  public void pushRotationMatrixOpenGL(float angle) {
+    mGl.glMatrixMode(GL10.GL_MODELVIEW);
+    mGl.glPushMatrix();
+    mGl.glTranslatef(mSurfaceWidth / 2.0f, mSurfaceHeight / 2.0f, 0.0f);
+    mGl.glRotatef(angle, 0, 0, 1);
+    mGl.glTranslatef(-mSurfaceWidth / 2.0f, -mSurfaceHeight / 2.0f, 0.0f);
+  }
+
+  public void popMatrixOpenGL() {
+    mGl.glMatrixMode(GL10.GL_MODELVIEW);
+    mGl.glPopMatrix();
+  }
+
   private int loadImageFromBitmapOpenGL(Bitmap bitmap) {
     // Allocate a texture handle within the OpenGL context.
     int[] texture_names = new int[1];
@@ -618,6 +642,12 @@ public class Graphics {
     mGl.glTexParameterf(GL10.GL_TEXTURE_2D,
                         GL10.GL_TEXTURE_MAG_FILTER,
                         GL10.GL_NEAREST);
+    mGl.glTexParameterx(GL10.GL_TEXTURE_2D,
+                        GL10.GL_TEXTURE_WRAP_S,
+                        GL10.GL_REPEAT);
+    mGl.glTexParameterx(GL10.GL_TEXTURE_2D,
+                        GL10.GL_TEXTURE_WRAP_T,
+                        GL10.GL_REPEAT);
 
     // The size must be manually stored for retrieval during the rendering
     // process since the texture coordinate scheme under OpenGL is normalized

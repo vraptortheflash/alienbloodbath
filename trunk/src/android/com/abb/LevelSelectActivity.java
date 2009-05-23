@@ -11,11 +11,14 @@
 
 package android.com.abb;
 
-import android.content.Context;
+import android.app.ProgressDialog;
 import android.app.TabActivity;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.animation.TranslateAnimation;
 import android.view.LayoutInflater;
@@ -23,6 +26,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
@@ -36,7 +40,7 @@ import java.util.List;
 import junit.framework.Assert;
 
 
-public class LevelSelectActivity extends TabActivity implements ListView.OnItemClickListener {
+public class LevelSelectActivity extends TabActivity implements ListView.OnItemClickListener, Runnable {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -46,24 +50,46 @@ public class LevelSelectActivity extends TabActivity implements ListView.OnItemC
     tab_host.addTab(tab_host.newTabSpec("levellistview")
                     .setIndicator("", getResources().getDrawable(R.drawable.maps))
                     .setContent(R.id.levellistview));
-    /*
     tab_host.addTab(tab_host.newTabSpec("avatarview")
                     .setIndicator("", getResources().getDrawable(R.drawable.avatar))
                     .setContent(R.id.avatarview));
-    */
     tab_host.addTab(tab_host.newTabSpec("settingsview")
                     .setIndicator("", getResources().getDrawable(R.drawable.settings))
                     .setContent(R.id.settingsview));
+    tab_host.addTab(tab_host.newTabSpec("helpview")
+                    .setIndicator("", getResources().getDrawable(R.drawable.help))
+                    .setContent(R.id.helpview));
     tab_host.setCurrentTab(0);
 
-    Content.initialize(getResources());
+    WebView web_view = (WebView)findViewById(R.id.helpview);
+    web_view.loadUrl("file:///android_asset/help.htm");
 
-    loadLevels();
-    mLevelArrayAdapter = new LevelArrayAdapter(this);
-    ListView list_view = (ListView)findViewById(R.id.levellistview);
-    list_view.setAdapter(mLevelArrayAdapter);
-    list_view.setOnItemClickListener(this);
+    // Start the asset pre-caching and level loading. This is done in another
+    // thread since it is relatively slow. Note that the loading thread needs to
+    // signal this thread via a "handler" since Android views may only be
+    // touched via the main thread.
+    mPrecachingDialog = ProgressDialog.show(
+        this, null, "Precaching...", true, false);
+    mPrecachingDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+    (new Thread(this)).start();
   }
+
+  public void run() {
+    Content.initialize(this);
+    loadLevels();
+    mRunDoneHandler.sendEmptyMessage(0);
+  }
+
+  private Handler mRunDoneHandler = new Handler() {
+      @Override
+      public void handleMessage(Message msg) {
+        mPrecachingDialog.dismiss();
+        mLevelArrayAdapter = new LevelArrayAdapter(mThis);
+        ListView list_view = (ListView)findViewById(R.id.levellistview);
+        list_view.setAdapter(mLevelArrayAdapter);
+        list_view.setOnItemClickListener(mThis);
+      }
+    };
 
   @Override
   public void onItemClick(AdapterView parent, View v, int position, long id) {
@@ -100,9 +126,6 @@ public class LevelSelectActivity extends TabActivity implements ListView.OnItemC
   @Override
   public void onSaveInstanceState(Bundle saved_instance_state) {
     super.onSaveInstanceState(saved_instance_state);
-
-    // Clean up any temporary files used by the content management library.
-    Content.cleanup();
   }
 
   private void loadLevels() {
@@ -196,10 +219,13 @@ public class LevelSelectActivity extends TabActivity implements ListView.OnItemC
     float time;
   }
 
+  private LevelSelectActivity mThis = this;
   private LevelArrayAdapter mLevelArrayAdapter;
   private ArrayList<Level> mLevels = new ArrayList<Level>();
+  private ProgressDialog mPrecachingDialog;
 
   //private final String kRootDirectory = "content:///Classic/";
   //private final String kRootDirectory = "content:///Demo/";
-  private final String kRootDirectory = "content:///The_Second_Wave/";
+  //private final String kRootDirectory = "content:///The_Second_Wave/";
+  private final String kRootDirectory = "file:///android_asset/Maps/";
 }

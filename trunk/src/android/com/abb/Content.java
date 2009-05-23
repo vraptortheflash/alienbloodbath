@@ -11,6 +11,8 @@
 
 package android.com.abb;
 
+import android.content.Context;
+import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.util.Log;
@@ -28,75 +30,118 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import junit.framework.Assert;
 
-
 /** Class to abstract the details of extracting and accessing files from the ABB
  * content zip file in the same was files on disk are accessed. TODO: This class
  * is not thread-safe. Extracted files are not cached. */
 public class Content {
-  public static void initialize(Resources resources) {
-    mResources = resources;
+  public static void initialize(Context context) {
+    mAssets = context.getAssets();
+    mCacheDir = context.getCacheDir().getAbsolutePath() + "/";
+    mResources = context.getResources();
     prepare();
   }
 
-  private static void safePrepare() {
-    if (!(new File(kTempContentPath)).exists()) {
-      prepare();
+  synchronized private static void prepare() {
+    if (cacheIsState()) {
+      for (String cache_item : (new File(mCacheDir)).list()) {
+        deleteRecursively(cache_item);
+      }
+      extractAssets("");
     }
   }
 
-  synchronized private static void prepare() {
-    if (!(new File(kTempFileDirectory)).exists()) {
-      boolean success = (new File(kTempFileDirectory)).mkdir();
-      Assert.assertTrue("Could not create cache directory.", success);
+  private static boolean cacheIsState() {
+    if (!new File(mCacheDir + "epoch.txt").exists()) {
+      return true;
     }
 
     try {
-      InputStream content_input_stream =
-          mResources.openRawResource(R.raw.content_package);
-      writeStreamToFile(content_input_stream, kTempContentPath);
-      content_input_stream.close();
+      InputStream asset_input_stream = mAssets.open("epoch.txt");
+      writeStreamToFile(asset_input_stream, mCacheDir + "real_epoch.txt");
+      asset_input_stream.close();
     } catch (IOException ex) {
-      Assert.fail("Content::initialize. " +
-                  "Failed extracting content package: " + ex.toString());
+      Assert.fail("Could not compute assets epoch: " + ex.toString());
+    }
+
+    String[] epoch = readFileLines(mCacheDir + "epoch.txt");
+    String[] real_epoch = readFileLines(mCacheDir + "real_epoch.txt");
+
+    if (epoch.length != real_epoch.length) {
+      return true;
+    }
+    for (int line = 0; line < epoch.length; ++line) {
+      if (!epoch[line].equals(real_epoch[line])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static void extractAssets(String path) {
+    String[] assets = null;
+    try {
+      assets = mAssets.list(path);
+    } catch (IOException ex) {
+      // The path is most likely not a directory. No work to do.
+    }
+
+    if (assets != null) {
+      for (String asset : assets) {
+        String full_path = path + (path.length() > 0 ? "/" : "") + asset;
+        String target_path = mCacheDir + full_path;
+        try {
+          // Skip android SDK specific assets.
+          boolean skip = false;
+          for (String ignore_asset : kIgnoreAssets) {
+            if (full_path.indexOf(ignore_asset) != -1) {
+              skip = true;
+              break;
+            }
+          }
+          if (skip) {
+            continue;
+          }
+
+          // Create the parent directory.
+          Log.d("Content::prepare", "Extracting asset: " + full_path);
+          (new File((new File(target_path)).getParent())).mkdir();
+
+          // Write the file.
+          InputStream asset_input_stream = mAssets.open(full_path);
+          writeStreamToFile(asset_input_stream, target_path);
+          asset_input_stream.close();
+        } catch (IOException ex) {
+          Log.d("Content::extractAssets",
+                "Failed extracting asset: " + full_path + " to " + target_path);
+        }
+        extractAssets(full_path);  // Recurse.
+      }
     }
   }
 
-  synchronized public static void cleanup() {
-    safeDelete(kTempContentPath);
-    for (String temporary_file : mFileCache.values()) {
-      safeDelete(temporary_file);
+  private static void deleteRecursively(String path) {
+    File path_file = new File(path);
+    if (path_file.isDirectory()) {
+      for (String child : path_file.list()) {
+        deleteRecursively(path + child);
+      }
     }
-    mFileCache.clear();
-  }
-
-  protected static void safeDelete(String file_path) {
-    File file = new File(file_path);
-    if (file.exists()) {
-      file.delete();
-    }
+    path_file.delete();
   }
 
   public static boolean exists(Uri uri) {
     Log.d("Content::exists", uri.toString());
 
-    safePrepare();
+    // Handle "file:///android_asset" scheme.
+    if (uri.toString().indexOf("file:///android_asset/") == 0) {
+      return exists(
+          Uri.parse(uri.toString().replaceFirst(
+                        "file:///android_asset/", "file://" + mCacheDir)));
+    }
 
     // Handle "file://" scheme.
     if (uri.getScheme().equals("file")) {
       return (new File(uri.getPath())).exists();
-    }
-
-    // Handle "content://" scheme.
-    else if (uri.getScheme().equals("content")) {
-      String entry_name = uriToContentEntry(uri);
-
-      String[] entries = rawContentEntries();
-      Arrays.sort(entries);
-      boolean exists = Arrays.binarySearch(entries, entry_name) > 0;
-      if (!exists) {
-        Log.d("Content::exists", "Could not find entry: " + entry_name);
-      }
-      return exists;
     }
 
     // Bad uri scheme.
@@ -109,27 +154,16 @@ public class Content {
   public static String[] list(Uri uri) {
     Log.d("Content::list", uri.toString());
 
-    safePrepare();
+    // Handle "file:///android_asset" scheme.
+    if (uri.toString().indexOf("file:///android_asset/") == 0) {
+      return list(
+          Uri.parse(uri.toString().replaceFirst(
+                        "file:///android_asset/", "file://" + mCacheDir)));
+    }
 
     // Handle "file://" scheme.
     if (uri.getScheme().equals("file")) {
       return (new File(uri.getPath())).list();
-    }
-
-    // Handle "content://" scheme.
-    else if (uri.getScheme().equals("content")) {
-      String path_prefix = uriToContentEntry(uri);
-
-      String[] entries = rawContentEntries();
-      ArrayList<String> list_entries = new ArrayList<String>();
-      for (String entry : entries) {
-        if (entry.startsWith(path_prefix)) {
-          entry = entry.replace(path_prefix, "");
-          Log.d("Content::list", "Found entry: " + entry);
-          list_entries.add(entry);
-        }
-      }
-      return list_entries.toArray(new String[0]);
     }
 
     // Bad uri scheme.
@@ -139,59 +173,22 @@ public class Content {
     }
   }
 
-  synchronized public static String getTemporaryFilePath(Uri uri) {
-    Log.d("Content::getTemporaryFilePath", uri.toString());
+  synchronized public static String getFilePath(Uri uri) {
+    Log.d("Content::getFilePath", uri.toString());
 
-    safePrepare();
+    // Handle "file:///android_asset" scheme.
+    if (uri.toString().indexOf("file:///android_asset/") == 0) {
+      return uri.toString().replaceFirst("file:///android_asset/", mCacheDir);
+    }
 
     // Handle "file://" scheme.
     if (uri.getScheme().equals("file")) {
       return uri.getPath();
     }
 
-    // Attempt to resolve the file request from the file cache.
-    String cached_file_path = mFileCache.get(uri);
-    if (cached_file_path != null) {
-      return cached_file_path;
-    }
-
-    // Handle "content://" scheme. We must extract the file to a temporary path
-    // in order to handle this request.
-    if (uri.getScheme().equals("content")) {
-      ZipFile content_file;
-      try {
-        content_file = new ZipFile(kTempContentPath);
-      } catch (IOException ex) {
-        Assert.fail("Content::getTemporaryFilePath. " +
-                    "Unable to open package file: " + ex.toString());
-        return null;
-      }
-      String entry_name = uriToContentEntry(uri);
-      ZipEntry content_entry = content_file.getEntry(entry_name);
-      if (content_entry == null) {
-        Assert.fail("Content::getTemporaryFilePath. " +
-                    "Unable to find entry: " + entry_name);
-        return null;
-      }
-
-      String temporary_file_path =
-          kTempFileDirectory + entry_name.replace("/", "_");
-      try {
-        InputStream content_stream = content_file.getInputStream(content_entry);
-        writeStreamToFile(content_stream, temporary_file_path);
-      } catch (IOException ex) {
-        Assert.fail("Content::getTemporaryFilePath. " +
-                    "Unable to write out entry: " + ex.toString());
-        return null;
-      }
-
-      mFileCache.put(uri, temporary_file_path);
-      return temporary_file_path;
-    }
-
     // Bad uri scheme.
     else {
-      Assert.fail("Content::getTemporaryFilePath. " +
+      Assert.fail("Content::getFilePath. " +
                   "Bad URI scheme: " + uri.toString());
       return null;
     }
@@ -231,7 +228,7 @@ public class Content {
   }
 
   static public String[] readUriLines(Uri uri) {
-    String file_path = getTemporaryFilePath(uri);
+    String file_path = getFilePath(uri);
     return readFileLines(file_path);
   }
 
@@ -317,33 +314,10 @@ public class Content {
     output_stream.close();
   }
 
-  private static String[] rawContentEntries() {
-    ZipFile content_file;
-    try {
-      content_file = new ZipFile(kTempContentPath);
-    } catch (IOException ex) {
-      Assert.fail("Content::rawContentEntries, " +
-                  "Unable to open package file: " + ex.toString());
-      return null;
-    }
-    if (!content_file.entries().hasMoreElements()) {
-      Log.d("Content::rawContentEntries", "Content package empty.");
-    }
+  private static String       mCacheDir;
+  private static AssetManager mAssets;
+  private static Resources    mResources;
 
-    ArrayList<String> entry_list = new ArrayList<String>();
-    for (Enumeration<? extends ZipEntry> entry_it = content_file.entries();
-         entry_it.hasMoreElements();) {
-      String entry_name = entry_it.nextElement().getName();
-      entry_list.add(entry_name);
-    }
-    return entry_list.toArray(new String[0]);
-  }
-
-  private static TreeMap<Uri, String> mFileCache = new TreeMap<Uri, String>();
-  private static Resources mResources;
-
-  private static final String kTempFileDirectory =
-      "/data/data/android.com.abb/cache/";
-  private static final String kTempContentPath =
-      "/data/data/android.com.abb/cache/abbpackage.tmp";
+  private static final String[] kIgnoreAssets = {
+    "images/", "sounds/", "webkit/" };
 }
