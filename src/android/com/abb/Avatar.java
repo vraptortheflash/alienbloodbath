@@ -23,6 +23,7 @@ public class Avatar extends AnimatedEntity {
   public Avatar(GameState game_state) {
     super();
     mGameState = game_state;
+    mGrappling = new Grappling(game_state);
 
     //setDrawingScale(kDrawingScale);
     radius = kRadius;  // Collision radius.
@@ -95,6 +96,15 @@ public class Avatar extends AnimatedEntity {
       mWeapon.setTarget(mTargetX, mTargetY);
       mWeapon.step(time_step);
     }
+
+    // Update the grappling hook.
+    if (mGrapplingTimer > 0.0f) {
+      mGrappling.step(time_step);
+      x = mGrappling.getBottomLink().x;
+      y = mGrappling.getBottomLink().y;
+      dx = mGrappling.getBottomLink().dx;
+      dy = mGrappling.getBottomLink().dy;
+    }
   }
 
   public void drawHud(Graphics graphics) {
@@ -164,6 +174,10 @@ public class Avatar extends AnimatedEntity {
       mWeapon.draw(graphics, center_x, center_y, zoom,
                    hand_lx, hand_ly, hand_rx, hand_ry);
     }
+
+    if (mGrapplingTimer > 0.0f) {
+      mGrappling.draw(graphics, center_x, center_y, zoom);
+    }
   }
 
   public void setKeyState(int key_code, int state) {
@@ -200,6 +214,18 @@ public class Avatar extends AnimatedEntity {
     if (key_code == kKeyShoot1 || key_code == kKeyShoot2) {
       if (mWeapon != null) {
         mWeapon.enableShooting(state == 1);
+      }
+    }
+
+    // Grappling.
+    if (key_code == kKeyGrappling && state == 1) {
+      if (mGrapplingTimer <= 0.0f) {
+        mGrappling.setGrapple(x + 84, y - 84, x, y);
+        mGrappling.getBottomLink().dx = dx;
+        mGrappling.getBottomLink().dy = dy;
+        mGrapplingTimer = kGrapplingTime;
+      } else {
+        mGrapplingTimer = 0.0f;
       }
     }
   }
@@ -266,6 +292,8 @@ public class Avatar extends AnimatedEntity {
   private int       mCanvasWidth;
   private int       mCanvasHeight;
   private GameState mGameState;
+  private Grappling mGrappling;
+  private float     mGrapplingTimer;
   private boolean   mJumping;
   private float     mTargetX;
   private float     mTargetY;
@@ -279,6 +307,7 @@ public class Avatar extends AnimatedEntity {
   private static final float kAirAcceleration        = 2000.0f;
   private static final float kAnimationStopThreshold = 40.0f;
   private static final float kDrawingScale           = 0.4f;
+  private static final float kGrapplingTime          = 1.0f;
   private static final float kGravity                = 300.0f;
   private static final float kGroundAcceleration     = 2000.0f;
   private static final float kGroundAnimationSpeed   = 1.0f / 1500.0f;
@@ -290,9 +319,10 @@ public class Avatar extends AnimatedEntity {
   private static final int   kKeyLeft                = KeyEvent.KEYCODE_A;
   private static final int   kKeyRight               = KeyEvent.KEYCODE_S;
   private static final int   kKeyJump                = KeyEvent.KEYCODE_K;
+  private static final int   kKeyGrappling           = KeyEvent.KEYCODE_I;
   private static final int   kKeyShoot1              = KeyEvent.KEYCODE_J;
   private static final int   kKeyShoot2              = KeyEvent.KEYCODE_L;
-  private static final float kRadius                 = 20.0f;
+  private static final float kRadius                 = 22.0f;
   private static final Uri   kSoundJump              = Uri.parse("file:///android_asset/avatar_jump.mp3");
   private static final int   kTouchMovementHeight    = 45;
   private static final float kVelocityBoost          = 40.0f;
