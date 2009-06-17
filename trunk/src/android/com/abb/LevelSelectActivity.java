@@ -50,19 +50,21 @@ public class LevelSelectActivity extends TabActivity implements ListView.OnItemC
     tab_host.addTab(tab_host.newTabSpec("levellistview")
                     .setIndicator("", getResources().getDrawable(R.drawable.maps))
                     .setContent(R.id.levellistview));
+    /*
     tab_host.addTab(tab_host.newTabSpec("avatarview")
                     .setIndicator("", getResources().getDrawable(R.drawable.avatar))
                     .setContent(R.id.avatarview));
     tab_host.addTab(tab_host.newTabSpec("settingsview")
                     .setIndicator("", getResources().getDrawable(R.drawable.settings))
                     .setContent(R.id.settingsview));
+    */
     tab_host.addTab(tab_host.newTabSpec("helpview")
                     .setIndicator("", getResources().getDrawable(R.drawable.help))
                     .setContent(R.id.helpview));
     tab_host.setCurrentTab(0);
 
     WebView web_view = (WebView)findViewById(R.id.helpview);
-    web_view.loadUrl("file:///android_asset/help.htm");
+    web_view.loadUrl("file:///android_asset/help/help.htm");
 
     // Start the asset pre-caching and level loading. This is done in another
     // thread since it is relatively slow. Note that the loading thread needs to
