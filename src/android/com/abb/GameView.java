@@ -251,9 +251,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
   @Override
   public boolean onTouchEvent(MotionEvent event) {
+    // The mGame synchronization lock below is highly contented and therefore
+    // these motion events may be *very expensive*. Because of this, we
+    // fast-track ignore the ACTION_MOVE events which are never used here.
+    if (event.getAction() == MotionEvent.ACTION_MOVE) {
+      event.recycle();
+      return true;
+    }
+
     synchronized (mGame) {
       mGame.onMotionEvent(event);
     }
+
     event.recycle();
     return true;
   }

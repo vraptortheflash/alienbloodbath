@@ -226,6 +226,6 @@ public class LevelSelectActivity extends TabActivity implements ListView.OnItemC
 
   //private final String kRootDirectory = "content:///Classic/";
   //private final String kRootDirectory = "content:///Demo/";
-  //private final String kRootDirectory = "content:///The_Second_Wave/";
-  private final String kRootDirectory = "file:///android_asset/Maps/";
+  private final String kRootDirectory = "file:///android_asset/The_Second_Wave/";
+  //private final String kRootDirectory = "file:///android_asset/Maps/";
 }
