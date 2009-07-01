@@ -69,9 +69,9 @@ public class Avatar extends AnimatedEntity {
     }
 
     // Update the avatar animation.
-    if (dx < 0.0f) {
+    if (dx < -0.001f) {
       sprite_flipped_horizontal = true;
-    } else if (dx > 0.0f) {
+    } else if (dx > 0.001f) {
       sprite_flipped_horizontal = false;
     }
     stepAnimation(time_step);
@@ -79,7 +79,11 @@ public class Avatar extends AnimatedEntity {
       if (Math.abs(dx) > kAnimationStopThreshold) {
         setAnimation("running");
       } else {
-        setAnimation("standing");
+        if (mTargetY < -Math.abs(mTargetX)) {
+          setAnimation("shoot_up");
+        } else {
+          setAnimation("standing");
+        }
       }
     } else {
       setAnimation("jumping");
@@ -151,26 +155,27 @@ public class Avatar extends AnimatedEntity {
     mCanvasWidth = graphics.getWidth();
     mCanvasHeight = graphics.getHeight();
 
-    // Draw the articulated entity.
+    // Draw the animated entity.
     super.draw(graphics, center_x, center_y, zoom);
 
     // The weapon must be drawn after the avatar's articulated entity. In
     // addition to the fact that no z-buffer is used, the articulated entity's
     // draw method calculates the model's hand positions which we use to draw
-    // the weapon on top of.
+    // the weapon on top of. For the sprite based model, this is more of a hack.
     if (mWeapon != null) {
-      /*
-      super.getPartTransformation("farm_l").getValues(mArray9);
-      float hand_lx = mArray9[2];
-      float hand_ly = mArray9[5];
-      super.getPartTransformation("farm_r").getValues(mArray9);
-      float hand_rx = mArray9[2];
-      float hand_ry = mArray9[5];
-      */
-      float hand_lx = mCanvasWidth / 2 - 5;
-      float hand_ly = mCanvasHeight / 2;
-      float hand_rx = mCanvasWidth / 2 + 5;
-      float hand_ry = mCanvasHeight / 2;
+      float sprite_x = (x - center_x) * zoom + (mCanvasWidth - 48 * zoom) / 2.0f;
+      float sprite_y = (y - center_y) * zoom + (mCanvasHeight - 48 * zoom) / 2.0f;
+      int frame = sprite_rect.top / 48;
+      float hand_lx, hand_rx;
+      if (!sprite_flipped_horizontal) {
+        hand_lx = sprite_x + kHandPositions[4 * frame + 0] * zoom;
+        hand_rx = sprite_x + kHandPositions[4 * frame + 2] * zoom;
+      } else {
+        hand_lx = sprite_x + 48 * zoom - kHandPositions[4 * frame + 0] * zoom;
+        hand_rx = sprite_x + 48 * zoom - kHandPositions[4 * frame + 2] * zoom;
+      }
+      float hand_ly = sprite_y + (kHandPositions[4 * frame + 1] % 48 + 6) * zoom;
+      float hand_ry = sprite_y + (kHandPositions[4 * frame + 3] % 48 + 6) * zoom;
       mWeapon.draw(graphics, center_x, center_y, zoom,
                    hand_lx, hand_ly, hand_rx, hand_ry);
     }
@@ -188,9 +193,13 @@ public class Avatar extends AnimatedEntity {
     // Horizontal movement.
     if (key_code == kKeyLeft) {
       ddx = -kGroundAcceleration * state;
+      mTargetX = -1;
+      mTargetY = 0;
     }
     if (key_code == kKeyRight) {
       ddx = +kGroundAcceleration * state;
+      mTargetX = +1;
+      mTargetY = 0;
     }
 
     // Vertical movement. The following is tricky since plausible physics
@@ -217,6 +226,7 @@ public class Avatar extends AnimatedEntity {
       }
     }
 
+    /*
     // Grappling.
     if (key_code == kKeyGrappling && state == 1) {
       if (mGrapplingTimer <= 0.0f) {
@@ -228,6 +238,7 @@ public class Avatar extends AnimatedEntity {
         mGrapplingTimer = 0.0f;
       }
     }
+    */
   }
 
   public void onMotionEvent(MotionEvent motion_event) {
@@ -240,7 +251,9 @@ public class Avatar extends AnimatedEntity {
     // from the API, but aren't yet used here.
     int action = motion_event.getAction();
 
-    if (action == MotionEvent.ACTION_UP) {
+    if (action == MotionEvent.ACTION_UP ||
+        action == MotionEvent.ACTION_CANCEL ||
+        action == MotionEvent.ACTION_OUTSIDE) {
       setKeyState(kKeyLeft, 0);
       setKeyState(kKeyRight, 0);
       setKeyState(kKeyJump, 0);
@@ -276,6 +289,7 @@ public class Avatar extends AnimatedEntity {
       // movement section of the display surface.)
       mTargetX = motion_event.getX() - mCanvasWidth / 2;
       mTargetY = motion_event.getY() - mCanvasHeight / 2;
+      sprite_flipped_horizontal = mTargetX < 0;
       setKeyState(kKeyShoot1, 1);
     }
     return;
@@ -312,6 +326,16 @@ public class Avatar extends AnimatedEntity {
   private static final float kGroundAcceleration     = 2000.0f;
   private static final float kGroundAnimationSpeed   = 1.0f / 1500.0f;
   private static final float kGroundKineticFriction  = 0.3f;
+  private static final int   kHandPositions[]        = {
+    19, 20,   37, 20,
+    23, 71,   37, 82,
+    22, 118,  39, 118,
+    30, 162,  45, 150,
+    28, 211,  28, 194,
+    23, 261,  42, 252,
+    28, 313,  35, 330,
+    24, 363,  6, 371,
+    21, 408,  13, 391 };
   private static final float kMaxGroundVelocity      = 200.0f;
   private static final float kMaxHorizontalVelocity  = 300.0f;
   private static final float kMaxVerticalVelocity    = 300.0f;
@@ -322,8 +346,9 @@ public class Avatar extends AnimatedEntity {
   private static final int   kKeyGrappling           = KeyEvent.KEYCODE_I;
   private static final int   kKeyShoot1              = KeyEvent.KEYCODE_J;
   private static final int   kKeyShoot2              = KeyEvent.KEYCODE_L;
-  private static final float kRadius                 = 22.0f;
-  private static final Uri   kSoundJump              = Uri.parse("file:///android_asset/avatar_jump.mp3");
+  private static final float kRadius                 = 23.0f;
+  private static final Uri   kSoundJump              =
+      Uri.parse("file:///android_asset/avatar_jump.mp3");
   private static final int   kTouchMovementHeight    = 45;
   private static final float kVelocityBoost          = 40.0f;
 }

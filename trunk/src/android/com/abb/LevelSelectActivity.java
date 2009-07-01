@@ -48,7 +48,7 @@ public class LevelSelectActivity extends TabActivity implements ListView.OnItemC
 
     TabHost tab_host = getTabHost();
     tab_host.addTab(tab_host.newTabSpec("levellistview")
-                    .setIndicator("", getResources().getDrawable(R.drawable.maps))
+                    .setIndicator("Levels", getResources().getDrawable(R.drawable.maps))
                     .setContent(R.id.levellistview));
     /*
     tab_host.addTab(tab_host.newTabSpec("avatarview")
@@ -59,7 +59,7 @@ public class LevelSelectActivity extends TabActivity implements ListView.OnItemC
                     .setContent(R.id.settingsview));
     */
     tab_host.addTab(tab_host.newTabSpec("helpview")
-                    .setIndicator("", getResources().getDrawable(R.drawable.help))
+                    .setIndicator("Help", getResources().getDrawable(R.drawable.help))
                     .setContent(R.id.helpview));
     tab_host.setCurrentTab(0);
 
