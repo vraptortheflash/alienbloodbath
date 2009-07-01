@@ -79,7 +79,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       // http://blogs.sun.com/dholmes/entry/inside_the_hotspot_vm_clocks
       long time = System.nanoTime();
 
-      int frame = 0;
+      //int frame = 0;
       while (mRunning) {
         synchronized (this) {
           while (mPaused && mRunning) {
@@ -98,11 +98,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         float time_step = (float)(current_time - time) * 1.0e-9f;
         time = current_time;
 
+        /*
         ++frame;
         if (frame % 30 == 0) {
           Log.d("GameThread::run",
                 "Frame rate: " + (int)(1.0f / time_step));
         }
+        */
 
         if (false && time_step < kMinTimeStep) {
           float remaining_time = kMinTimeStep - time_step;
@@ -218,6 +220,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   /** Standard override to get key-press events. */
   @Override
   public boolean onKeyDown(int key_code, KeyEvent msg) {
+    /*
     if (key_code == kProfileKey) {
       if (!mProfiling) {
         Debug.startMethodTracing(kProfilePath);
@@ -227,6 +230,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         mProfiling = false;
       }
     }
+    */
 
     synchronized (mGame) {
       return mGame.onKeyDown(key_code);

@@ -107,17 +107,19 @@ public class GameState implements Game {
     avatar.onMotionEvent(motion_event);
   }
 
-  private int mFrame = 0;
-  private long mStepTime;
-  private long mDrawTime;
+  //private int mFrame = 0;
+  //private long mStepTime;
+  //private long mDrawTime;
 
   public boolean onFrame(Graphics graphics, float time_step) {
-    long time_0 = System.nanoTime();
+    //long time_0 = System.nanoTime();
     stepGame(time_step);
-    long time_1 = System.nanoTime();
+    //long time_1 = System.nanoTime();
     drawGame(graphics);
-    long time_2 = System.nanoTime();
+    //long time_2 = System.nanoTime();
 
+    /*
+    // Online profiling.
     mStepTime += time_1 - time_0;
     mDrawTime += time_2 - time_1;
     ++mFrame;
@@ -135,6 +137,7 @@ public class GameState implements Game {
       mFrame = 0;
       mStepTime = mDrawTime = 0;
     }
+    */
 
     return true;  // True to keep updating.
   }
@@ -339,13 +342,9 @@ public class GameState implements Game {
 
   public Entity createBloodParticle(float x, float y, float dx, float dy) {
     final float kTimeRemaining = 0.75f;  // Seconds.
-    final int kSpriteBase      = 1 * 64;
-    final int kSpriteWidth     = 64;
-    final int kSpriteHeight    = 64;
 
     Entity blood = Entity.obtain();
-    blood.sprite_rect.set(
-        0, kSpriteBase, kSpriteWidth, kSpriteBase + kSpriteHeight);
+    blood.sprite_rect.set(12, 49, 54, 97);
     blood.sprite_flipped_horizontal = mRandom.nextBoolean();
     blood.sprite_image = misc_sprites;
     blood.life = kTimeRemaining;
@@ -513,10 +512,14 @@ public class GameState implements Game {
   private static final float kGravity                  = 200.0f;
   private static final float kGroundZoom               = 0.85f;
   private static final int   kMaxSounds                = 10;
-  private static final Uri   kSoundAvatarDamage        = Uri.parse("file:///android_asset/avatar_damage.mp3");
-  private static final Uri   kSoundAvatarDeath         = Uri.parse("file:///android_asset/avatar_death.mp3");
-  private static final Uri   kSoundAvatarWin           = Uri.parse("file:///android_asset/avatar_win.mp3");
-  private static final Uri   kSoundEnemyDeath          = Uri.parse("file:///android_asset/enemy_death.mp3");
+  private static final Uri   kSoundAvatarDamage        =
+      Uri.parse("file:///android_asset/avatar_damage.mp3");
+  private static final Uri   kSoundAvatarDeath         =
+      Uri.parse("file:///android_asset/avatar_death.mp3");
+  private static final Uri   kSoundAvatarWin           =
+      Uri.parse("file:///android_asset/avatar_win.mp3");
+  private static final Uri   kSoundEnemyDeath          =
+      Uri.parse("file:///android_asset/enemy_death.mp3");
   private static final float kViewLead                 = 1.0f;
   private static final float kViewSpeed                = 2.0f;
   private static final float kWinTimer                 = 3.0f;

@@ -129,8 +129,7 @@ public class Weapon extends Entity {
   public void step(float time_step) {
     super.step(time_step);
 
-    // Update the shooting mechanism. The following is specialized for running
-    // or standing on the ground versus jumping.
+    // Update the shooting mechanism.
     mCurrentDelay -= time_step;
     if (mShooting && mCurrentDelay < time_step && sprite_image != -1 &&
         mAmmo > 0) {
@@ -140,12 +139,12 @@ public class Weapon extends Entity {
 
       float shot_distance = sprite_rect.width() / 2;
       float shot_velocity = mVelocity;
-      float shot_angle = ((float)Math.atan2(mTargetY, mTargetX) +
-                          mSpread * (float)Math.sin(mPhase));
+      float shot_angle = (float)Math.atan2(mTargetY, mTargetX);
+      float spread_angle = mSpread * (float)Math.sin(mPhase);
       float x_offset = shot_distance * (float)Math.cos(shot_angle);
       float y_offset = shot_distance * (float)Math.sin(shot_angle);
-      float dx_offset = shot_velocity * (float)Math.cos(shot_angle);
-      float dy_offset = shot_velocity * (float)Math.sin(shot_angle);
+      float dx_offset = shot_velocity * (float)Math.cos(shot_angle + spread_angle);
+      float dy_offset = shot_velocity * (float)Math.sin(shot_angle + spread_angle);
 
       if (mProjectileIsFlame) {
         mGameState.createFireProjectile(x + x_offset, y + y_offset,
@@ -185,17 +184,16 @@ public class Weapon extends Entity {
     }
 
     // Note that the avatar hand coordinates are specified in screen
-    // coordinates, not world coordinates. They are set via the
-    // setHandsPositions method.
+    // coordinates, not world coordinates.
     if (sprite_image != -1) {
-      int x_offset = -sprite_rect.width() / 4;
-      int y_offset = -sprite_rect.height() / 2;
+      float x_offset = -sprite_rect.width() / 2.0f * zoom;
+      float y_offset = -sprite_rect.height() / 2.0f * zoom;
       mDrawingMatrix.setTranslate(hand_rx, hand_ry);
       mDrawingMatrix.preRotate(
-          57.2958f * (float)Math.atan2(hand_ly - hand_ry, hand_lx - hand_rx));
+          57.2958f * (float)Math.atan2(hand_ry - hand_ly, hand_rx - hand_lx));
       mDrawingMatrix.preTranslate(x_offset, y_offset);
-      mDrawingMatrix.preScale(zoom * sprite_rect.width(),
-                              zoom * sprite_rect.height());
+      mDrawingMatrix.preScale(
+          zoom * sprite_rect.width(), zoom * sprite_rect.height());
       graphics.drawImage(sprite_image, sprite_rect, mDrawingMatrix,
                          false, sprite_flipped_horizontal, 1);
     }
