@@ -81,6 +81,6 @@ public class AvatarDatabase {
   private AvatarDatabaseOpenHelper mDatabaseOpenHelper;
 
   private static final String kDatabaseName = "avatar.db";
-  private static final int kDatabaseVersion = 1;
+  private static final int kDatabaseVersion = 2;
   private static final String kDatabaseTable = "avatar";
 }
